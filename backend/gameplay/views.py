@@ -6,6 +6,8 @@ from rest_framework.views import APIView
 
 from .feedback import calculate_feedback
 from .models import DailySong, GuessAttempt, ScoreEntry
+from .moderation import contains_banned_word
+from .scoring import calculate_score
 
 
 def get_device_id(request):
@@ -131,4 +133,53 @@ class GuessView(APIView):
                 "finished": finished,
                 "attempts_remaining": 6 - attempt_number,
             }
+        )
+
+
+class ScoreView(APIView):
+    def post(self, request):
+        device_id = get_device_id(request)
+        daily_song = DailySong.objects.filter(
+            date=timezone.localdate(), state=DailySong.PUBLISHED
+        ).first()
+        if daily_song is None:
+            return Response({"detail": "No hay canción publicada para hoy."}, status=404)
+
+        if ScoreEntry.objects.filter(device_id=device_id, daily_song=daily_song).exists():
+            return Response({"detail": "Ya enviaste tu puntaje de hoy."}, status=400)
+
+        winning_attempt_obj = (
+            GuessAttempt.objects.filter(device_id=device_id, daily_song=daily_song, is_correct=True)
+            .order_by("attempt_number")
+            .first()
+        )
+        if winning_attempt_obj is None:
+            return Response({"detail": "Todavía no ganaste hoy."}, status=400)
+
+        display_name = (request.data.get("display_name") or "").strip()
+        if not display_name or contains_banned_word(display_name):
+            return Response({"detail": "Nombre inválido."}, status=400)
+
+        try:
+            total_time_seconds = float(request.data.get("total_time_seconds"))
+        except (TypeError, ValueError):
+            return Response({"detail": "total_time_seconds inválido."}, status=400)
+
+        score = calculate_score(winning_attempt_obj.attempt_number, total_time_seconds)
+
+        entry = ScoreEntry.objects.create(
+            device_id=device_id,
+            daily_song=daily_song,
+            display_name=display_name,
+            score=score,
+            winning_attempt=winning_attempt_obj.attempt_number,
+            total_time_seconds=total_time_seconds,
+        )
+        return Response(
+            {
+                "score": entry.score,
+                "winning_attempt": entry.winning_attempt,
+                "display_name": entry.display_name,
+            },
+            status=201,
         )
