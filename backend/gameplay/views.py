@@ -183,3 +183,20 @@ class ScoreView(APIView):
             },
             status=201,
         )
+
+
+class LeaderboardTodayView(APIView):
+    def get(self, request):
+        today = timezone.localdate()
+        daily_song = DailySong.objects.filter(date=today, state=DailySong.PUBLISHED).first()
+        entries = []
+        if daily_song is not None:
+            entries = [
+                {
+                    "display_name": entry.display_name,
+                    "score": entry.score,
+                    "winning_attempt": entry.winning_attempt,
+                }
+                for entry in ScoreEntry.objects.filter(daily_song=daily_song).order_by("-score")
+            ]
+        return Response({"day": str(today), "entries": entries})
