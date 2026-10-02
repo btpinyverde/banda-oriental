@@ -6,7 +6,7 @@
 
 **Architecture:** Monorepo with `backend/` (Django + DRF, Render) and `frontend/` (React + TypeScript via Vite, Vercel). A single `/api/health/` endpoint verifies the backend can reach the real Postgres database; the frontend fetches it and renders the result. No game logic, no MusicBrainz, no R2 usage yet — this plan only proves the deploy pipeline and DB connectivity.
 
-**Tech Stack:** Django 5.1 + Django REST Framework, pytest + pytest-django, Postgres (Neon), React 18 + TypeScript via Vite, Vitest + React Testing Library, GitHub Actions (CI), Render (backend hosting), Vercel (frontend hosting).
+**Tech Stack:** Django 5.1 + Django REST Framework, pytest + pytest-django, Postgres (Neon), React 18 + TypeScript via Vite, Vitest + React Testing Library, a local git `pre-push` hook as the test gate (no GitHub Actions — see Task 3), Render (backend hosting), Vercel (frontend hosting).
 
 **Spec:** `docs/superpowers/specs/2026-10-02-banda-oriental-design.md`
 
@@ -566,66 +566,94 @@ git commit -m "feat(frontend): add Vite/React skeleton with health status page"
 
 ---
 
-### Task 3: CI pipeline (GitHub Actions)
+### Task 3: Local pre-push test gate (git hook)
 
 **Files:**
-- Create: `.github/workflows/ci.yml`
+- Create: `.githooks/pre-push`
+- Create: `README.md`
 
 **Interfaces:**
-- Consumes: `backend/requirements-dev.txt` (Task 1), `frontend/package.json` (Task 2).
-- Produces: a required CI check named `backend-tests` and `frontend-tests` on every push/PR to `main`.
+- Consumes: `backend/.venv` (Task 1, local dev setup) and `frontend/` scripts (Task 2: `npm run test -- --run`, `npm run build`).
+- Produces: a `git push` that aborts with a non-zero exit if backend tests, frontend tests, or the frontend build fail — enforced locally, no GitHub Actions, no billing dependency.
 
-- [ ] **Step 1: Write the workflow**
+> **Context:** this plan originally used a GitHub Actions workflow here. GitHub locked the account's Actions billing (asked for a card to verify, even though public-repo minutes are free) and Brandon chose to avoid adding a card entirely rather than resolve the lock. A local pre-push hook gives the same practical guarantee for a solo developer — nothing reaches `origin` untested — without touching GitHub Actions or billing at all.
 
-```yaml
-# .github/workflows/ci.yml
-name: CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  backend-tests:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements-dev.txt
-      - run: python -m pytest -v
-
-  frontend-tests:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: npm ci
-      - run: npm run test -- --run
-      - run: npm run build
-```
-
-- [ ] **Step 2: Verify it runs**
-
-Run: `git add .github/workflows/ci.yml && git commit -m "ci: run backend and frontend tests on push/PR to main"`
-Push the branch and confirm both jobs go green on GitHub Actions before merging.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 1: Write the hook**
 
 ```bash
-git add .github/workflows/ci.yml
-git commit -m "ci: run backend and frontend tests on push/PR to main"
+#!/bin/sh
+# .githooks/pre-push — blocks `git push` if tests or the frontend build fail.
+set -e
+
+echo "pre-push: backend tests"
+(cd backend && ./.venv/bin/python -m pytest)
+
+echo "pre-push: frontend tests"
+(cd frontend && npm run test -- --run)
+
+echo "pre-push: frontend build"
+(cd frontend && npm run build)
+
+echo "pre-push: all checks passed"
+```
+
+```markdown
+# README.md
+# Banda Oriental
+
+Wordle diario de canciones uruguayas. Backend en Django, frontend en React + TypeScript.
+
+## Desarrollo local
+
+### Backend
+
+\`\`\`bash
+cd backend
+python3.12 -m venv .venv
+./.venv/bin/pip install -r requirements-dev.txt
+./.venv/bin/python manage.py migrate
+./.venv/bin/python manage.py runserver
+\`\`\`
+
+### Frontend
+
+\`\`\`bash
+cd frontend
+npm install
+npm run dev
+\`\`\`
+
+### Test gate antes de pushear
+
+Este repo no usa GitHub Actions (ver nota en el plan de bootstrap). En su lugar, un
+git hook local corre los tests de backend y frontend, y el build del frontend, antes
+de cada `git push`. Para instalarlo una vez por clon del repo:
+
+\`\`\`bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-push
+\`\`\`
+
+Si el hook falla, el push no sale — arreglá lo que rompió antes de reintentar.
+```
+
+- [ ] **Step 2: Make it executable and install it locally**
+
+Run: `chmod +x .githooks/pre-push && git config core.hooksPath .githooks`
+Expected: no output from `chmod`; `git config --get core.hooksPath` prints `.githooks`.
+
+- [ ] **Step 3: Verify it actually blocks a failing push**
+
+Temporarily break a test (e.g. change an assertion in `backend/core/tests/test_health.py` to something false), then run:
+
+Run: `git add -A && git commit -m "wip: temp breakage to verify hook" --no-verify && git push --dry-run`
+Expected: the hook runs, `pytest` fails, the push is aborted before reaching the network. Then `git reset --soft HEAD~1` to undo the temp commit and restore the test file.
+
+- [ ] **Step 4: Commit the real hook and README**
+
+```bash
+git add .githooks/pre-push README.md
+git commit -m "chore: replace GitHub Actions CI with a local pre-push test gate"
 ```
 
 ---

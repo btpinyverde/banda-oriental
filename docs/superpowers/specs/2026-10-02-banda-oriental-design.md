@@ -56,8 +56,11 @@ Componentes externos:
 - **Cover Art Archive** — portadas de discos.
 - **Neon** — Postgres gestionado, free tier sin expiración.
 - **Cloudflare R2** — storage de los stems de audio, egress gratis.
-- **GitHub Actions** — cron que dispara la sincronización periódica con
-  MusicBrainz contra un endpoint protegido del backend.
+
+No se usa GitHub Actions para nada que corra código del proyecto (ver §13):
+la cuenta de GitHub quedó bloqueada pidiendo verificación de tarjeta para
+usar Actions, y se decidió no cargarla. El sync de MusicBrainz y el gate de
+tests se resuelven sin depender de runners de GitHub.
 
 El frontend nunca se comunica directo con MusicBrainz, Cover Art Archive ni
 R2 (salvo para reproducir los archivos de audio vía URL firmada que el
@@ -104,9 +107,9 @@ de upsert, nunca duplica). Flujo:
 5. Guardar/actualizar en `catalog`.
 
 Respeta el rate limit de MusicBrainz (1 request/segundo sin API key). Se
-dispara vía GitHub Actions (`schedule: cron`) que hace un POST autenticado
-(token secreto en GitHub Secrets) a un endpoint `/api/admin/sync/` del
-backend. El backend encola la ejecución del management command.
+dispara a mano desde un botón en el Django admin (no hay cron automático —
+ver nota en §3 y §13 sobre por qué se descartó GitHub Actions). Brandon lo
+corre cuando quiere traer música nueva al catálogo.
 
 ## 6. Mecánica de juego
 
@@ -185,7 +188,8 @@ Django admin estándar, extendido con:
 - Un flujo para crear un `DailySong`: elegir canción del catálogo, subir los
   4 archivos de stems (se suben directo a R2 desde el admin), asignar el
   orden de desbloqueo.
-- Un botón para disparar el sync de MusicBrainz manualmente además del cron.
+- Un botón para disparar el sync de MusicBrainz (único mecanismo, no hay
+  cron automático — ver §5).
 - Edición del `instagram_handle` de artistas.
 - Vista para moderar/borrar entradas del leaderboard a mano si hace falta.
 
@@ -215,11 +219,20 @@ Django admin estándar, extendido con:
 | Backend | Render (free, sin Docker) | Deploy automático en push a `main`, duerme tras 15min idle |
 | Base de datos | Neon (Postgres free) | No expira, autosuspend/wake |
 | Storage audio | Cloudflare R2 | Free tier, egress gratis |
-| Sync MusicBrainz | GitHub Actions (cron) | Llama a endpoint protegido del backend |
+| Sync MusicBrainz | Botón manual en el Django admin | Sin cron — ver nota abajo |
+| Test gate | Git hook local (`pre-push`) | Sin GitHub Actions — ver nota abajo |
 
-Variables de entorno sensibles (credenciales de R2, secret del endpoint de
-sync, `SECRET_KEY` de Django) van en variables de entorno de cada plataforma,
-nunca committeadas. Se documenta un `.env.example` en cada app.
+**Nota — por qué no hay GitHub Actions:** al crear el repo, la cuenta de
+GitHub quedó bloqueada pidiendo verificación de tarjeta para usar Actions
+(política anti-abuso de GitHub, no una deuda real — los minutos son
+gratis e ilimitados en repos públicos). Brandon decidió no cargar tarjeta,
+así que ni el sync de MusicBrainz ni el gate de tests dependen de runners
+de GitHub: el sync se dispara a mano desde el admin, y los tests corren
+localmente antes de cada push vía un git hook.
+
+Variables de entorno sensibles (credenciales de R2, `SECRET_KEY` de
+Django) van en variables de entorno de cada plataforma, nunca
+committeadas. Se documenta un `.env.example` en cada app.
 
 ## 14. Testing
 
