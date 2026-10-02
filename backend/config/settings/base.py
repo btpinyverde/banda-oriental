@@ -14,6 +14,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "storages",
     "core",
     "catalog",
     "gameplay",
@@ -61,12 +62,31 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Django's plain default here on purpose: whitenoise's manifest storage
 # needs `collectstatic` to have run first (only true in prod's build
 # step); using it in dev/test too would break every `{% static %}` tag,
-# since there's no manifest.json locally. "stems" is a temporary local
-# stub — Task 2 replaces it with the real Cloudflare R2 backend.
+# since there's no manifest.json locally. "stems" points at Cloudflare R2
+# (private bucket — every URL must be signed, never a bare public link).
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-    "stems": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+}
+
+R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY", "")
+R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "")
+R2_ENDPOINT_URL = os.environ.get("R2_ENDPOINT_URL", "")
+
+STORAGES["stems"] = {
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": {
+        "access_key": R2_ACCESS_KEY_ID,
+        "secret_key": R2_SECRET_ACCESS_KEY,
+        "bucket_name": R2_BUCKET_NAME,
+        "endpoint_url": R2_ENDPOINT_URL,
+        "region_name": "auto",
+        "querystring_auth": True,
+        "default_acl": None,
+        "signature_version": "s3v4",
+        "querystring_expire": 3600,
+    },
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
