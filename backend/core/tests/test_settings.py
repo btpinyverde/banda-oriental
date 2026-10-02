@@ -41,6 +41,10 @@ def test_prod_settings_enable_connection_health_checks(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@host/db")
     monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "key")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("R2_BUCKET_NAME", "bucket")
+    monkeypatch.setenv("R2_ENDPOINT_URL", "https://acct.r2.cloudflarestorage.com")
     mod = _reload_prod_settings()
     database = mod.DATABASES["default"]
     assert database["CONN_HEALTH_CHECKS"] is True
@@ -53,6 +57,10 @@ def test_prod_settings_parse_exact_cors_origin_list(monkeypatch):
     monkeypatch.setenv(
         "CORS_ALLOWED_ORIGINS", "https://bandaoriental.xami.uy, https://x.vercel.app"
     )
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "key")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("R2_BUCKET_NAME", "bucket")
+    monkeypatch.setenv("R2_ENDPOINT_URL", "https://acct.r2.cloudflarestorage.com")
     mod = _reload_prod_settings()
     assert mod.CORS_ALLOWED_ORIGINS == [
         "https://bandaoriental.xami.uy",
@@ -77,6 +85,37 @@ def test_prod_settings_trust_the_proxy_https_header(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@host/db")
     monkeypatch.setenv("ALLOWED_HOSTS", "banda-oriental-backend.onrender.com")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://bandaoriental.xami.uy")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "key")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("R2_BUCKET_NAME", "bucket")
+    monkeypatch.setenv("R2_ENDPOINT_URL", "https://acct.r2.cloudflarestorage.com")
     mod = _reload_prod_settings()
     assert mod.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
     assert mod.CSRF_TRUSTED_ORIGINS == ["https://banda-oriental-backend.onrender.com"]
+
+
+@pytest.mark.parametrize(
+    "missing_var",
+    ["R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_ENDPOINT_URL"],
+)
+def test_prod_settings_require_each_r2_setting(monkeypatch, missing_var):
+    # Without this, a missing R2 var doesn't fail until the first real
+    # upload attempt — the S3 client raises `ValueError: Invalid
+    # endpoint: ''` deep inside storages/boto3, not at startup like every
+    # other required setting (DATABASE_URL, ALLOWED_HOSTS, ...).
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@host/db")
+    monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
+    all_r2_vars = {
+        "R2_ACCESS_KEY_ID": "key",
+        "R2_SECRET_ACCESS_KEY": "secret",
+        "R2_BUCKET_NAME": "bucket",
+        "R2_ENDPOINT_URL": "https://acct.r2.cloudflarestorage.com",
+    }
+    for name, value in all_r2_vars.items():
+        if name == missing_var:
+            monkeypatch.delenv(name, raising=False)
+        else:
+            monkeypatch.setenv(name, value)
+    with pytest.raises(ImproperlyConfigured, match=missing_var):
+        _reload_prod_settings()

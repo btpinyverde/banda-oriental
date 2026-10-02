@@ -6,3 +6,4 @@ gunicorn==23.0.0
 django-cors-headers==4.4.0
 whitenoise==6.8.2
 requests==2.32.3
+django-storages[s3]==1.14.4

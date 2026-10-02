@@ -14,8 +14,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "storages",
     "core",
     "catalog",
+    "gameplay",
 ]
 
 MIDDLEWARE = [
@@ -53,10 +55,43 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-# No STORAGES override here on purpose: whitenoise's manifest storage needs
-# `collectstatic` to have run first (only true in prod's build step). Using
-# it here too would break every dev/test request that renders a `{% static %}`
-# tag, since there's no manifest.json locally.
+# Django does NOT merge a custom STORAGES dict with its own defaults —
+# defining STORAGES at all means naming every key yourself, including ones
+# you don't want to change (confirmed empirically: omitting "default" here
+# left it missing from settings.STORAGES entirely). "staticfiles" stays
+# Django's plain default here on purpose: whitenoise's manifest storage
+# needs `collectstatic` to have run first (only true in prod's build
+# step); using it in dev/test too would break every `{% static %}` tag,
+# since there's no manifest.json locally. "stems" points at Cloudflare R2
+# (private bucket — every URL must be signed, never a bare public link).
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY", "")
+R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "")
+R2_ENDPOINT_URL = os.environ.get("R2_ENDPOINT_URL", "")
+
+STORAGES["stems"] = {
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": {
+        "access_key": R2_ACCESS_KEY_ID,
+        "secret_key": R2_SECRET_ACCESS_KEY,
+        "bucket_name": R2_BUCKET_NAME,
+        "endpoint_url": R2_ENDPOINT_URL,
+        "region_name": "auto",
+        "querystring_auth": True,
+        "default_acl": None,
+        "signature_version": "s3v4",
+        "querystring_expire": 3600,
+        # Defense in depth alongside stem_upload_path's random filenames
+        # (gameplay/models.py): without this, a name collision would
+        # silently replace an existing object instead of erroring.
+        "file_overwrite": False,
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
