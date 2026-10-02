@@ -40,6 +40,7 @@
 - Create: `backend/catalog/management/commands/__init__.py`
 - Create: `backend/catalog/management/commands/ensure_superuser.py`
 - Modify: `backend/config/settings/base.py`
+- Modify: `backend/config/settings/prod.py`
 - Modify: `backend/config/urls.py`
 - Modify: `backend/requirements.txt`
 - Modify: `render.yaml`
@@ -343,11 +344,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+# No STORAGES override here on purpose: whitenoise's manifest storage needs
+# `collectstatic` to have run first (only true in prod's build step). Using
+# it here too would break every dev/test request that renders a `{% static %}`
+# tag, since there's no manifest.json locally. It's added in prod.py instead
+# — see that file's edit below.
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -387,6 +388,23 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("core.urls")),
 ]
+```
+
+Edit `backend/config/settings/prod.py` — add the manifest storage override right
+after `DEBUG = False` (it belongs only here, not in `base.py`, because it
+needs `collectstatic` to have already run — true in Render's build step,
+never true locally):
+
+```python
+# backend/config/settings/prod.py — insert after `DEBUG = False`
+# Safe here (unlike in base.py/dev.py): Render's buildCommand always runs
+# `collectstatic` before the app starts, so the manifest this storage needs
+# always exists by the time a real request comes in.
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 ```
 
 Edit `backend/requirements.txt` — add two lines:
@@ -568,8 +586,9 @@ def test_search_uruguayan_artists_parses_id_and_name(mock_get):
         {"mbid": "b8468bc4-a202-4c2a-ba1e-7dc75d9cbcf0", "name": "Leo Masliah"},
         {"mbid": "abb91078-f7db-41f2-8f07-7f37bb739143", "name": "Jorge Drexler"},
     ]
-    called_url, called_kwargs = mock_get.call_args[0][0], mock_get.call_args[1]
-    assert "query=country%3AUY" in called_url or called_kwargs.get("params", {}).get("query") == "country:UY"
+    called_path, called_params = mock_get.call_args[0]
+    assert called_path == "artist"
+    assert called_params == {"query": "country:UY", "offset": 0, "limit": 25}
 
 
 @patch("catalog.musicbrainz._get")
@@ -622,9 +641,12 @@ def test_get_tracklist_parses_tracks_and_handles_missing_length(mock_get):
 
 
 @patch("catalog.musicbrainz.time.sleep")
-@patch("catalog.musicbrainz._get")
-def test_consecutive_requests_are_rate_limited(mock_get, mock_sleep):
-    mock_get.return_value = _mock_response(ARTIST_SEARCH_RESPONSE)
+@patch("catalog.musicbrainz.requests.get")
+def test_consecutive_requests_are_rate_limited(mock_requests_get, mock_sleep):
+    # Patches requests.get (not _get) so _throttle()'s real logic runs —
+    # patching _get itself would bypass the throttle entirely and prove
+    # nothing.
+    mock_requests_get.return_value = _mock_response(ARTIST_SEARCH_RESPONSE)
     search_uruguayan_artists(offset=0, limit=25)
     search_uruguayan_artists(offset=25, limit=25)
     assert mock_sleep.called
@@ -812,6 +834,16 @@ def test_get_cover_art_url_returns_empty_string_on_404(mock_get):
     mock_get.return_value = response
 
     assert get_cover_art_url("no-art-mbid") == ""
+
+
+@patch("catalog.coverartarchive.requests.get")
+def test_get_cover_art_url_returns_empty_string_on_timeout(mock_get):
+    # Real failure mode: Cover Art Archive redirects to archive.org, which
+    # is occasionally slow/unreachable. A timeout there must not crash the
+    # whole sync — it should be treated the same as "no cover art".
+    mock_get.side_effect = requests.Timeout("archive.org took too long")
+
+    assert get_cover_art_url("slow-mbid") == ""
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -832,7 +864,10 @@ def get_cover_art_url(release_mbid):
     try:
         response = requests.get(f"{BASE_URL}/release/{release_mbid}", timeout=10)
         response.raise_for_status()
-    except requests.HTTPError:
+    except requests.RequestException:
+        # Covers 404 (no art) and real-world failures like archive.org
+        # (where Cover Art Archive redirects) timing out or being
+        # unreachable — none of these should crash the whole sync.
         return ""
     data = response.json()
     for image in data.get("images", []):
@@ -1216,3 +1251,73 @@ appear after a refresh.
 git add backend/catalog/admin.py backend/catalog/tests/test_admin.py
 git commit -m "feat(backend): add admin action to trigger a bounded MusicBrainz sync"
 ```
+
+---
+
+## Post-review fixes (PR #5 final review)
+
+A fresh-context review of the whole branch before merge found 2 Critical and
+4 Important issues that the task-by-task implementation above missed. Each
+was fixed via TDD (failing test first) in a follow-up commit, rather than
+rewritten into the task text above — read this section alongside Tasks 1-5,
+not as a replacement for them.
+
+1. **Admin login 403'd in production (Critical).** Render terminates TLS
+   and forwards plain HTTP with `X-Forwarded-Proto: https`; without
+   `SECURE_PROXY_SSL_HEADER`, Django never learns the request was HTTPS, so
+   the admin's CSRF check rejected every real browser's `https://` Origin.
+   Fixed in `config/settings/prod.py`: added `SECURE_PROXY_SSL_HEADER`,
+   `CSRF_TRUSTED_ORIGINS` (built from `ALLOWED_HOSTS`), and
+   `SESSION_COOKIE_SECURE`/`CSRF_COOKIE_SECURE`. Test:
+   `core/tests/test_settings.py::test_prod_settings_trust_the_proxy_https_header`
+   and `catalog/tests/test_security.py` (reproduces the 403, then proves the
+   fix turns it into a 302).
+
+2. **The "bounded" sync wasn't bounded by time, and progress was only saved
+   at the very end (Critical).** A real artist's full discography can take
+   well over gunicorn's 30s default timeout; if killed mid-batch, nothing
+   was saved and the next click retried the exact same artists forever.
+   Fixed in `sync_musicbrainz.py`: a `TIME_BUDGET_SECONDS = 20` wall-clock
+   check stops starting new artists before the deadline, and
+   `SyncState.musicbrainz_offset` is saved after each artist, not once
+   after the whole loop. Test:
+   `test_sync_stops_early_and_saves_progress_when_time_budget_is_exceeded`.
+
+3. **The sync trigger didn't exist on a fresh database (Important).** It
+   lived as a Django admin *action* on `ArtistAdmin`, which needs existing
+   rows to select — impossible before the first artist ever syncs. Moved
+   to a new `SyncStateAdmin` instead: migration `0002_ensure_syncstate_singleton.py`
+   guarantees the one `SyncState` row exists from the very first `migrate`,
+   so the action is always selectable, even with zero Artists. Test:
+   `test_sync_action_works_on_a_completely_empty_database`.
+
+4. **Re-syncing could erase good data with empty data (Important).** If
+   MusicBrainz or Cover Art Archive didn't return a genre/year/cover art on
+   a later sync (a transient gap, or the API just doesn't have it), the
+   unconditional `update_or_create(..., defaults={...})` overwrote a
+   previously-saved good value with an empty one. Fixed in
+   `sync_musicbrainz.py`'s `_sync_artist`: new empty/`None` values fall back
+   to the existing row's value instead of overwriting it. Test:
+   `test_sync_does_not_overwrite_good_album_data_with_empty_resync_data`.
+
+5. **The same song could jump between albums (Important).** `Song.mbid` is
+   the MusicBrainz *recording* ID, and the same recording routinely appears
+   on both the original studio album and a "Grandes éxitos" compilation (or
+   a live album) — MusicBrainz's `type=album` filter doesn't exclude these.
+   Whichever release-group was processed last won, silently moving a song's
+   `album` (and therefore its year). Fixed in `musicbrainz.py`'s
+   `get_album_release_groups`: skip any release-group with a non-empty
+   `secondary-types` list. Test:
+   `test_get_album_release_groups_excludes_compilations_and_other_secondary_types`.
+
+6. **One artist's failure crashed the whole batch (Important).** Any
+   exception — a MusicBrainz 503, unexpected data shape, whatever — raised
+   out of `handle()` uncaught, so the offset was never advanced past a
+   permanently-failing artist. Fixed in `sync_musicbrainz.py`: each
+   artist's sync is wrapped in try/except; a failure is logged to stdout
+   and the batch continues (and the offset still advances past it, so it's
+   not retried forever). Test:
+   `test_sync_continues_past_an_artist_that_fails_and_saves_progress_for_it`.
+
+Several Minor findings from the same review were deferred (not fixed in
+this PR) — see the plan's SDD ledger for the full list and reasoning.
