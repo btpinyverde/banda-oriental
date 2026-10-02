@@ -200,3 +200,38 @@ class LeaderboardTodayView(APIView):
                 for entry in ScoreEntry.objects.filter(daily_song=daily_song).order_by("-score")
             ]
         return Response({"day": str(today), "entries": entries})
+
+
+class ArchiveListView(APIView):
+    def get(self, request):
+        today = timezone.localdate()
+        days = DailySong.objects.filter(state=DailySong.PUBLISHED, date__lt=today).order_by("-date")
+        return Response(
+            {
+                "days": [
+                    {"date": str(day.date), "song_title": day.song.title, "artist": day.song.album.artist.name}
+                    for day in days
+                ]
+            }
+        )
+
+
+class ArchiveDetailView(APIView):
+    def get(self, request, fecha):
+        today = timezone.localdate()
+        daily_song = DailySong.objects.filter(
+            date=fecha, state=DailySong.PUBLISHED, date__lt=today
+        ).first()
+        if daily_song is None:
+            return Response({"detail": "Día no encontrado."}, status=404)
+
+        song = daily_song.song
+        return Response(
+            {
+                "date": str(daily_song.date),
+                "song_title": song.title,
+                "artist": song.album.artist.name,
+                "album": song.album.name,
+                "artist_instagram_handle": song.album.artist.instagram_handle,
+            }
+        )
