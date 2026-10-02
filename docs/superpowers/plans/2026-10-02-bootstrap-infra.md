@@ -427,7 +427,7 @@ Expected: `Cannot find module './HealthStatus'`.
     "test": "vitest"
   },
   "dependencies": {
-    "next": "^15.0.3",
+    "next": "^16.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -570,6 +570,10 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 `frontend/next-env.d.ts` is not hand-written — `next dev`/`next build`
 generates it automatically on first run. It gets committed once it
 exists (standard Next.js convention), it's just not authored by hand.
+`next build` also auto-patches `tsconfig.json` on first run (forces
+`jsx: "react-jsx"`, adds a `.next/dev/types` include entry) — that's
+expected, not a sign the authored file above was wrong; commit the
+patched version.
 
 - [ ] **Step 4: Run tests to verify they pass**
 

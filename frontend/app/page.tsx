@@ -1,6 +1,6 @@
 import { HealthStatus } from "./HealthStatus";
 
-export function App() {
+export default function Home() {
   return (
     <main>
       <h1>Banda Oriental</h1>
