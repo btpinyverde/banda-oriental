@@ -14,8 +14,19 @@ if not database_url:
     )
 
 DATABASES = {
-    "default": dj_database_url.parse(database_url, conn_max_age=600, ssl_require=True)
+    "default": dj_database_url.parse(
+        database_url,
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=True,
+    )
 }
+# Neon's free-tier compute autosuspends after ~5 minutes idle, well inside
+# conn_max_age — CONN_HEALTH_CHECKS discards a dead pooled connection
+# instead of reusing it and raising mid-request. connect_timeout keeps a
+# truly unreachable database from blocking the worker until gunicorn kills
+# it (which would surface as a 502, not the health endpoint's own 503).
+DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 10
 
 allowed_hosts = os.environ.get("ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts.split(",") if h.strip()]
