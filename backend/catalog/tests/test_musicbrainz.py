@@ -34,6 +34,14 @@ RELEASE_GROUPS_RESPONSE = {
             "primary-type": "Album",
             "genres": [{"name": "singer-songwriter"}],
         },
+        {
+            "id": "compilation-mbid",
+            "title": "Grandes éxitos",
+            "first-release-date": "2005",
+            "primary-type": "Album",
+            "secondary-types": ["Compilation"],
+            "genres": [],
+        },
     ],
 }
 
@@ -108,6 +116,19 @@ def test_get_album_release_groups_parses_year_and_handles_missing_genre(mock_get
         "year": None,
         "genre": "singer-songwriter",
     }
+
+
+@patch("catalog.musicbrainz._get")
+def test_get_album_release_groups_excludes_compilations_and_other_secondary_types(mock_get):
+    # The same recording routinely appears on both the original album and a
+    # "Grandes éxitos" compilation (or a live album) — syncing both would
+    # let whichever is processed last steal the song's album/year.
+    mock_get.return_value = _mock_response(RELEASE_GROUPS_RESPONSE)
+    groups = get_album_release_groups("abb91078-f7db-41f2-8f07-7f37bb739143")
+    assert [g["mbid"] for g in groups] == [
+        "92a52b9a-855e-364d-a552-ecf29a5a4200",
+        "no-date-mbid",
+    ]
 
 
 @patch("catalog.musicbrainz._get")

@@ -71,3 +71,12 @@ def test_dev_settings_secret_key_is_never_empty(monkeypatch):
     monkeypatch.delenv("SECRET_KEY", raising=False)
     mod = _reload_dev_settings()
     assert mod.SECRET_KEY
+
+
+def test_prod_settings_trust_the_proxy_https_header(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@host/db")
+    monkeypatch.setenv("ALLOWED_HOSTS", "banda-oriental-backend.onrender.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://bandaoriental.xami.uy")
+    mod = _reload_prod_settings()
+    assert mod.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https")
+    assert mod.CSRF_TRUSTED_ORIGINS == ["https://banda-oriental-backend.onrender.com"]

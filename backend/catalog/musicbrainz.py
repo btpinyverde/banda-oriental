@@ -44,6 +44,12 @@ def get_album_release_groups(artist_mbid):
     data = response.json()
     groups = []
     for rg in data["release-groups"]:
+        if rg.get("secondary-types"):
+            # Skip compilations, live albums, remixes, etc. — the same
+            # recording routinely appears on these and on the original
+            # studio album; keeping both lets whichever syncs last steal
+            # the song's album/year.
+            continue
         date = rg.get("first-release-date") or ""
         year = int(date[:4]) if date[:4].isdigit() else None
         genres = rg.get("genres") or []

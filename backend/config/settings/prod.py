@@ -46,3 +46,13 @@ if not CORS_ALLOWED_ORIGINS:  # noqa: F405
     raise ImproperlyConfigured(
         "CORS_ALLOWED_ORIGINS is required in production."
     )
+
+# Render terminates TLS and forwards plain HTTP to gunicorn with
+# X-Forwarded-Proto: https. Without telling Django to trust that header,
+# request.is_secure() is always False behind the proxy, which makes the
+# admin's CSRF check reject every real browser's https:// Origin with a
+# 403 — nobody can log in.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True

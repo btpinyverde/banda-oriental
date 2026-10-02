@@ -1251,3 +1251,73 @@ appear after a refresh.
 git add backend/catalog/admin.py backend/catalog/tests/test_admin.py
 git commit -m "feat(backend): add admin action to trigger a bounded MusicBrainz sync"
 ```
+
+---
+
+## Post-review fixes (PR #5 final review)
+
+A fresh-context review of the whole branch before merge found 2 Critical and
+4 Important issues that the task-by-task implementation above missed. Each
+was fixed via TDD (failing test first) in a follow-up commit, rather than
+rewritten into the task text above — read this section alongside Tasks 1-5,
+not as a replacement for them.
+
+1. **Admin login 403'd in production (Critical).** Render terminates TLS
+   and forwards plain HTTP with `X-Forwarded-Proto: https`; without
+   `SECURE_PROXY_SSL_HEADER`, Django never learns the request was HTTPS, so
+   the admin's CSRF check rejected every real browser's `https://` Origin.
+   Fixed in `config/settings/prod.py`: added `SECURE_PROXY_SSL_HEADER`,
+   `CSRF_TRUSTED_ORIGINS` (built from `ALLOWED_HOSTS`), and
+   `SESSION_COOKIE_SECURE`/`CSRF_COOKIE_SECURE`. Test:
+   `core/tests/test_settings.py::test_prod_settings_trust_the_proxy_https_header`
+   and `catalog/tests/test_security.py` (reproduces the 403, then proves the
+   fix turns it into a 302).
+
+2. **The "bounded" sync wasn't bounded by time, and progress was only saved
+   at the very end (Critical).** A real artist's full discography can take
+   well over gunicorn's 30s default timeout; if killed mid-batch, nothing
+   was saved and the next click retried the exact same artists forever.
+   Fixed in `sync_musicbrainz.py`: a `TIME_BUDGET_SECONDS = 20` wall-clock
+   check stops starting new artists before the deadline, and
+   `SyncState.musicbrainz_offset` is saved after each artist, not once
+   after the whole loop. Test:
+   `test_sync_stops_early_and_saves_progress_when_time_budget_is_exceeded`.
+
+3. **The sync trigger didn't exist on a fresh database (Important).** It
+   lived as a Django admin *action* on `ArtistAdmin`, which needs existing
+   rows to select — impossible before the first artist ever syncs. Moved
+   to a new `SyncStateAdmin` instead: migration `0002_ensure_syncstate_singleton.py`
+   guarantees the one `SyncState` row exists from the very first `migrate`,
+   so the action is always selectable, even with zero Artists. Test:
+   `test_sync_action_works_on_a_completely_empty_database`.
+
+4. **Re-syncing could erase good data with empty data (Important).** If
+   MusicBrainz or Cover Art Archive didn't return a genre/year/cover art on
+   a later sync (a transient gap, or the API just doesn't have it), the
+   unconditional `update_or_create(..., defaults={...})` overwrote a
+   previously-saved good value with an empty one. Fixed in
+   `sync_musicbrainz.py`'s `_sync_artist`: new empty/`None` values fall back
+   to the existing row's value instead of overwriting it. Test:
+   `test_sync_does_not_overwrite_good_album_data_with_empty_resync_data`.
+
+5. **The same song could jump between albums (Important).** `Song.mbid` is
+   the MusicBrainz *recording* ID, and the same recording routinely appears
+   on both the original studio album and a "Grandes éxitos" compilation (or
+   a live album) — MusicBrainz's `type=album` filter doesn't exclude these.
+   Whichever release-group was processed last won, silently moving a song's
+   `album` (and therefore its year). Fixed in `musicbrainz.py`'s
+   `get_album_release_groups`: skip any release-group with a non-empty
+   `secondary-types` list. Test:
+   `test_get_album_release_groups_excludes_compilations_and_other_secondary_types`.
+
+6. **One artist's failure crashed the whole batch (Important).** Any
+   exception — a MusicBrainz 503, unexpected data shape, whatever — raised
+   out of `handle()` uncaught, so the offset was never advanced past a
+   permanently-failing artist. Fixed in `sync_musicbrainz.py`: each
+   artist's sync is wrapped in try/except; a failure is logged to stdout
+   and the batch continues (and the offset still advances past it, so it's
+   not retried forever). Test:
+   `test_sync_continues_past_an_artist_that_fails_and_saves_progress_for_it`.
+
+Several Minor findings from the same review were deferred (not fixed in
+this PR) — see the plan's SDD ledger for the full list and reasoning.

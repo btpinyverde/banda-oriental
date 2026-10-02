@@ -43,3 +43,12 @@ def test_song_links_to_album_and_duration_is_optional():
 def test_sync_state_get_or_create_defaults_to_offset_zero():
     state = SyncState.get_solo()
     assert state.musicbrainz_offset == 0
+
+
+@pytest.mark.django_db
+def test_sync_state_singleton_row_exists_right_after_migrating():
+    # A data migration creates this row so the admin always has exactly one
+    # SyncState to select — the sync trigger must work on day one, before
+    # any artist has ever been synced, not just after get_solo() is called
+    # once from application code.
+    assert SyncState.objects.filter(pk=1).exists()
