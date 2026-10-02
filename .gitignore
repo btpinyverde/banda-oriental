@@ -1,0 +1,18 @@
+# Claude Code / superpowers workspace (never part of the product)
+.claude/worktrees/
+.superpowers/
+
+# Python
+__pycache__/
+*.pyc
+backend/db.sqlite3
+backend/staticfiles/
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS
+.DS_Store
