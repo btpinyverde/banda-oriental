@@ -1,4 +1,7 @@
+import uuid
+
 from django.core.files.storage import storages
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from catalog.models import Song
@@ -18,7 +21,19 @@ class DailySong(models.Model):
 
 
 def stem_upload_path(instance, filename):
-    return f"stems/{instance.daily_song.date.isoformat()}/{instance.stem_type}-{filename}"
+    # Deliberately drops the uploader's original filename: it ends up in
+    # the signed URL the frontend sends to players (Plan 3b), and a
+    # filename like "luna-negra-drums.mp3" would leak the answer before
+    # anyone guesses it. A random name also avoids silently overwriting
+    # another day's object — Demucs gives every song the same stem
+    # filenames (drums.wav, bass.wav, ...), so keeping the original name
+    # would collide across different DailySong rows.
+    ext = filename.rsplit(".", 1)[-1] if "." in filename else "bin"
+    # str(), not .isoformat(): a DailySong built via .create(date="...")
+    # (rather than loaded from the database) keeps `date` as a plain str
+    # until the next full_clean/refresh, and str() on an actual date
+    # object already yields the same ISO format.
+    return f"stems/{instance.daily_song.date}/{uuid.uuid4().hex}.{ext}"
 
 
 def get_stems_storage():
@@ -42,13 +57,22 @@ class Stem(models.Model):
 
     daily_song = models.ForeignKey(DailySong, on_delete=models.CASCADE, related_name="stems")
     stem_type = models.CharField(max_length=10, choices=STEM_TYPE_CHOICES)
-    unlock_order = models.PositiveSmallIntegerField()
+    unlock_order = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(4)]
+    )
     audio_file = models.FileField(upload_to=stem_upload_path, storage=get_stems_storage)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["daily_song", "unlock_order"], name="unique_unlock_order_per_day"
+            ),
+            models.UniqueConstraint(
+                fields=["daily_song", "stem_type"], name="unique_stem_type_per_day"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(unlock_order__gte=1, unlock_order__lte=4),
+                name="unlock_order_between_1_and_4",
             ),
         ]
         ordering = ["unlock_order"]

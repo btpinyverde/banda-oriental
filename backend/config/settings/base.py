@@ -86,6 +86,10 @@ STORAGES["stems"] = {
         "default_acl": None,
         "signature_version": "s3v4",
         "querystring_expire": 3600,
+        # Defense in depth alongside stem_upload_path's random filenames
+        # (gameplay/models.py): without this, a name collision would
+        # silently replace an existing object instead of erroring.
+        "file_overwrite": False,
     },
 }
 

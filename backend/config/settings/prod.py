@@ -60,3 +60,16 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Without this, a missing R2 var doesn't fail until the first real stem
+# upload — the S3 client raises `ValueError: Invalid endpoint: ''` deep
+# inside storages/boto3 at that point, not at startup like every other
+# required setting above.
+for _r2_var in (
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_BUCKET_NAME",
+    "R2_ENDPOINT_URL",
+):
+    if not globals()[_r2_var]:
+        raise ImproperlyConfigured(f"{_r2_var} is required in production.")
