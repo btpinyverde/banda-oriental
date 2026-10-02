@@ -568,8 +568,9 @@ def test_search_uruguayan_artists_parses_id_and_name(mock_get):
         {"mbid": "b8468bc4-a202-4c2a-ba1e-7dc75d9cbcf0", "name": "Leo Masliah"},
         {"mbid": "abb91078-f7db-41f2-8f07-7f37bb739143", "name": "Jorge Drexler"},
     ]
-    called_url, called_kwargs = mock_get.call_args[0][0], mock_get.call_args[1]
-    assert "query=country%3AUY" in called_url or called_kwargs.get("params", {}).get("query") == "country:UY"
+    called_path, called_params = mock_get.call_args[0]
+    assert called_path == "artist"
+    assert called_params == {"query": "country:UY", "offset": 0, "limit": 25}
 
 
 @patch("catalog.musicbrainz._get")
@@ -622,9 +623,12 @@ def test_get_tracklist_parses_tracks_and_handles_missing_length(mock_get):
 
 
 @patch("catalog.musicbrainz.time.sleep")
-@patch("catalog.musicbrainz._get")
-def test_consecutive_requests_are_rate_limited(mock_get, mock_sleep):
-    mock_get.return_value = _mock_response(ARTIST_SEARCH_RESPONSE)
+@patch("catalog.musicbrainz.requests.get")
+def test_consecutive_requests_are_rate_limited(mock_requests_get, mock_sleep):
+    # Patches requests.get (not _get) so _throttle()'s real logic runs —
+    # patching _get itself would bypass the throttle entirely and prove
+    # nothing.
+    mock_requests_get.return_value = _mock_response(ARTIST_SEARCH_RESPONSE)
     search_uruguayan_artists(offset=0, limit=25)
     search_uruguayan_artists(offset=25, limit=25)
     assert mock_sleep.called
