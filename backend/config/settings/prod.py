@@ -10,10 +10,14 @@ DEBUG = False
 # Safe here (unlike in base.py/dev.py): Render's buildCommand always runs
 # `collectstatic` before the app starts, so the manifest this storage needs
 # always exists by the time a real request comes in.
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
+#
+# This mutates the dict `from .base import *` brought in, rather than
+# reassigning STORAGES outright — reassigning would silently drop
+# "default" and "stems" (confirmed empirically: Django does not merge a
+# STORAGES setting with any previous value, so a bare `STORAGES = {...}`
+# here left FileField's storage lookup unable to find "stems" at all).
+STORAGES["staticfiles"] = {  # noqa: F405
+    "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
 }
 
 database_url = os.environ.get("DATABASE_URL")

@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "core",
     "catalog",
+    "gameplay",
 ]
 
 MIDDLEWARE = [
@@ -53,10 +54,20 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-# No STORAGES override here on purpose: whitenoise's manifest storage needs
-# `collectstatic` to have run first (only true in prod's build step). Using
-# it here too would break every dev/test request that renders a `{% static %}`
-# tag, since there's no manifest.json locally.
+# Django does NOT merge a custom STORAGES dict with its own defaults —
+# defining STORAGES at all means naming every key yourself, including ones
+# you don't want to change (confirmed empirically: omitting "default" here
+# left it missing from settings.STORAGES entirely). "staticfiles" stays
+# Django's plain default here on purpose: whitenoise's manifest storage
+# needs `collectstatic` to have run first (only true in prod's build
+# step); using it in dev/test too would break every `{% static %}` tag,
+# since there's no manifest.json locally. "stems" is a temporary local
+# stub — Task 2 replaces it with the real Cloudflare R2 backend.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    "stems": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
