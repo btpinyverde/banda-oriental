@@ -30,9 +30,11 @@ commits honestos y tests reales por sobre la velocidad de entrega.
 - Compartir en redes sin revelar la canción mientras el día está vigente;
   revelación completa (con handle de Instagram del artista si está cargado)
   una vez vencido el día.
-- Página de archivo público con el calendario de días vencidos.
-- Deploy automático en cada push a `main` (frontend en Vercel, backend en
-  Render).
+- Página de archivo público con el calendario de días vencidos, indexable
+  en Google (ver §9).
+- Deploy automático en cada push a `main` (frontend en Vercel, en el
+  subdominio `bandaoriental.xami.uy`; backend en Render). Hay un botón en
+  la home de xami.uy que lleva al juego.
 
 **Fuera de alcance (futuro, pero el diseño lo deja habilitado):**
 - Cuentas de usuario reales con login. El modelo de datos y los endpoints de
@@ -48,7 +50,7 @@ Monorepo con dos aplicaciones independientes que se despliegan por separado:
 ```
 banda-oriental/
 ├── backend/     # Django + DRF, desplegado en Render
-└── frontend/    # React + TypeScript, desplegado en Vercel
+└── frontend/    # Next.js + TypeScript, desplegado en Vercel (bandaoriental.xami.uy)
 ```
 
 Componentes externos:
@@ -164,8 +166,23 @@ hasta que el audio realmente sonó.
 
 ## 9. Frontend
 
-React + TypeScript, mobile-first (se juega desde el navegador del celular
-principalmente). Responsabilidades:
+**Next.js (App Router) + TypeScript**, no un SPA puro de React — cambio de
+decisión respecto a la versión anterior de este documento. Motivo: dos
+requisitos reales necesitan HTML renderizado en el servidor, no solo
+client-side rendering:
+
+1. **Indexación en Google** — se quiere que el sitio aparezca al buscarse.
+   Un SPA que arranca con un `<div id="root">` vacío depende de que el
+   crawler ejecute JS para ver contenido; Next.js con SSR/SSG entrega HTML
+   con contenido real en la primera respuesta.
+2. **Compartir en redes (Instagram/Facebook)** — el bot que genera la
+   preview de un link leído el HTML tal cual llega, sin ejecutar JS. Los
+   meta tags Open Graph (título, descripción, imagen) de cada página de
+   `/archivo/<fecha>` tienen que estar en el HTML servido, no agregados
+   después por JS.
+
+Mobile-first (se juega desde el navegador del celular principalmente).
+Responsabilidades:
 - Generar y persistir el UUID anónimo en `localStorage` en el primer uso.
 - Guardar racha e historial de resultados pasados en `localStorage`.
 - Reproductor de audio que detecta buffering real antes de habilitar el
@@ -175,6 +192,18 @@ principalmente). Responsabilidades:
 - Generación client-side de la tarjeta de compartir (canvas), con dos
   variantes: oculta (día vigente) y revelada (día vencido, con handle de IG
   si existe).
+
+**SEO / indexación:**
+- `sitemap.xml` generado dinámicamente, incluye la home y una entrada por
+  cada día vencido en `/archivo/<fecha>` (esas páginas son contenido real
+  indexable: "canción uruguaya del día X, interpretada por Y").
+- `robots.txt` permitiendo indexación de todo lo público (no de rutas de
+  juego en progreso que no tienen contenido propio que indexar).
+- Metadata por página (title, description, Open Graph) vía las
+  convenciones de metadata de Next.js — generada dinámicamente en las
+  páginas de archivo (nombre de canción + artista una vez vencido el día).
+- Verificación en Google Search Console una vez deployado, para pedir
+  indexación activa en vez de esperar a que el crawler la encuentre sola.
 
 Estilo visual: a definir por el usuario tomando como referencia la app
 Pasito (app de fitness/recompensas, estilo gamificado). Los assets concretos
@@ -215,7 +244,8 @@ Django admin estándar, extendido con:
 
 | Pieza | Servicio | Notas |
 |---|---|---|
-| Frontend | Vercel | Deploy automático en push a `main` |
+| Frontend | Vercel (Next.js) | Deploy automático en push a `main`; dominio custom `bandaoriental.xami.uy` |
+| Dominio | `xami.uy` vía ANTEL | CNAME de `bandaoriental` → Vercel, configurado en el panel de DNS de ANTEL |
 | Backend | Render (free, sin Docker) | Deploy automático en push a `main`, duerme tras 15min idle |
 | Base de datos | Neon (Postgres free) | No expira, autosuspend/wake |
 | Storage audio | Cloudflare R2 | Free tier, egress gratis |

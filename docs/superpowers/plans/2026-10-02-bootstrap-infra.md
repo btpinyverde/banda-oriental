@@ -15,7 +15,7 @@
 - Default branch is `main`; it is the production branch on both Render and Vercel (push to `main` → auto-deploy).
 - No Docker — Render native Python runtime (per spec §13).
 - Backend must fail fast with a clear error if `DATABASE_URL` is missing in production; it must never fall back silently to sqlite outside local dev.
-- Frontend must read the API base URL from an environment variable (`VITE_API_BASE_URL`), never hardcode `localhost`.
+- Frontend must read the API base URL from an environment variable (`NEXT_PUBLIC_API_BASE_URL`), never hardcode `localhost`.
 - CORS must allow exactly the deployed frontend origin(s) — no wildcard `*` in production.
 
 ## Review Focus
@@ -23,7 +23,7 @@
 - Neon database asleep/unreachable on a cold request → health endpoint must return `503` with a clear body, not an unhandled 500.
 - Render free-tier cold start (~30-50s) on the first request of the day → frontend must show a visible loading state the whole time, not appear frozen or blank.
 - Missing `DATABASE_URL` in production → Django must refuse to start with a clear `ImproperlyConfigured` error, not crash obscurely later.
-- Frontend built with the wrong/missing `VITE_API_BASE_URL` → the health check must show an explicit "no se pudo contactar al servidor" error, not a silent blank screen.
+- Frontend built with the wrong/missing `NEXT_PUBLIC_API_BASE_URL` → the health check must show an explicit "no se pudo contactar al servidor" error, not a silent blank screen.
 - CORS misconfigured (frontend origin not allowed) → covered by an explicit test asserting the configured origin list, so a future change can't accidentally reopen or lock out the frontend.
 
 ---
@@ -329,28 +329,37 @@ git commit -m "feat(backend): add Django skeleton with DB-aware health endpoint"
 
 ---
 
-### Task 2: Frontend skeleton + health status page
+### Task 2: Frontend skeleton + health status page (Next.js)
+
+> **Context:** this task originally scaffolded a Vite SPA. Mid-plan, two
+> real requirements surfaced that a pure client-side SPA can't satisfy:
+> Google indexing (crawlers see an empty `<div>` until JS runs) and
+> Open Graph previews for sharing on Instagram/Facebook (their bots don't
+> execute JS, so meta tags must be in the server-rendered HTML). Next.js
+> (App Router) solves both via SSR, so this task scaffolds Next.js
+> instead of Vite+React. If you implemented the Vite version already,
+> delete `frontend/` and start clean with this task.
 
 **Files:**
 - Create: `frontend/package.json`
 - Create: `frontend/tsconfig.json`
-- Create: `frontend/vite.config.ts`
+- Create: `frontend/next.config.ts`
+- Create: `frontend/vitest.config.ts`
 - Create: `frontend/vitest.setup.ts`
-- Create: `frontend/index.html`
-- Create: `frontend/src/main.tsx`
-- Create: `frontend/src/App.tsx`
-- Create: `frontend/src/HealthStatus.tsx`
+- Create: `frontend/app/layout.tsx`
+- Create: `frontend/app/page.tsx`
+- Create: `frontend/app/HealthStatus.tsx`
 - Create: `frontend/.env.example`
-- Test: `frontend/src/HealthStatus.test.tsx`
+- Test: `frontend/app/HealthStatus.test.tsx`
 
 **Interfaces:**
-- Consumes: `GET {VITE_API_BASE_URL}/api/health/` from Task 1, response shape `{status: "ok" | "error", db: "ok" | "unreachable"}`.
-- Produces: `<HealthStatus />` component, rendering one of `"cargando..."`, `"ok"`, or `"no se pudo contactar al servidor"`.
+- Consumes: `GET {NEXT_PUBLIC_API_BASE_URL}/api/health/` from Task 1, response shape `{status: "ok" | "error", db: "ok" | "unreachable"}`.
+- Produces: `<HealthStatus />` client component, rendering one of `"cargando..."`, `"ok"`, or `"no se pudo contactar al servidor"`.
 
 - [ ] **Step 1: Write the failing test**
 
 ```tsx
-// frontend/src/HealthStatus.test.tsx
+// frontend/app/HealthStatus.test.tsx
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HealthStatus } from "./HealthStatus";
@@ -411,26 +420,26 @@ Expected: `Cannot find module './HealthStatus'`.
   "name": "banda-oriental-frontend",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest"
   },
   "dependencies": {
+    "next": "^15.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
+    "@types/node": "^22.7.5",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",
     "jsdom": "^25.0.1",
     "typescript": "^5.6.3",
-    "vite": "^5.4.8",
     "vitest": "^2.1.3"
   }
 }
@@ -440,26 +449,40 @@ Expected: `Cannot find module './HealthStatus'`.
 // frontend/tsconfig.json
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": true
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "types": ["@testing-library/jest-dom"]
   },
-  "include": ["src"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
 ```
 
 ```ts
-// frontend/vite.config.ts
+// frontend/next.config.ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {};
+
+export default nextConfig;
+```
+
+```ts
+// frontend/vitest.config.ts
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -475,40 +498,30 @@ export default defineConfig({
 import "@testing-library/jest-dom/vitest";
 ```
 
-```html
-<!-- frontend/index.html -->
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Banda Oriental</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+```tsx
+// frontend/app/layout.tsx
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+
+export const metadata: Metadata = {
+  title: "Banda Oriental",
+  description: "El Wordle diario de canciones uruguayas.",
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="es">
+      <body>{children}</body>
+    </html>
+  );
+}
 ```
 
 ```tsx
-// frontend/src/main.tsx
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { App } from "./App";
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-```
-
-```tsx
-// frontend/src/App.tsx
+// frontend/app/page.tsx
 import { HealthStatus } from "./HealthStatus";
 
-export function App() {
+export default function Home() {
   return (
     <main>
       <h1>Banda Oriental</h1>
@@ -519,12 +532,14 @@ export function App() {
 ```
 
 ```tsx
-// frontend/src/HealthStatus.tsx
+// frontend/app/HealthStatus.tsx
+"use client";
+
 import { useEffect, useState } from "react";
 
 type HealthState = "loading" | "ok" | "error";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export function HealthStatus() {
   const [state, setState] = useState<HealthState>("loading");
@@ -549,19 +564,28 @@ export function HealthStatus() {
 
 ```
 # frontend/.env.example
-VITE_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
+
+`frontend/next-env.d.ts` is not hand-written — `next dev`/`next build`
+generates it automatically on first run. It gets committed once it
+exists (standard Next.js convention), it's just not authored by hand.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npm run test -- --run`
 Expected: all 3 tests `PASS`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Run the production build to confirm Next.js itself is wired correctly**
+
+Run: `cd frontend && npm run build`
+Expected: build succeeds, generates `.next/` and `next-env.d.ts`.
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add frontend/
-git commit -m "feat(frontend): add Vite/React skeleton with health status page"
+git commit -m "feat(frontend): add Next.js skeleton with health status page"
 ```
 
 ---
@@ -686,7 +710,7 @@ No commit for this task (external provisioning only). Keep the connection string
 
 **Interfaces:**
 - Consumes: the Neon connection string from Task 4.
-- Produces: a deployed backend at `https://<service>.onrender.com`, with `GET /api/health/` returning `{"status": "ok", "db": "ok"}` against the real Neon database — consumed by Task 6 as `VITE_API_BASE_URL`.
+- Produces: a deployed backend at `https://<service>.onrender.com`, with `GET /api/health/` returning `{"status": "ok", "db": "ok"}` against the real Neon database — consumed by Task 6 as `NEXT_PUBLIC_API_BASE_URL`.
 
 - [ ] **Step 1: Write the blueprint**
 
@@ -718,7 +742,7 @@ services:
 SECRET_KEY=change-me
 DATABASE_URL=postgres://user:password@host/dbname
 ALLOWED_HOSTS=banda-oriental-backend.onrender.com
-CORS_ALLOWED_ORIGINS=https://banda-oriental.vercel.app
+CORS_ALLOWED_ORIGINS=https://bandaoriental.xami.uy
 ```
 
 - [ ] **Step 2: Commit**
@@ -738,25 +762,42 @@ git commit -m "chore(infra): add Render blueprint for the backend"
 
 ---
 
-### Task 6: Vercel project for the frontend
+### Task 6: Vercel project for the frontend, on bandaoriental.xami.uy
 
 **Files:**
-- No new files — this task is Vercel dashboard configuration plus verifying the existing `frontend/.env.example` is accurate.
+- No new files — this task is Vercel dashboard configuration, DNS configuration in ANTEL's panel for `xami.uy`, plus verifying the existing `frontend/.env.example` is accurate.
 
 **Interfaces:**
-- Consumes: the Render backend URL from Task 5, as `VITE_API_BASE_URL`.
+- Consumes: the Render backend URL from Task 5, as `NEXT_PUBLIC_API_BASE_URL`.
+- Produces: the production site reachable at `https://bandaoriental.xami.uy`, consumed by the xami.uy homepage button (a separate, out-of-repo change Brandon makes on that site).
 
 - [ ] **Step 1: Manual setup (Brandon, in the Vercel dashboard)**
 
 1. Create a Vercel account if you don't have one yet.
 2. "Add New..." → "Project" → import the `banda-oriental` GitHub repo.
 3. Set "Root Directory" to `frontend`.
-4. Framework preset: Vite.
-5. Add environment variable `VITE_API_BASE_URL` = the Render backend URL from Task 5 (`https://<service>.onrender.com`), scoped to "Production".
+4. Framework preset: Next.js (Vercel should auto-detect it from `package.json`).
+5. Add environment variable `NEXT_PUBLIC_API_BASE_URL` = the Render backend URL from Task 5 (`https://<service>.onrender.com`), scoped to "Production".
 6. Confirm "Production Branch" is `main` (Vercel's default) so every push to `main` auto-deploys.
-7. Deploy and open the resulting URL — it should show "Banda Oriental" and, after the Render cold start, "ok".
-8. Go back to Render and update `CORS_ALLOWED_ORIGINS` to this real Vercel URL, then redeploy.
+7. Deploy and open the resulting `*.vercel.app` URL — it should show "Banda Oriental" and, after the Render cold start, "ok".
 
-- [ ] **Step 2: Report the result**
+- [ ] **Step 2: Add the custom domain in Vercel**
 
-Nothing to commit here — this task is purely dashboard configuration. Record the resulting production URL when reporting back; Plan 2 (catalog + sync) will build on this deployed skeleton.
+1. In the Vercel project → Settings → Domains → add `bandaoriental.xami.uy`.
+2. Vercel shows the exact DNS record it needs (typically a `CNAME` for `bandaoriental` pointing to `cname.vercel-dns.com`, but use whatever Vercel displays — it can differ).
+
+- [ ] **Step 3: Add the DNS record in ANTEL's panel**
+
+1. Log into ANTEL's domain/DNS management panel for `xami.uy`.
+2. Add the exact record type/name/value Vercel showed in Step 2 (a `CNAME` record for the `bandaoriental` subdomain).
+3. Save. DNS propagation can take from minutes to a few hours.
+4. Back in Vercel, wait for the domain to show "Valid Configuration" — this confirms propagation reached Vercel.
+
+- [ ] **Step 4: Verify and lock down CORS**
+
+1. Once `https://bandaoriental.xami.uy` resolves and shows "Banda Oriental" / "ok", go back to Render and update `CORS_ALLOWED_ORIGINS` to `https://bandaoriental.xami.uy` (not the `*.vercel.app` URL), then redeploy.
+2. Re-check the site still shows "ok" after the CORS update (confirms the frontend's real production origin, not the Vercel preview URL, is what's allowed).
+
+- [ ] **Step 5: Report the result**
+
+Nothing to commit here — this task is purely dashboard/DNS configuration. Record the resulting production URL (`https://bandaoriental.xami.uy`) when reporting back; Plan 2 (catalog + sync) will build on this deployed skeleton. Adding the link button on the xami.uy homepage is a separate change in that site's own codebase, outside this plan.
