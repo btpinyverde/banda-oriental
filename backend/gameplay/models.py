@@ -92,6 +92,12 @@ class GuessAttempt(models.Model):
 
     class Meta:
         ordering = ["attempt_number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["device_id", "daily_song", "attempt_number"],
+                name="unique_attempt_number_per_device_per_day",
+            ),
+        ]
 
 
 class ScoreEntry(models.Model):
