@@ -46,6 +46,17 @@ def test_daily_requires_device_id_header(client):
 
 
 @pytest.mark.django_db
+def test_daily_rejects_a_malformed_device_id(client):
+    # The plan's Architecture line promises get_device_id "validates the
+    # header is present and well-formed" — presence alone isn't enough: an
+    # overlong value overflows GuessAttempt.device_id's varchar(64) in
+    # production (Postgres raises; SQLite silently truncated it when
+    # probed, which is its own kind of wrong).
+    response = client.get(reverse("gameplay:daily"), HTTP_X_DEVICE_ID="x" * 500)
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
 def test_daily_returns_404_when_no_published_song_today(client):
     response = client.get(reverse("gameplay:daily"), HTTP_X_DEVICE_ID=DEVICE_ID)
     assert response.status_code == 404
@@ -144,6 +155,61 @@ def test_daily_returns_final_result_once_the_device_already_scored(client, publi
     assert body["finished"] is True
     assert body["won"] is True
     assert body["song"]["title"] == "Luna negra"
+
+
+@pytest.mark.django_db
+def test_daily_shows_won_but_unscored_state_instead_of_letting_the_device_keep_playing(
+    client, published_today
+):
+    # A device that won but hasn't submitted its score yet (closed the tab
+    # before typing a display name, say) must see a finished/won state —
+    # GuessView already rejects further guesses for this device, so an
+    # in-progress response here would strand the player.
+    GuessAttempt.objects.create(
+        device_id=DEVICE_ID,
+        daily_song=published_today,
+        attempt_number=1,
+        guessed_text="Luna negra",
+        is_correct=True,
+        feedback={"year": "exact", "genre": "same", "artist": "same", "album": "same"},
+    )
+
+    response = client.get(reverse("gameplay:daily"), HTTP_X_DEVICE_ID=DEVICE_ID)
+
+    body = response.json()
+    assert body["finished"] is True
+    assert body["won"] is True
+    assert body["score_submitted"] is False
+    assert body["song"]["title"] == "Luna negra"
+
+
+@pytest.mark.django_db
+def test_daily_shows_won_not_lost_when_the_winning_guess_was_the_sixth_attempt(
+    client, published_today
+):
+    for attempt_number in range(1, 6):
+        GuessAttempt.objects.create(
+            device_id=DEVICE_ID,
+            daily_song=published_today,
+            attempt_number=attempt_number,
+            guessed_text="Otra canción",
+            is_correct=False,
+            feedback={"year": "exact", "genre": "same", "artist": "different", "album": "different"},
+        )
+    GuessAttempt.objects.create(
+        device_id=DEVICE_ID,
+        daily_song=published_today,
+        attempt_number=6,
+        guessed_text="Luna negra",
+        is_correct=True,
+        feedback={"year": "exact", "genre": "same", "artist": "same", "album": "same"},
+    )
+
+    response = client.get(reverse("gameplay:daily"), HTTP_X_DEVICE_ID=DEVICE_ID)
+
+    body = response.json()
+    assert body["finished"] is True
+    assert body["won"] is True
 
 
 @pytest.mark.django_db

@@ -79,3 +79,11 @@ def test_archive_detail_404s_for_an_unpublished_day(client):
     response = client.get(reverse("gameplay:archive-detail", args=["2020-01-01"]))
 
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("fecha", ["garbage", "2026-02-30", "2026-13-01", "not-a-date-at-all"])
+def test_archive_detail_404s_for_a_malformed_date_instead_of_500(client, fecha):
+    response = client.get(reverse("gameplay:archive-detail", args=[fecha]))
+
+    assert response.status_code == 404

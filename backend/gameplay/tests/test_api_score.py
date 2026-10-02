@@ -104,3 +104,56 @@ def test_score_rejects_a_banned_display_name(client, won_on_attempt_2):
 
     assert response.status_code == 400
     assert not ScoreEntry.objects.filter(device_id=DEVICE_ID).exists()
+
+
+@pytest.mark.django_db
+def test_score_rejects_a_non_string_display_name(client, won_on_attempt_2):
+    response = client.post(
+        reverse("gameplay:score"),
+        data={"display_name": 12345, "total_time_seconds": 5.0},
+        content_type="application/json",
+        HTTP_X_DEVICE_ID=DEVICE_ID,
+    )
+
+    assert response.status_code == 400
+    assert not ScoreEntry.objects.filter(device_id=DEVICE_ID).exists()
+
+
+@pytest.mark.django_db
+def test_score_rejects_a_display_name_longer_than_the_model_field(client, won_on_attempt_2):
+    response = _submit_score(client, display_name="x" * 51)
+
+    assert response.status_code == 400
+    assert not ScoreEntry.objects.filter(device_id=DEVICE_ID).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("bad_time", ["nan", "inf", "-inf", -5])
+def test_score_rejects_a_non_finite_or_negative_total_time_seconds(client, won_on_attempt_2, bad_time):
+    response = _submit_score(client, total_time_seconds=bad_time)
+
+    assert response.status_code == 400
+    assert not ScoreEntry.objects.filter(device_id=DEVICE_ID).exists()
+
+
+@pytest.mark.django_db
+def test_score_handles_a_concurrent_duplicate_submission_without_a_500(client, won_on_attempt_2, monkeypatch):
+    # The plan's own Global Constraint: "a repeat submission must come
+    # back as a clean 400, never a 500 from a raw IntegrityError." Two
+    # requests racing both pass the .exists() check before either has
+    # created its row. Reproduced deterministically by forcing the check
+    # to lie (as a real race effectively does) and letting the database's
+    # own UniqueConstraint fire during create() — exactly what a true
+    # race produces.
+    from django.db.models.query import QuerySet
+
+    ScoreEntry.objects.create(
+        device_id=DEVICE_ID, daily_song=won_on_attempt_2, display_name="Other",
+        score=100, winning_attempt=2, total_time_seconds=5.0,
+    )
+    monkeypatch.setattr(QuerySet, "exists", lambda self: False)
+
+    response = _submit_score(client)
+
+    assert response.status_code == 400
+    assert ScoreEntry.objects.filter(device_id=DEVICE_ID).count() == 1

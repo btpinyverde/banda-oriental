@@ -127,3 +127,33 @@ def test_guess_requires_device_id_header(client, published_today, other_song):
     )
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_guess_handles_a_concurrent_duplicate_attempt_without_a_500(
+    client, published_today, other_song, monkeypatch
+):
+    # Two requests racing for the same attempt_number both pass the
+    # existing_attempts check before either row is committed. Reproduced
+    # deterministically by forcing the count to lie (as a real race
+    # effectively does) and letting the database's own UniqueConstraint
+    # on (device_id, daily_song, attempt_number) fire during create() —
+    # exactly what a true race produces, and also the backstop that
+    # otherwise lets two different songs both be scored as "attempt 1".
+    from django.db.models.query import QuerySet
+
+    GuessAttempt.objects.create(
+        device_id=DEVICE_ID,
+        daily_song=published_today,
+        attempt_number=1,
+        guessed_text="Primer intento",
+        is_correct=False,
+        feedback={"year": "unknown", "genre": "unknown", "artist": "different", "album": "different"},
+    )
+    monkeypatch.setattr(QuerySet, "count", lambda self: 0)
+
+    response = _guess(client, other_song.id, attempt_number=1)
+    monkeypatch.undo()  # restore .count() before asserting on it below
+
+    assert response.status_code == 400
+    assert GuessAttempt.objects.filter(device_id=DEVICE_ID, daily_song=published_today).count() == 1
