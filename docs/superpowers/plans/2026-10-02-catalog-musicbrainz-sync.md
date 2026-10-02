@@ -40,6 +40,7 @@
 - Create: `backend/catalog/management/commands/__init__.py`
 - Create: `backend/catalog/management/commands/ensure_superuser.py`
 - Modify: `backend/config/settings/base.py`
+- Modify: `backend/config/settings/prod.py`
 - Modify: `backend/config/urls.py`
 - Modify: `backend/requirements.txt`
 - Modify: `render.yaml`
@@ -343,11 +344,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+# No STORAGES override here on purpose: whitenoise's manifest storage needs
+# `collectstatic` to have run first (only true in prod's build step). Using
+# it here too would break every dev/test request that renders a `{% static %}`
+# tag, since there's no manifest.json locally. It's added in prod.py instead
+# — see that file's edit below.
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -387,6 +388,23 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("core.urls")),
 ]
+```
+
+Edit `backend/config/settings/prod.py` — add the manifest storage override right
+after `DEBUG = False` (it belongs only here, not in `base.py`, because it
+needs `collectstatic` to have already run — true in Render's build step,
+never true locally):
+
+```python
+# backend/config/settings/prod.py — insert after `DEBUG = False`
+# Safe here (unlike in base.py/dev.py): Render's buildCommand always runs
+# `collectstatic` before the app starts, so the manifest this storage needs
+# always exists by the time a real request comes in.
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 ```
 
 Edit `backend/requirements.txt` — add two lines:
@@ -816,6 +834,16 @@ def test_get_cover_art_url_returns_empty_string_on_404(mock_get):
     mock_get.return_value = response
 
     assert get_cover_art_url("no-art-mbid") == ""
+
+
+@patch("catalog.coverartarchive.requests.get")
+def test_get_cover_art_url_returns_empty_string_on_timeout(mock_get):
+    # Real failure mode: Cover Art Archive redirects to archive.org, which
+    # is occasionally slow/unreachable. A timeout there must not crash the
+    # whole sync — it should be treated the same as "no cover art".
+    mock_get.side_effect = requests.Timeout("archive.org took too long")
+
+    assert get_cover_art_url("slow-mbid") == ""
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -836,7 +864,10 @@ def get_cover_art_url(release_mbid):
     try:
         response = requests.get(f"{BASE_URL}/release/{release_mbid}", timeout=10)
         response.raise_for_status()
-    except requests.HTTPError:
+    except requests.RequestException:
+        # Covers 404 (no art) and real-world failures like archive.org
+        # (where Cover Art Archive redirects) timing out or being
+        # unreachable — none of these should crash the whole sync.
         return ""
     data = response.json()
     for image in data.get("images", []):

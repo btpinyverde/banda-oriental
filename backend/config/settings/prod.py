@@ -7,6 +7,15 @@ from .base import *  # noqa: F401,F403
 
 DEBUG = False
 
+# Safe here (unlike in base.py/dev.py): Render's buildCommand always runs
+# `collectstatic` before the app starts, so the manifest this storage needs
+# always exists by the time a real request comes in.
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
     raise ImproperlyConfigured(

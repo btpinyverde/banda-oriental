@@ -53,11 +53,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+# No STORAGES override here on purpose: whitenoise's manifest storage needs
+# `collectstatic` to have run first (only true in prod's build step). Using
+# it here too would break every dev/test request that renders a `{% static %}`
+# tag, since there's no manifest.json locally.
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

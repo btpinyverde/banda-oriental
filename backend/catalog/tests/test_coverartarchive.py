@@ -60,3 +60,13 @@ def test_get_cover_art_url_returns_empty_string_on_404(mock_get):
     mock_get.return_value = response
 
     assert get_cover_art_url("no-art-mbid") == ""
+
+
+@patch("catalog.coverartarchive.requests.get")
+def test_get_cover_art_url_returns_empty_string_on_timeout(mock_get):
+    # Real failure mode: Cover Art Archive redirects to archive.org, which
+    # is occasionally slow/unreachable. A timeout there must not crash the
+    # whole sync — it should be treated the same as "no cover art".
+    mock_get.side_effect = requests.Timeout("archive.org took too long")
+
+    assert get_cover_art_url("slow-mbid") == ""
