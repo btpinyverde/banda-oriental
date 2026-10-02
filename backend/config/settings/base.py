@@ -115,3 +115,17 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+# Scoring constants live here (spec §8), never hardcoded in a view or in
+# the frontend, so they can be tuned without a frontend deploy.
+GAMEPLAY_BASE_SCORES = {1: 100, 2: 85, 3: 70, 4: 55, 5: 40, 6: 20}
+GAMEPLAY_SPEED_BONUS = {
+    "max": 50,
+    # Below this, a guess counts as "instant" and gets the full bonus —
+    # protects against a near-zero elapsed time looking infinitely good.
+    "min_elapsed_seconds": 1,
+    # At or beyond this, the bonus floors at zero — protects against a
+    # huge or negative elapsed time (clock skew, a tab left open) ever
+    # producing an absurd or negative score (spec §8).
+    "max_elapsed_seconds": 60,
+}
