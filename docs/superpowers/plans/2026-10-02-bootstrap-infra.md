@@ -729,6 +729,8 @@ services:
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
     startCommand: "gunicorn config.wsgi:application"
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
       - key: SECRET_KEY
@@ -740,6 +742,11 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
 ```
+
+`backend/runtime.txt` alone is **not** enough on Render — it's ignored by
+Render's Python buildpack (confirmed by a real failed deploy: it defaulted
+to Python 3.14 and `psycopg[binary]==3.2.3` has no wheel for it). The
+`PYTHON_VERSION` env var above is what Render actually reads.
 
 ```
 # backend/.env.example
