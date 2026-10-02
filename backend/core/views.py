@@ -1,4 +1,4 @@
-from django.db import OperationalError, connection
+from django.db import InterfaceError, OperationalError, connection
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -8,6 +8,6 @@ class HealthView(APIView):
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
-        except OperationalError:
+        except (OperationalError, InterfaceError):
             return Response({"status": "error", "db": "unreachable"}, status=503)
         return Response({"status": "ok", "db": "ok"})

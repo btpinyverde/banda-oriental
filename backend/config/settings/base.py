@@ -40,6 +40,10 @@ REST_FRAMEWORK = {
     # falls back to importing django.contrib.auth.models.AnonymousUser
     # unless this is overridden.
     "UNAUTHENTICATED_USER": None,
+    # Without this, a browser's Accept header (which includes text/html)
+    # makes DRF pick BrowsableAPIRenderer, which needs a template we don't
+    # configure and crashes with a 500. This API is JSON-only, always.
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
 }
 
 CORS_ALLOWED_ORIGINS = [
