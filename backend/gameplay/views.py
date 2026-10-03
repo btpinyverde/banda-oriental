@@ -76,7 +76,12 @@ class DailyView(APIView):
                     for stem in stems
                 ],
                 "feedback_history": [
-                    {"attempt_number": a.attempt_number, "feedback": a.feedback} for a in attempts
+                    {
+                        "attempt_number": a.attempt_number,
+                        "guessed_text": a.guessed_text,
+                        "feedback": a.feedback,
+                    }
+                    for a in attempts
                 ],
                 "finished": False,
             }
