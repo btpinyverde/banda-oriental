@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MenuMovil } from "./MenuMovil";
 
 const ENLACES = [
   { href: "/jugar", etiqueta: "Jugar" },
@@ -38,6 +39,8 @@ export function Navbar() {
           Jugar el diario
         </Link>
       </div>
+
+      <MenuMovil enlaces={ENLACES} />
     </header>
   );
 }

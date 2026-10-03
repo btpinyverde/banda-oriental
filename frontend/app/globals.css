@@ -1,7 +1,8 @@
 /*
- * Estilos de la landing. Todo está pensado para desktop: no hay media queries de tablet/celular todavía,
- * salvo ocultar las manchas de borde por debajo de 1384px. Las secciones están en el orden de la página:
- * navbar, hero, tarjetas de modos, cómo se juega, explorá el archivo y footer.
+ * Estilos de la landing. Las secciones están en el orden de la página: navbar, hero, tarjetas de modos,
+ * cómo se juega, explorá el archivo y footer. Primero va todo lo de desktop; el bloque de celular
+ * (@media max-width: 860px) está al final del archivo. De 861px a 1383px no hay estilos propios; ahí
+ * solo se ocultan las manchas de borde (<1384px).
  */
 
 :root {
@@ -1282,4 +1283,495 @@ button {
   background: #fff;
   text-align: center;
   color: var(--tinta-suave);
+}
+
+/* ================================================================
+   Celular (hasta 860px). Una sola columna; las medidas de la hero
+   se calculan sobre un diseño de 390px de ancho.
+   ================================================================ */
+
+.menu-movil,
+.llamado,
+.archivo__ondulada {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  :root {
+    --gutter: 20px;
+  }
+
+  /* En celulares grandes y tablets verticales el contenido queda en una columna centrada. */
+  .navbar,
+  .hero,
+  .modos,
+  .como,
+  .archivo,
+  .llamado,
+  .footer__cuerpo {
+    max-width: 560px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  /* ---------- Navbar ---------- */
+  .navbar {
+    position: relative;
+    gap: 0;
+    padding: 12px var(--gutter);
+  }
+
+  .navbar > nav,
+  .navbar__acciones {
+    display: none;
+  }
+
+  .navbar__logo img {
+    height: 46px;
+  }
+
+  .menu-movil {
+    display: block;
+    margin-left: auto;
+  }
+
+  .menu-movil__boton {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+
+  .menu-movil__panel {
+    position: absolute;
+    top: calc(100% - 4px);
+    right: var(--gutter);
+    left: var(--gutter);
+    z-index: 30;
+    padding: 14px 18px 18px;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 18px 50px rgba(20, 17, 15, 0.18);
+  }
+
+  .menu-movil__panel ul {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .menu-movil__panel li a {
+    display: block;
+    padding: 13px 6px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .menu-movil__acciones {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+
+  /* ---------- Hero ---------- */
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 22px var(--gutter) 0;
+  }
+
+  .hero__eyebrow {
+    font-size: 11px;
+  }
+
+  .hero__titulo img {
+    width: min(100%, 340px);
+  }
+
+  .hero__bajada {
+    max-width: none;
+    margin-top: 18px;
+    font-size: 17px;
+  }
+
+  .hero__acciones {
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .boton--grande {
+    width: 100%;
+    height: 58px;
+    justify-content: center;
+    font-size: 17px;
+  }
+
+  .hero__acciones .boton--claro {
+    background: #fff;
+    box-shadow: inset 0 0 0 2px #e4def6;
+  }
+
+  .hero__beneficios {
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 30px;
+  }
+
+  .beneficio {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .hero__chispas-izq {
+    display: none;
+  }
+
+  /* Composición de la derecha: la tarjeta del juego es lo principal; la foto asoma por detrás. */
+  .hero__visual {
+    --u: calc(min(100vw, 560px) * 0.66 / 390);
+    top: 0;
+    height: calc(794 * var(--u));
+    margin-top: 28px;
+  }
+
+  .hero__tarjeta { top: calc(140 * var(--u)); left: calc(14 * var(--u)); transform: rotate(-4deg); }
+  .deco--mancha-amarilla { left: calc(-40 * var(--u)); top: calc(70 * var(--u)); width: calc(330 * var(--u)); }
+  .deco--mancha-violeta { left: calc(330 * var(--u)); top: calc(60 * var(--u)); width: calc(220 * var(--u)); }
+  .deco--mancha-rosa { left: calc(10 * var(--u)); top: calc(564 * var(--u)); width: calc(250 * var(--u)); transform: rotate(-20deg); }
+  .deco--pincel-amarillo { left: calc(300 * var(--u)); top: calc(634 * var(--u)); width: calc(190 * var(--u)); }
+  .deco--foto { left: calc(282 * var(--u)); top: calc(549 * var(--u)); width: calc(238 * var(--u)); height: calc(200 * var(--u)); z-index: 2; }
+  .deco--flor { left: calc(246 * var(--u)); top: calc(674 * var(--u)); width: calc(64 * var(--u)); z-index: 5; }
+  .deco--nota { left: calc(14 * var(--u)); top: calc(640 * var(--u)); width: calc(88 * var(--u)); height: calc(92 * var(--u)); z-index: 5; }
+  .deco--sticker { left: calc(376 * var(--u)); top: calc(-6 * var(--u)); width: calc(140 * var(--u)); z-index: 6; }
+  .deco--rayos-arriba { left: calc(330 * var(--u)); top: calc(18 * var(--u)); width: calc(26 * var(--u)); }
+  .deco--flecha,
+  .deco--rayos-foto,
+  .deco--rayos-titulo,
+  .deco--rayita,
+  .deco--rayitas-botones {
+    display: none;
+  }
+
+  /* ---------- Tarjetas de modos ---------- */
+  .modos {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 40px auto 56px;
+  }
+
+  .modo {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+    padding: 26px 22px 22px;
+  }
+
+  .modo__contenido {
+    display: contents;
+  }
+
+  .modo__icono { order: 1; align-self: flex-start; margin: 0 0 14px; }
+  .modo__titulo { order: 2; font-size: 28px; }
+  .modo__texto { order: 3; max-width: none; margin-top: 10px; }
+  .modo__arte { order: 4; width: 100%; margin-top: 14px; justify-content: center; }
+  .modo__arte--versus { width: 100%; }
+  .modo__boton { order: 5; width: 100%; justify-content: space-between; height: 54px; margin-top: 18px; padding: 0 28px; font-size: 16px; }
+
+  /* ---------- Cómo se juega ---------- */
+  .como {
+    padding: 0 var(--gutter) 56px;
+  }
+
+  .como__cabecera {
+    padding-top: 56px;
+  }
+
+  .como__titulo {
+    font-size: 58px;
+  }
+
+  .como__bajada {
+    font-size: 17px;
+  }
+
+  .como__sticker,
+  .como__mancha,
+  .paso__flecha {
+    display: none;
+  }
+
+  .como__pasos {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 30px;
+  }
+
+  .paso {
+    min-height: 0;
+    padding: 22px 20px 22px;
+  }
+
+  .como__pasos .paso .paso__demo {
+    margin: 18px 0 0;
+  }
+
+  .como__rayas--paso1,
+  .como__rayas--paso2,
+  .como__rayas--paso3 {
+    display: none;
+  }
+
+  /* Las maquetas ocupan el ancho de la tarjeta, no quedan pegadas a la izquierda. */
+  .maqueta-stems {
+    justify-content: space-between;
+    padding: 0 6px;
+  }
+
+  .maqueta-premios {
+    width: 196px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Explorá el archivo ---------- */
+  .archivo {
+    display: flex;
+    flex-direction: column;
+    padding: 0 var(--gutter) 56px;
+  }
+
+  .archivo__cabecera {
+    display: contents;
+  }
+
+  .archivo__cabecera > div { order: 1; }
+  .archivo__generos { order: 2; margin-top: 20px; gap: 8px; }
+  .archivo__carrusel { order: 3; margin-top: 18px; }
+  .archivo__cabecera > .boton { order: 4; align-self: stretch; justify-content: center; height: 56px; margin-top: 24px; }
+
+  .archivo__ondulada {
+    display: block;
+    order: 0;
+    margin-bottom: 56px;
+  }
+
+  .archivo__titulo {
+    font-size: 44px;
+  }
+
+  .archivo__bajada {
+    font-size: 16px;
+  }
+
+  .genero {
+    height: 36px;
+    padding: 0 13px;
+    font-size: 13px;
+  }
+
+  .archivo__flecha {
+    display: none;
+  }
+
+  .archivo__fila {
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .artista {
+    flex: none;
+    display: grid;
+    grid-template-columns: 112px 1fr;
+    column-gap: 14px;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .artista__foto {
+    grid-row: 1 / span 2;
+    aspect-ratio: 4 / 3.3;
+  }
+
+  .artista__nombre { margin: 0; align-self: end; }
+  .artista__canciones { margin: 2px 0 0; align-self: start; }
+  .artista:nth-child(n + 4) { display: none; }
+
+  /* ---------- Cierre solo para celular ---------- */
+  .llamado {
+    display: block;
+    padding: 0 var(--gutter);
+  }
+
+  .llamado__tarjeta {
+    position: relative;
+    overflow: hidden;
+    padding: 30px 24px 0;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #d4f5e3, #e6faef);
+  }
+
+  .llamado__titulo {
+    margin: 0;
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+  }
+
+  .llamado__texto {
+    margin: 16px 0 0;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--tinta-suave);
+  }
+
+  .llamado .boton {
+    margin-top: 22px;
+  }
+
+  .llamado__arte {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .llamado__flan {
+    display: block;
+    width: 290px;
+    height: auto;
+    margin-bottom: -6px;
+  }
+
+  .llamado__rayas {
+    position: absolute;
+    top: 30px;
+    left: 4px;
+    width: 40px;
+    transform: scaleX(-1);
+  }
+
+  .llamado__recordatorio {
+    position: relative;
+    display: grid;
+    place-items: center;
+    margin-top: 16px;
+    padding: 40px 24px;
+    border-radius: 24px;
+    background: #fdf1bf;
+  }
+
+  .llamado__sticker {
+    display: block;
+    width: 200px;
+    height: auto;
+    transform: rotate(-7deg);
+  }
+
+  .llamado__rayas-sticker {
+    position: absolute;
+    top: 26px;
+    right: 56px;
+    width: 34px;
+  }
+
+  /* ---------- Footer ---------- */
+  .footer {
+    margin-top: 44px;
+    padding-bottom: 20px;
+  }
+
+  .footer__deco,
+  .footer__arte {
+    display: none;
+  }
+
+  .footer__principal {
+    grid-template-columns: 1fr 1.05fr 1.2fr;
+    column-gap: 14px;
+    row-gap: 26px;
+    padding: 30px 0 22px;
+  }
+
+  .footer__marca {
+    grid-column: 1 / -1;
+  }
+
+  .footer__logo {
+    width: 140px;
+  }
+
+  .footer__lema {
+    max-width: none;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+
+  .footer__redes {
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .red {
+    width: 42px;
+    height: 42px;
+  }
+
+  .red__icono {
+    width: 20px;
+    height: 20px;
+  }
+
+  .footer__titulo {
+    margin-bottom: 14px;
+    font-size: 15.5px;
+    white-space: nowrap;
+  }
+
+  .footer__columna ul {
+    gap: 11px;
+  }
+
+  .footer__columna a {
+    font-size: 13.5px;
+    line-height: 1.25;
+  }
+
+  .footer__inferior {
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    padding-top: 18px;
+  }
+
+  .footer__inferior p {
+    flex: 1 0 100%;
+    margin: 0;
+  }
+
+  .footer__inferior ul {
+    gap: 20px;
+  }
+
+  .footer__estrella {
+    margin-left: auto;
+  }
+}
+
+/* En celulares muy angostos el título "Banda Oriental" ya no entra en una línea. */
+@media (max-width: 359px) {
+  .footer__titulo {
+    min-height: 2.5em;
+    white-space: normal;
+  }
 }
