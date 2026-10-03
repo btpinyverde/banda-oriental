@@ -83,6 +83,7 @@ function AudioPlayback({ src, unlockedCount, onReady }: AudioPlayerProps) {
           onReady(true);
         }}
         onWaiting={() => {
+          heard.current = false;
           setState("loading");
           onReady(false);
         }}
