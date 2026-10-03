@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { Ondulada } from "./Ondulada";
 
 export type ArtistaArchivo = {
   id: string;
@@ -45,6 +46,8 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
 
   return (
     <section className="archivo" aria-labelledby="archivo-titulo">
+      {/* La línea ondulada abre la sección solo en celular (en desktop la separan los espacios). */}
+      <Ondulada className="archivo__ondulada" trazo="corta" />
       <div className="archivo__cabecera">
         <div>
           <h2 className="archivo__titulo" id="archivo-titulo">
