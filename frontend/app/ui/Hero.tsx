@@ -27,7 +27,7 @@ export function Hero() {
           </h1>
 
           <p className="hero__bajada">
-            Escuchá, pensá, probá. Tenés seis intentos y cada error te destapa un instrumento más.
+            Escuchá, pensá, probá. Tenés seis intentos y cada error destapa una pista más.
           </p>
 
           <div className="hero__acciones">
