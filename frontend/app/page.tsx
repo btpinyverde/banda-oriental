@@ -1,3 +1,4 @@
+import { construirJsonLd, serializarJsonLd } from "./lib/seo";
 import { ArchivoArtistas } from "./ui/ArchivoArtistas";
 import { ARTISTAS_EJEMPLO, GENEROS_EJEMPLO, TOTAL_CANCIONES_EJEMPLO } from "./ui/archivo-ejemplo";
 import { ComoSeJuega } from "./ui/ComoSeJuega";
@@ -25,6 +26,10 @@ import { Navbar } from "./ui/Navbar";
 export default function Home() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializarJsonLd(construirJsonLd()) }}
+      />
       <Navbar />
       <main>
         <Hero />
