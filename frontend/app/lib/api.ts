@@ -65,6 +65,17 @@ export interface SongOption {
   artist: string;
 }
 
+// Bound requests so an unavailable API leaves a retryable state.
+async function request(url: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function parseErrorDetail(response: Response): Promise<string> {
   try {
     const body = await response.json();
@@ -77,7 +88,7 @@ async function parseErrorDetail(response: Response): Promise<string> {
 }
 
 export async function getDailyState(deviceId: string): Promise<DailyState | null> {
-  const response = await fetch(`${API_BASE_URL}/api/daily/`, {
+  const response = await request(`${API_BASE_URL}/api/daily/`, {
     headers: { "X-Device-Id": deviceId },
     cache: "no-store",
   });
@@ -91,7 +102,7 @@ export async function submitGuess(
   attemptNumber: number,
   songId: number
 ): Promise<GuessResult> {
-  const response = await fetch(`${API_BASE_URL}/api/daily/guess/`, {
+  const response = await request(`${API_BASE_URL}/api/daily/guess/`, {
     method: "POST",
     headers: { "X-Device-Id": deviceId, "Content-Type": "application/json" },
     body: JSON.stringify({ attempt_number: attemptNumber, song_id: songId }),
@@ -101,7 +112,7 @@ export async function submitGuess(
 }
 
 export async function listSongs(): Promise<SongOption[]> {
-  const response = await fetch(`${API_BASE_URL}/api/songs/`, { cache: "no-store" });
+  const response = await request(`${API_BASE_URL}/api/songs/`, { cache: "no-store" });
   if (!response.ok) throw new ApiError(await parseErrorDetail(response), response.status);
   const data: { songs: SongOption[] } = await response.json();
   return data.songs;

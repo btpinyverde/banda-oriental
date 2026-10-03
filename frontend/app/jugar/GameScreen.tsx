@@ -153,6 +153,7 @@ export function GameScreen() {
         <AudioPlayer
           key={`${attemptKey}:${audioEpoch}`}
           src={currentStem.url}
+          stemType={currentStem.stem_type}
           unlockedCount={daily.unlocked_stems.length}
           onReady={setCanGuess}
         />

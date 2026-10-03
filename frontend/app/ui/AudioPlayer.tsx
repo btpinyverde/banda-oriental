@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { StemInfo } from "../lib/api";
 import { Icon } from "./Icon";
 
 type PlaybackState = "idle" | "loading" | "playing" | "paused" | "error";
@@ -17,6 +18,7 @@ function formatTime(seconds: number): string {
 
 interface AudioPlayerProps {
   src: string;
+  stemType?: StemInfo["stem_type"];
   unlockedCount: number;
   onReady: (ready: boolean) => void;
 }
@@ -25,7 +27,7 @@ export function AudioPlayer(props: AudioPlayerProps) {
   return <AudioPlayback key={props.src} {...props} />;
 }
 
-function AudioPlayback({ src, unlockedCount, onReady }: AudioPlayerProps) {
+function AudioPlayback({ src, stemType, unlockedCount, onReady }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const heard = useRef(false);
   const mounted = useRef(true);
@@ -132,7 +134,7 @@ function AudioPlayback({ src, unlockedCount, onReady }: AudioPlayerProps) {
           ? "No se pudo reproducir el audio. Tocá para reintentar."
           : state === "loading"
             ? "Cargando audio…"
-            : `Pista ${unlockedCount} de 4: ${STEM_LABELS[unlockedCount - 1]}`}
+            : `Pista ${unlockedCount} de 4: ${stemType ? { drums: "Batería", bass: "Bajo", other: "Otros instrumentos", vocals: "Voz" }[stemType] : STEM_LABELS[unlockedCount - 1]}`}
       </p>
     </section>
   );
