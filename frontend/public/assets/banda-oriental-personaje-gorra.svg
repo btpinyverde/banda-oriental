@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+  <title id="title">Personaje con gorra — Banda Oriental</title>
+  <desc id="desc">Mascota vectorial flat con gorra blanca, pelo negro rizado y rostro amarillo crema.</desc>
+
+  <!-- Fondo transparente -->
+  <g id="doodles" fill="none" stroke="#17151F" stroke-width="18" stroke-linecap="round">
+    <path d="M102 218 L66 177"/>
+    <path d="M92 284 L43 268"/>
+    <path d="M108 354 L62 379"/>
+    <path d="M696 404 L744 370"/>
+    <path d="M711 466 L765 466"/>
+    <path d="M697 520 L739 555"/>
+  </g>
+
+  <g id="hair" fill="#17151F">
+    <ellipse cx="259" cy="425" rx="66" ry="73"/>
+    <ellipse cx="224" cy="493" rx="62" ry="70"/>
+    <ellipse cx="238" cy="562" rx="67" ry="72"/>
+    <ellipse cx="294" cy="606" rx="72" ry="66"/>
+    <ellipse cx="350" cy="594" rx="65" ry="67"/>
+    <ellipse cx="607" cy="326" rx="52" ry="60"/>
+    <ellipse cx="628" cy="385" rx="47" ry="55"/>
+  </g>
+
+  <g id="face">
+    <path
+      d="M303 325
+         C351 275 447 251 532 278
+         C611 303 650 375 648 470
+         C646 568 598 644 514 673
+         C425 703 323 672 271 606
+         C222 545 216 461 245 397
+         C260 364 278 342 303 325 Z"
+      fill="#FFD966"
+      stroke="#17151F"
+      stroke-width="24"
+      stroke-linejoin="round"/>
+
+    <!-- oreja -->
+    <path
+      d="M272 430
+         C223 415 190 446 197 489
+         C204 533 248 551 285 526
+         C300 516 305 501 307 486"
+      fill="#FFD966"
+      stroke="#17151F"
+      stroke-width="24"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+    <path d="M242 478 C258 456 281 466 280 492"
+      fill="none" stroke="#17151F" stroke-width="16" stroke-linecap="round"/>
+  </g>
+
+  <g id="cap">
+    <!-- copa -->
+    <path
+      d="M241 329
+         C229 246 257 163 325 116
+         C386 74 480 64 548 99
+         C594 123 623 161 642 211
+         C550 226 452 259 365 307
+         C318 333 278 350 241 329 Z"
+      fill="#FFFDF7"
+      stroke="#17151F"
+      stroke-width="24"
+      stroke-linejoin="round"/>
+
+    <!-- costura -->
+    <path d="M340 115 C317 180 323 245 349 310"
+      fill="none" stroke="#17151F" stroke-width="18" stroke-linecap="round"/>
+
+    <!-- botón -->
+    <ellipse cx="329" cy="111" rx="28" ry="21" fill="#17151F"/>
+
+    <!-- visera -->
+    <path
+      d="M351 309
+         C425 252 516 211 612 190
+         C682 175 729 190 736 221
+         C744 258 692 290 625 302
+         C536 319 447 341 370 367
+         C337 378 318 363 323 343
+         C326 331 336 319 351 309 Z"
+      fill="#FFFDF7"
+      stroke="#17151F"
+      stroke-width="24"
+      stroke-linejoin="round"/>
+
+    <!-- pelo bajo visera -->
+    <path
+      d="M350 347
+         C393 335 428 315 465 294
+         C508 269 557 247 613 237
+         C628 235 640 244 636 257
+         C628 286 590 319 548 340
+         C488 370 414 389 355 382
+         C334 380 329 357 350 347 Z"
+      fill="#17151F"/>
+  </g>
+
+  <g id="features" fill="none" stroke="#17151F" stroke-linecap="round" stroke-linejoin="round">
+    <!-- cejas -->
+    <path d="M363 405 C385 381 408 377 428 389" stroke-width="18"/>
+    <path d="M532 378 C553 365 575 367 590 383" stroke-width="18"/>
+
+    <!-- ojos -->
+    <path d="M399 430 C407 450 407 474 401 491" stroke-width="22"/>
+    <path d="M559 417 C568 439 569 462 564 481" stroke-width="22"/>
+
+    <!-- nariz -->
+    <path d="M497 445 C512 462 520 476 507 490" stroke-width="17"/>
+
+    <!-- sonrisa -->
+    <path
+      d="M437 531
+         C474 546 523 541 557 521
+         C553 570 527 601 488 602
+         C458 602 439 578 437 531 Z"
+      fill="#FFFDF7"
+      stroke-width="22"/>
+  </g>
+</svg>

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <title>music note</title>
+  <path d="m48 26 47-14v66" stroke="#25212d" stroke-width="6" stroke-linecap="round"/><path d="M48 26v62" stroke="#25212d" stroke-width="6"/><path d="m48 26 47-14v18L48 44Z" fill="#7544e8"/><ellipse cx="32" cy="91" rx="19" ry="13" transform="rotate(-20 32 91)" fill="#ff91a2"/><ellipse cx="79" cy="81" rx="19" ry="13" transform="rotate(-20 79 81)" fill="#ffdc58"/>
+</svg>
