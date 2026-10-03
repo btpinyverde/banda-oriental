@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Espadas cruzadas de batalla</title>
+  <!-- Espada de atrás: punta, hoja, guarda y empuñadura separadas. -->
+  <g stroke="#25213f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 6c6 1 10 4 14 8l25 28-5 5-27-28C11 15 9 11 8 6Z" fill="#e8e2ff"/>
+    <path d="m14 13 29 31" stroke="#777090" stroke-width="1.7"/>
+    <path d="m45 47 11 11" stroke-width="6"/>
+    <path d="m39 51 13-13" stroke-width="4.8"/>
+    <path d="m51 58 7-7" stroke-width="4.5"/>
+  </g>
+  <!-- Espada de adelante, con cruce legible a 23–27 px. -->
+  <g stroke="#25213f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M56 6c-1 6-4 11-8 15L22 48l-6-6 28-29c4-4 8-6 12-7Z" fill="#f6f2ff"/>
+    <path d="M51 12 20 44" stroke="#8a829f" stroke-width="1.7"/>
+    <path d="M18 47 7 58" stroke-width="6"/>
+    <path d="m12 38 14 14" stroke-width="4.8"/>
+    <path d="m6 52 7 7" stroke-width="4.5"/>
+  </g>
+</svg>

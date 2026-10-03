@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 680" fill="none"><title>calendario hoy 138</title>
+<defs>
+<filter id="sombra" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#2a1f6b" flood-opacity="0.22"/></filter>
+</defs>
+<!-- hojas de atrás: páginas con esquinas redondeadas -->
+<defs>
+<linearGradient id="gv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7457f5"/><stop offset="1" stop-color="#5b3fe8"/></linearGradient>
+</defs>
+<path d="M214 506L205 548Q200 580 236 578L656 552Q690 549 686 516L648 84Q644 58 616 60L322 64Z" fill="url(#gv)"/>
+<path d="M400 76L648 82L702 484Q710 528 668 534L400 546Z" fill="#ff7fae"/>
+<path d="M238 118L96 428Q80 470 122 480L408 548Q448 556 456 518L328 196Z" fill="#ffe566"/>
+<!-- argollas, parte de atrás: queda detrás de la hoja -->
+<g stroke="#111" stroke-width="10" fill="none">
+<g transform="translate(338 84.7) rotate(12)"><ellipse rx="23" ry="38"/></g>
+<g transform="translate(448 80.8) rotate(12)"><ellipse rx="23" ry="38"/></g>
+<g transform="translate(558 76.9) rotate(12)"><ellipse rx="23" ry="38"/></g>
+</g>
+<!-- hoja principal -->
+<path d="M246 88L640 74L580 504L162 488Z" fill="#f8f6f1" stroke="#f8f6f1" stroke-width="18" stroke-linejoin="round" filter="url(#sombra)"/>
+<!-- argollas, parte de adelante: baja por la hoja y entra en el agujero -->
+<g stroke="#111" stroke-width="10" stroke-linecap="round" fill="none">
+<g transform="translate(338 84.7) rotate(12)"><ellipse cx="3" cy="35" rx="9" ry="5" fill="#111" stroke="none"/><path d="M-23 0A23 38 0 0 0 3 37"/></g>
+<g transform="translate(448 80.8) rotate(12)"><ellipse cx="3" cy="35" rx="9" ry="5" fill="#111" stroke="none"/><path d="M-23 0A23 38 0 0 0 3 37"/></g>
+<g transform="translate(558 76.9) rotate(12)"><ellipse cx="3" cy="35" rx="9" ry="5" fill="#111" stroke="none"/><path d="M-23 0A23 38 0 0 0 3 37"/></g>
+</g>
+<!-- HOY -->
+<g transform="translate(286 260) skewX(-14)" stroke="#111" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+<path d="M4 -60V0M36 -60V0M4 -30H36"/>
+<ellipse cx="68" cy="-30" rx="19" ry="30"/>
+<path d="M98 -60L118 -28L138 -60M118 -28V0"/>
+</g>
+<!-- #138 -->
+<g transform="translate(262 406) skewX(-12) scale(1.03)" stroke="#111" stroke-width="19" stroke-linecap="round" stroke-linejoin="round">
+<path d="M20 -92L14 0M46 -92L40 0M2 -62H60M0 -32H58"/>
+<path d="M72 -78L92 -94V0"/>
+<path d="M122 -86C132 -100 168 -98 170 -76C171 -58 150 -54 142 -52C152 -51 176 -46 176 -26C176 -4 138 2 120 -12"/>
+<ellipse cx="228" cy="-70" rx="20" ry="21"/>
+<ellipse cx="228" cy="-27" rx="25" ry="26"/>
+</g>
+<!-- rayitas -->
+<g stroke="#111" stroke-width="14" stroke-linecap="round">
+<path d="M120 52L148 122"/>
+<path d="M54 108L112 150"/>
+<path d="M38 192L98 196"/>
+</g>
+</svg>
