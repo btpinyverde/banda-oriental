@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="280" viewBox="0 0 360 280" role="img" aria-label="Blob coral ondulado">
+  <title>Blob coral ondulado</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-coral" d="M30 173 C18 116 66 63 120 64 C138 20 200 14 225 58 C277 30 327 68 314 120 C350 157 326 223 274 229 C223 264 184 235 162 220 C105 258 42 230 30 173 Z" fill="#FF817E" />
+  </g>
+</svg>

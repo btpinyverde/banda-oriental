@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Corona">
+  <title>Corona</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-yellow" d="M39 77 L88 108 L119 51 L150 109 L203 70 L185 178 Q119 193 57 180 Z" fill="#FFD747" /><path class="bo-ink-stroke" d="M65 161 Q120 172 178 157" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-purple" d="M120 113 L132 132 L119 148 L107 132 Z" fill="#7547EB" /><ellipse class="bo-coral" cx="37" cy="66" rx="10" ry="10" fill="#FF817E" /><ellipse class="bo-coral" cx="120" cy="41" rx="10" ry="10" fill="#FF817E" /><ellipse class="bo-coral" cx="205" cy="59" rx="10" ry="10" fill="#FF817E" />
+  </g>
+</svg>

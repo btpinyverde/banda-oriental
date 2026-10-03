@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Otros instrumentos · teclado">
+  <title>Otros instrumentos · teclado</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-mint" d="M35 66 Q36 53 50 55 L201 66 Q213 67 210 80 L197 171 Q196 185 181 183 L30 171 Q19 170 22 157 Z" fill="#9DE1BC" /><path class="bo-paper" d="M43 89 L194 100 L184 164 L34 153 Z" fill="#FFF9EF" /><path class="bo-ink-stroke" d="M64 94 L58 155 M89 97 L84 157 M115 98 L110 159 M141 100 L135 161 M167 102 L161 163" fill="none" stroke="#25212E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-ink" d="M58 91 L71 92 L66 128 L53 127 Z M84 93 L97 94 L92 131 L79 130 Z M136 97 L149 98 L144 134 L131 133 Z M162 99 L175 100 L170 137 L157 136 Z" fill="#25212E" /><ellipse class="bo-purple" cx="48" cy="73" rx="4" ry="4" fill="#7547EB" /><ellipse class="bo-coral" cx="63" cy="74" rx="4" ry="4" fill="#FF817E" />
+  </g>
+</svg>

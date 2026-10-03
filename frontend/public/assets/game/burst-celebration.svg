@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Explosión de celebración">
+  <title>Explosión de celebración</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-yellow-stroke" d="M115 27 L116 59 M166 38 L151 67 M205 79 L175 91 M210 131 L179 126 M184 183 L161 158 M137 209 L130 179 M83 204 L94 176 M36 167 L65 149 M24 113 L59 114 M48 57 L73 80" fill="none" stroke="#FFD747" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-ink-stroke" d="M151 18 L150 26 M218 167 L209 162 M39 198 L45 191" fill="none" stroke="#25212E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" /><ellipse class="bo-coral" cx="79" cy="32" rx="5" ry="5" fill="#FF817E" /><ellipse class="bo-mint" cx="206" cy="42" rx="5" ry="5" fill="#9DE1BC" /><ellipse class="bo-purple" cx="193" cy="211" rx="5" ry="5" fill="#7547EB" />
+  </g>
+</svg>
