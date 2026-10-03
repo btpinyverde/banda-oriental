@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Micrófono y voz">
+  <title>Micrófono y voz</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-purple" d="M98 134 L76 119 L43 181 Q40 190 47 196 Q55 202 61 193 Z" fill="#7547EB" /><path class="bo-coral" d="M91 65 C110 39 139 36 156 57 C175 78 154 105 133 119 Q113 131 94 113 Q74 96 91 65 Z" fill="#FF817E" /><path class="bo-ink-stroke" d="M95 66 L140 105 M107 53 L153 91 M98 94 L131 53 M109 108 L146 65" fill="none" stroke="#25212E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-ink-stroke" d="M40 198 C20 225 93 222 104 204 C115 185 157 187 166 206 M177 57 L194 45 M181 86 L208 83 M173 111 L191 123" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Trofeo">
+  <title>Trofeo</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-purple-stroke" d="M73 63 C28 48 22 100 58 115 L79 121 M166 63 C214 43 220 96 188 111 L166 120" fill="none" stroke="#7547EB" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-yellow" d="M62 44 Q119 33 179 43 L172 98 C169 132 149 145 128 150 L130 179 L166 188 L168 203 L75 207 L73 191 L107 181 L107 150 C79 144 68 125 66 99 Z" fill="#FFD747" /><path class="bo-ink-stroke" d="M83 62 Q117 57 154 61 M84 190 L155 189" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-purple" d="M116 77 L124 94 L143 97 L128 109 L130 127 L114 118 L98 127 L101 108 L87 98 L107 94 Z" fill="#7547EB" />
+  </g>
+</svg>

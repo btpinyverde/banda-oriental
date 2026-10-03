@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Nota musical decorativa">
+  <title>Nota musical decorativa</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-purple" d="M83 69 L182 40 L183 164 L168 165 L168 82 L98 103 L98 182 L83 184 Z" fill="#7547EB" /><ellipse class="bo-purple" cx="73" cy="181" rx="26" ry="19" fill="#7547EB" transform="rotate(-18 73 181)"/><ellipse class="bo-purple" cx="159" cy="164" rx="26" ry="19" fill="#7547EB" transform="rotate(-18 159 164)"/><path class="bo-ink-stroke" d="M34 74 L43 90 M57 48 L65 68 M206 103 L216 96" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

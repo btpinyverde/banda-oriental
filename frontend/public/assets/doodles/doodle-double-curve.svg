@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160" role="img" aria-label="Dos curvas manuales">
+  <title>Dos curvas manuales</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-ink-stroke" d="M64 28 Q128 79 70 135 M126 32 Q184 83 132 129" fill="none" stroke="#25212E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

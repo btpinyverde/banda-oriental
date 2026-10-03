@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Llama de racha">
+  <title>Llama de racha</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-coral" d="M126 20 C150 54 112 73 145 102 C157 110 170 84 166 69 C201 101 211 127 199 164 C186 208 141 224 101 208 C62 194 39 166 47 130 C51 108 64 94 78 82 C72 112 87 118 95 104 C108 83 90 58 126 20 Z" fill="#FF817E" /><path class="bo-yellow" d="M126 113 C144 140 122 146 144 165 C153 172 160 169 166 159 C168 188 145 204 121 198 C101 194 88 180 94 160 C98 146 114 140 126 113 Z" fill="#FFD747" />
+  </g>
+</svg>

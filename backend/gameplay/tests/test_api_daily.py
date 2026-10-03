@@ -248,3 +248,29 @@ def test_daily_does_not_leak_another_devices_progress(client, published_today):
     body = response.json()
     assert body["attempt_number"] == 1
     assert body["feedback_history"] == []
+
+
+@pytest.mark.django_db
+def test_daily_includes_the_guessed_song_title_in_feedback_history(client, published_today):
+    GuessAttempt.objects.create(
+        device_id=DEVICE_ID,
+        daily_song=published_today,
+        attempt_number=1,
+        guessed_text="Otra canción",
+        is_correct=False,
+        feedback={"year": "unknown", "genre": "unknown", "artist": "unknown", "album": "unknown"},
+    )
+    response = client.get(reverse("gameplay:daily"), HTTP_X_DEVICE_ID=DEVICE_ID)
+    assert response.json()["feedback_history"][0]["guessed_text"] == "Otra canción"
+
+
+def test_browser_can_preflight_device_id_header(client, settings):
+    settings.CORS_ALLOWED_ORIGINS = ["https://bandaoriental.example"]
+    response = client.options(
+        reverse("gameplay:daily"),
+        HTTP_ORIGIN="https://bandaoriental.example",
+        HTTP_ACCESS_CONTROL_REQUEST_METHOD="GET",
+        HTTP_ACCESS_CONTROL_REQUEST_HEADERS="x-device-id",
+    )
+    assert response["Access-Control-Allow-Origin"] == "https://bandaoriental.example"
+    assert "x-device-id" in response["Access-Control-Allow-Headers"].lower()

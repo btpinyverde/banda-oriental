@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Batería">
+  <title>Batería</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-ink-stroke" d="M32 80 L32 178 M18 190 L32 178 L47 190 M189 69 L189 178 M172 191 L189 178 L206 191" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-yellow" d="M22 71 Q39 53 66 61 Q82 65 85 75 Q54 86 22 80 Z" fill="#FFD747" /><path class="bo-yellow" d="M162 54 Q188 40 216 60 L214 68 Q188 77 160 63 Z" fill="#FFD747" /><path class="bo-coral" d="M59 90 L89 84 L94 115 L64 122 Z M137 84 L168 91 L161 122 L133 114 Z" fill="#FF817E" /><ellipse class="bo-purple" cx="114" cy="151" rx="49" ry="47" fill="#7547EB" /><ellipse class="bo-paper" cx="114" cy="151" rx="31" ry="30" fill="#FFF9EF" /><path class="bo-ink-stroke" d="M103 137 Q123 128 132 145 M81 190 L72 204 M146 190 L154 203 M70 45 L125 88 M154 39 L104 87" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

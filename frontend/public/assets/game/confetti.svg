@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="240" viewBox="0 0 300 240" role="img" aria-label="Confetti">
+  <title>Confetti</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-purple" d="M41 35 L56 28 L70 60 L55 67 Z M234 166 L250 161 L261 195 L245 200 Z" fill="#7547EB" /><path class="bo-coral" d="M109 31 L126 35 L119 70 L102 65 Z M54 169 L69 182 L44 208 L31 195 Z" fill="#FF817E" /><path class="bo-yellow" d="M239 43 L260 71 L226 75 Z M145 170 L162 196 L129 201 Z" fill="#FFD747" /><path class="bo-mint-stroke" d="M166 53 Q200 61 181 84 Q167 100 197 104 M89 115 Q118 108 111 130 Q105 150 134 146" fill="none" stroke="#9DE1BC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-ink-stroke" d="M35 109 L26 124 M210 135 L227 122 M177 207 L184 217" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><ellipse class="bo-yellow" cx="79" cy="90" rx="6" ry="6" fill="#FFD747" /><ellipse class="bo-coral" cx="215" cy="202" rx="6" ry="6" fill="#FF817E" /><ellipse class="bo-purple" cx="146" cy="96" rx="5" ry="5" fill="#7547EB" />
+  </g>
+</svg>

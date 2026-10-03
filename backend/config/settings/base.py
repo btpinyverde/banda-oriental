@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "")
@@ -129,3 +131,6 @@ GAMEPLAY_SPEED_BONUS = {
     # producing an absurd or negative score (spec §8).
     "max_elapsed_seconds": 60,
 }
+
+# The anonymous daily-game API is called from the separate frontend origin.
+CORS_ALLOW_HEADERS = (*default_headers, "x-device-id")

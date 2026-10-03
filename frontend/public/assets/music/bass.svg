@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-label="Bajo eléctrico">
+  <title>Bajo eléctrico</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path class="bo-purple" d="M146 89 C130 82 125 107 111 113 C100 119 91 99 75 115 C66 124 70 137 55 145 C28 158 37 190 58 201 C83 215 112 196 112 175 C111 160 136 163 137 147 C139 132 120 135 129 119 L151 98 Z" fill="#7547EB" /><path class="bo-coral" d="M115 129 L104 118 L166 44 L180 53 Z" fill="#FF817E" /><path class="bo-yellow" d="M161 44 L177 22 Q184 18 191 25 L202 35 L181 61 Z" fill="#FFD747" /><path class="bo-ink-stroke" d="M165 29 L159 24 M193 51 L200 55 M178 18 L174 13 M203 37 L210 42 M64 176 L76 186 M84 155 L96 165" fill="none" stroke="#25212E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><path class="bo-paper-stroke" d="M73 178 L185 38 M78 183 L189 42" fill="none" stroke="#FFF9EF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /><ellipse class="bo-yellow" cx="102" cy="176" rx="4" ry="4" fill="#FFD747" />
+  </g>
+</svg>
