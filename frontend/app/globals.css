@@ -110,6 +110,30 @@ button {
   font-size: 14px;
 }
 
+/* Entre el menú móvil (hasta 860px) y el ancho completo (1101px) la barra no entra con los espacios de
+   escritorio: se compactan para que ningún enlace se parta ni el botón quede fuera de la pantalla. */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .navbar {
+    gap: 24px;
+  }
+
+  .navbar__links {
+    gap: 18px;
+  }
+
+  .navbar__link {
+    white-space: nowrap;
+  }
+
+  .navbar__acciones {
+    gap: 8px;
+  }
+
+  .navbar__acciones .boton {
+    padding: 0 16px;
+  }
+}
+
 .boton {
   display: inline-flex;
   align-items: center;
