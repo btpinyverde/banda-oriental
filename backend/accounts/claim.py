@@ -2,7 +2,8 @@ import uuid
 
 from django.db import IntegrityError, transaction
 
-from gameplay.models import GuessAttempt, ScoreEntry
+from gameplay.models import GuessAttempt, PlayerStats, ScoreEntry
+from gameplay.stats import recompute_stats
 
 
 def device_id_from(request) -> str | None:
@@ -37,3 +38,29 @@ def claim_device_games(user, device_id: str | None) -> None:
                 ScoreEntry.objects.filter(daily_song_id=day, **unowned).update(user=user)
         except IntegrityError:
             continue  # another request claimed it first
+    adopt_device_stats(user, device_id)
+
+
+def adopt_device_stats(user, device_id: str) -> None:
+    """The stats follow the games: the account's row is recomputed with everything it now has (so a streak that
+    started anonymously goes on), the public name chosen on the device moves to the account unless it already has
+    one, and the device's own row goes away when nothing is left on the device."""
+    device_row = PlayerStats.objects.filter(device_id=device_id, user__isnull=True).first()
+    name = device_row.public_name if device_row else None
+    with transaction.atomic():
+        if device_row is not None and name:
+            device_row.public_name = None  # releases the name before the account takes it
+            device_row.save(update_fields=["public_name"])
+        row = recompute_stats(user=user)
+        if name and not row.public_name:
+            row.public_name = name
+            row.save(update_fields=["public_name"])
+        if device_row is not None:
+            leftovers = (
+                GuessAttempt.objects.filter(device_id=device_id, user__isnull=True).exists()
+                or ScoreEntry.objects.filter(device_id=device_id, user__isnull=True).exists()
+            )
+            if leftovers:
+                recompute_stats(device_id=device_id)
+            else:
+                device_row.delete()

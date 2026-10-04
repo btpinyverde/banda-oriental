@@ -82,3 +82,30 @@ def recompute_stats(*, user=None, device_id=None, today=None) -> PlayerStats:
         **({"user": user} if user is not None else {"user": None, "device_id": device_id}), defaults=values
     )
     return row
+
+
+def owner_of(request, device_id: str) -> dict:
+    """The keyword arguments that name a player: the account with a session, otherwise the device."""
+    if request.user is not None and request.user.is_authenticated:
+        return {"user": request.user}
+    return {"device_id": device_id}
+
+
+def serialize(row: PlayerStats | None) -> dict:
+    """What a player (or a ranking) is allowed to see. A player with no row yet is all zeros."""
+    if row is None:
+        row = PlayerStats()
+    won, distribution = row.won, row.distribution or empty_distribution()
+    attempts = sum(count * (index + 1) for index, count in enumerate(distribution))
+    return {
+        "public_name": row.public_name,
+        "played": row.played,
+        "won": won,
+        "win_percentage": round(won * 100 / row.played) if row.played else None,
+        "current_streak": row.current_streak,
+        "max_streak": row.max_streak,
+        "total_score": row.total_score,
+        "average_attempts": round(attempts / won, 1) if won else None,
+        "distribution": distribution,
+        "last_played_day": str(row.last_played_day) if row.last_played_day else None,
+    }

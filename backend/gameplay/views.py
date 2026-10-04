@@ -3,6 +3,8 @@ import uuid
 from datetime import date
 
 from catalog.models import Song
+import logging
+
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -12,11 +14,15 @@ from rest_framework.views import APIView
 from accounts.authentication import BearerTokenAuthentication
 
 from .feedback import calculate_feedback
-from .models import DailySong, GuessAttempt, ScoreEntry, Stem
+from .models import DailySong, GuessAttempt, PlayerStats, ScoreEntry, Stem
 from .moderation import contains_banned_word
 from .ownership import owner_fields, owner_filter
 from core.human import HasHumanPass
 from .scoring import calculate_score
+from .stats import owner_of, recompute_stats, serialize
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_device_id(request):
@@ -197,6 +203,12 @@ class GuessView(APIView):
             return Response({"detail": "Número de intento inválido."}, status=400)
 
         finished = is_correct or attempt_number == 6
+        if finished:
+            try:
+                recompute_stats(**owner_of(request, device_id))
+            except Exception:
+                # The attempt is already saved; stats are recomputed from the attempts, so the next game fixes this.
+                logger.exception("No se pudieron actualizar las estadísticas")
         return Response(
             {
                 "is_correct": is_correct,
@@ -234,13 +246,21 @@ class ScoreView(APIView):
         if winning_attempt_obj is None:
             return Response({"detail": "Todavía no ganaste hoy."}, status=400)
 
-        raw_display_name = request.data.get("display_name")
-        if not isinstance(raw_display_name, str):
-            return Response({"detail": "Nombre inválido."}, status=400)
-        display_name = raw_display_name.strip()
-        max_length = ScoreEntry._meta.get_field("display_name").max_length
-        if not display_name or len(display_name) > max_length or contains_banned_word(display_name):
-            return Response({"detail": "Nombre inválido."}, status=400)
+        stats_owner = owner_of(request, device_id)
+        stored = PlayerStats.objects.filter(**({"user": request.user} if "user" in stats_owner else {"user": None, "device_id": device_id})).first()
+        if stored is not None and stored.public_name:
+            # The public name is chosen once; later scores always carry it, whatever the client sends.
+            display_name = stored.public_name
+        else:
+            raw_display_name = request.data.get("display_name")
+            if not isinstance(raw_display_name, str):
+                return Response({"detail": "Nombre inválido."}, status=400)
+            display_name = raw_display_name.strip()
+            max_length = PlayerStats._meta.get_field("public_name").max_length
+            if not display_name or len(display_name) > max_length or contains_banned_word(display_name):
+                return Response({"detail": "Nombre inválido."}, status=400)
+            if PlayerStats.objects.filter(public_name__iexact=display_name).exists():
+                return Response({"detail": "Ese nombre ya está en uso. Elegí otro."}, status=400)
 
         try:
             total_time_seconds = float(request.data.get("total_time_seconds"))
@@ -251,6 +271,12 @@ class ScoreView(APIView):
         # a negative value (clock skew, bad data) is never meaningful here.
         if not math.isfinite(total_time_seconds) or total_time_seconds < 0:
             return Response({"detail": "total_time_seconds inválido."}, status=400)
+
+        # The client's clock can say anything; what the server saw between the first and the winning attempt is a
+        # floor the time cannot go under.
+        first_attempt = GuessAttempt.objects.filter(owner, daily_song=daily_song).order_by("attempt_number").first()
+        observed = (winning_attempt_obj.created_at - first_attempt.created_at).total_seconds()
+        total_time_seconds = max(total_time_seconds, observed)
 
         score = calculate_score(winning_attempt_obj.attempt_number, total_time_seconds)
 
@@ -270,13 +296,16 @@ class ScoreView(APIView):
                     winning_attempt=winning_attempt_obj.attempt_number,
                     total_time_seconds=total_time_seconds,
                 )
+                row = recompute_stats(**stats_owner)
+                if not row.public_name:
+                    row.public_name = display_name
+                    row.save(update_fields=["public_name"])
         except IntegrityError:
-            # The .exists() check above has a race: two near-simultaneous
-            # requests can both pass it before either row is committed.
-            # The UniqueConstraint on ScoreEntry is the real backstop —
-            # this just turns its IntegrityError into the same clean 400
-            # the plan requires, instead of an unhandled 500.
-            return Response({"detail": "Ya enviaste tu puntaje de hoy."}, status=400)
+            # Two things can collide: today's score (the .exists() check above has a race, and the UniqueConstraint
+            # on ScoreEntry is the real backstop) or the public name (someone took it a moment ago).
+            if ScoreEntry.objects.filter(owner, daily_song=daily_song).exists():
+                return Response({"detail": "Ya enviaste tu puntaje de hoy."}, status=400)
+            return Response({"detail": "Ese nombre ya está en uso. Elegí otro."}, status=400)
         return Response(
             {
                 "score": entry.score,
@@ -346,3 +375,16 @@ class ArchiveDetailView(APIView):
                 "artist_instagram_handle": song.album.artist.instagram_handle,
             }
         )
+
+
+class StatsView(APIView):
+    """The player's own stats, as the server calculated and saved them. Read-only: nothing here accepts stats."""
+
+    http_method_names = ["get", "head", "options"]
+    authentication_classes = [BearerTokenAuthentication]
+
+    def get(self, request):
+        device_id = get_device_id(request)
+        owner = owner_of(request, device_id)
+        lookup = {"user": owner["user"]} if "user" in owner else {"user": None, "device_id": device_id}
+        return Response(serialize(PlayerStats.objects.filter(**lookup).first()))
