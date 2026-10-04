@@ -8,8 +8,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .authentication import BearerTokenAuthentication
+from .claim import claim_device_games, device_id_from
 from .emails import send_already_registered, send_confirmation, send_magic_link, send_password_reset
 from .models import AuthToken, EmailChallenge
+from gameplay.models import GuessAttempt, ScoreEntry
+
 from .users import find_user, is_confirmed, mark_confirmed
 from .limits import TOO_MANY, can_send_email, clear_login_failures, login_locked, register_login_failure
 from .serializers import EmailSerializer, LoginSerializer, RegisterSerializer, ResetConfirmSerializer, TokenSerializer
@@ -18,6 +21,12 @@ User = get_user_model()
 
 REGISTER_DETAIL = "Si el correo es válido, te enviamos un mensaje para continuar."
 BAD_LINK = {"detail": "El enlace no es válido o venció."}
+
+
+def start_session(request, user) -> str:
+    """Opens a session and brings along the games played on this device before signing in."""
+    claim_device_games(user, device_id_from(request))
+    return AuthToken.issue(user)
 
 
 class PublicView(APIView):
@@ -78,7 +87,7 @@ class ConfirmView(PublicView):
         EmailChallenge.objects.filter(
             email=challenge.email, purpose=EmailChallenge.CONFIRM, used_at__isnull=True
         ).update(used_at=timezone.now())
-        return Response({"token": AuthToken.issue(user)})
+        return Response({"token": start_session(request, user)})
 
 
 # Checked when the email has no account, so "unknown email" takes as long as "wrong password".
@@ -109,7 +118,7 @@ class LoginView(PublicView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         clear_login_failures(email)
-        return Response({"token": AuthToken.issue(user)})
+        return Response({"token": start_session(request, user)})
 
 
 class LogoutView(APIView):
@@ -145,7 +154,7 @@ class MagicVerifyView(PublicView):
         if not user.is_active:
             return Response(BAD_LINK, status=status.HTTP_400_BAD_REQUEST)
         mark_confirmed(user)
-        return Response({"token": AuthToken.issue(user)})
+        return Response({"token": start_session(request, user)})
 
     @staticmethod
     def _create(email):
@@ -180,7 +189,7 @@ class PasswordResetConfirmView(PublicView):
         user.save(update_fields=["password"])
         user.auth_tokens.all().delete()  # every other session ends
         mark_confirmed(user)
-        return Response({"token": AuthToken.issue(user)})
+        return Response({"token": start_session(request, user)})
 
 
 class MeView(APIView):
@@ -189,3 +198,65 @@ class MeView(APIView):
 
     def get(self, request):
         return Response({"email": request.user.email, "date_joined": request.user.date_joined})
+
+    def delete(self, request):
+        """Deletes the account and everything tied to it: sessions, games, scores and emailed links."""
+        user = request.user
+        EmailChallenge.objects.filter(email=user.email).delete()
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class HistoryView(APIView):
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Every day the account played, newest first. The song is only included once that day's game is over."""
+        attempts = (
+            GuessAttempt.objects.filter(user=request.user)
+            .select_related("daily_song__song__album__artist")
+            .order_by("attempt_number")
+        )
+        scores = {entry.daily_song_id: entry for entry in ScoreEntry.objects.filter(user=request.user)}
+        days: dict[int, list[GuessAttempt]] = {}
+        for attempt in attempts:
+            days.setdefault(attempt.daily_song_id, []).append(attempt)
+
+        entries = []
+        for tries in days.values():
+            daily = tries[0].daily_song
+            winning = next((a.attempt_number for a in tries if a.is_correct), None)
+            finished = winning is not None or len(tries) >= 6
+            song = daily.song
+            entry = scores.get(daily.id)
+            entries.append(
+                {
+                    "day": str(daily.date),
+                    "finished": finished,
+                    "won": winning is not None,
+                    "winning_attempt": winning,
+                    "score": entry.score if entry else None,
+                    "attempts": [
+                        {
+                            "attempt_number": a.attempt_number,
+                            "guessed_text": a.guessed_text,
+                            "is_correct": a.is_correct,
+                            "feedback": a.feedback,
+                        }
+                        for a in tries
+                    ],
+                    "song": (
+                        {
+                            "title": song.title,
+                            "artist": song.album.artist.name,
+                            "album": song.album.name,
+                            "year": song.album.year,
+                        }
+                        if finished
+                        else None
+                    ),
+                }
+            )
+        entries.sort(key=lambda item: item["day"], reverse=True)
+        return Response({"days": entries})
