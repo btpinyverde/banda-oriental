@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:"Banda Oriental · Administración" }}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/banda-oriental.css' %}">{% endblock %}
+
+{% block extrahead %}{{ block.super }}<link rel="icon" type="image/png" href="{% static 'admin/logo-banda-oriental.png' %}">{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}" class="marca">
+    <img src="{% static 'admin/logo-banda-oriental-claro.png' %}" alt="Banda Oriental" height="34">
+    <span>Administración</span>
+  </a>
+</div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

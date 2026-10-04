@@ -39,7 +39,7 @@ MIDDLEWARE = [
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],  # the pages we brand (admin, API root, 404) replace Django's
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -47,6 +47,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.brand",
             ],
         },
     },
@@ -61,6 +62,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 # Django does NOT merge a custom STORAGES dict with its own defaults —
 # defining STORAGES at all means naming every key yourself, including ones
 # you don't want to change (confirmed empirically: omitting "default" here
