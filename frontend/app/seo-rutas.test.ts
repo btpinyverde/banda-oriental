@@ -5,10 +5,14 @@ import { SITIO_URL } from "./lib/seo";
 import sitemap from "./sitemap";
 
 describe("sitemap", () => {
-  it("lista solo la portada, que es lo único que existe y se puede indexar", () => {
+  it("lista la portada y el juego, que son las páginas con contenido que se pueden indexar", () => {
     const entradas = sitemap();
 
-    expect(entradas.map((e) => e.url)).toEqual([`${SITIO_URL}/`]);
+    expect(entradas.map((e) => e.url)).toEqual([`${SITIO_URL}/`, `${SITIO_URL}/jugar`]);
+  });
+
+  it("no lista páginas personales como el historial", () => {
+    expect(sitemap().map((e) => e.url)).not.toContain(`${SITIO_URL}/historial`);
   });
 });
 

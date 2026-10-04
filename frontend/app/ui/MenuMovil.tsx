@@ -6,7 +6,7 @@ import { useEffect, useId, useState } from "react";
 type Enlace = { href: string; etiqueta: string };
 
 /** Menú hamburguesa de la navbar. Solo se ve en pantallas chicas (el CSS lo oculta en desktop). */
-export function MenuMovil({ enlaces }: { enlaces: Enlace[] }) {
+export function MenuMovil({ enlaces, actual }: { enlaces: Enlace[]; actual?: string }) {
   const [abierto, setAbierto] = useState(false);
   const idPanel = useId();
 
@@ -41,7 +41,7 @@ export function MenuMovil({ enlaces }: { enlaces: Enlace[] }) {
           <ul>
             {enlaces.map(({ href, etiqueta }) => (
               <li key={href}>
-                <Link href={href} onClick={cerrar}>
+                <Link href={href} onClick={cerrar} aria-current={href === actual ? "page" : undefined}>
                   {etiqueta}
                 </Link>
               </li>
@@ -51,12 +51,14 @@ export function MenuMovil({ enlaces }: { enlaces: Enlace[] }) {
             <Link href="/login" className="boton boton--grande boton--claro" onClick={cerrar}>
               Iniciar sesión
             </Link>
-            <Link href="/jugar" className="boton boton--grande boton--violeta" onClick={cerrar}>
-              <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">
-                <path d="M1 1.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 1 1.5Z" />
-              </svg>
-              Jugar el diario
-            </Link>
+            {actual !== "/jugar" && (
+              <Link href="/jugar" className="boton boton--grande boton--violeta" onClick={cerrar}>
+                <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">
+                  <path d="M1 1.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 1 1.5Z" />
+                </svg>
+                Jugar el diario
+              </Link>
+            )}
           </div>
         </nav>
       )}

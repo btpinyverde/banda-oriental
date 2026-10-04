@@ -58,4 +58,15 @@ describe("MenuMovil", () => {
     expect(screen.queryByRole("link", { name: "Jugar" })).toBeNull();
     expect(screen.getByRole("button", { name: "Abrir menú" })).toBeInTheDocument();
   });
+
+  it("marca la página actual y quita Jugar el diario cuando ya se está en /jugar", () => {
+    render(<MenuMovil enlaces={ENLACES} actual="/jugar" />);
+
+    abrir();
+
+    expect(screen.getByRole("link", { name: "Jugar" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Archivo" })).not.toHaveAttribute("aria-current");
+    expect(screen.queryByRole("link", { name: "Jugar el diario" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Iniciar sesión" })).toBeInTheDocument();
+  });
 });

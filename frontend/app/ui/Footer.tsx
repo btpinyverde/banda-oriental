@@ -45,10 +45,10 @@ const LEGALES = [
 
 /**
  * Pie de página. `footer__arte` lleva a Flan.
- * La variante "compacto" es una sola fila (logo, lema, redes y enlaces legales) para páginas con mucho adorno,
- * como la 404.
+ * La variante "minimo" es una sola fila (logo, legales y copyright) para páginas ya cargadas de adornos,
+ * como /jugar. La "compacto" también es una fila, pero con el lema y las redes (página 404).
  */
-export function Footer({ variante = "completo" }: { variante?: "completo" | "compacto" }) {
+export function Footer({ variante = "completo" }: { variante?: "completo" | "minimo" | "compacto" }) {
   if (variante === "compacto") {
     return (
       <footer className="footer footer--compacto">
@@ -78,6 +78,24 @@ export function Footer({ variante = "completo" }: { variante?: "completo" | "com
           </ul>
           <img className="footer__estrella" src="/assets/brand-asterisk.svg" alt="" width={36} height={36} />
         </div>
+      </footer>
+    );
+  }
+
+  if (variante === "minimo") {
+    return (
+      <footer className="footer footer--minimo">
+        <Link href="/" className="footer__logo">
+          <img src="/assets/brand-wordmark.svg" alt="Banda Oriental, inicio" width={84} height={45} />
+        </Link>
+        <p>© 2026 Banda Oriental. Hecho en Uruguay.</p>
+        <ul>
+          {LEGALES.map(({ href, etiqueta }) => (
+            <li key={etiqueta}>
+              <Link href={href}>{etiqueta}</Link>
+            </li>
+          ))}
+        </ul>
       </footer>
     );
   }
