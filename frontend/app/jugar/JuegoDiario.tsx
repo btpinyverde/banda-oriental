@@ -7,6 +7,7 @@ import { guardarPartida } from "../lib/juego/almacen-historial";
 import { crearCliente } from "../lib/juego/cliente";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
 import { etiquetaDelDia, formatoCuentaAtras, pistasParaMezclar, segundosHastaMedianoche } from "../lib/juego/logica";
+import { useSesion } from "../lib/cuenta/useSesion";
 import { useDiaActual } from "../lib/juego/useDiaActual";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
 import { AyudaColores } from "./AyudaColores";
@@ -44,7 +45,8 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
     return estado.feedback_history.map((h) => ({
       numero: h.attempt_number,
       feedback: h.feedback,
-      cancion: guardados[h.attempt_number],
+      // Lo guardado en este navegador manda; si no hay (otro dispositivo de la cuenta) se usa la canción que manda el backend.
+      cancion: guardados[h.attempt_number] ?? h.guessed_song ?? undefined,
       textoAdivinado: h.guessed_text,
       correcto: false,
     }));
@@ -71,6 +73,17 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   useEffect(() => {
     void cargar();
   }, [cargar]);
+
+  // Al iniciar o cerrar sesión la partida pasa a ser la de la cuenta (o la del dispositivo): se vuelve a pedir. La
+  // primera vez solo se anota con qué sesión se abrió la página, porque ese pedido ya lo hizo la carga de arriba.
+  const { sesion, lista: sesionLeida } = useSesion();
+  const tokenAnterior = useRef<string | null | undefined>(undefined);
+  const tokenActual = sesion?.token ?? null;
+  useEffect(() => {
+    if (!sesionLeida) return;
+    if (tokenAnterior.current !== undefined && tokenAnterior.current !== tokenActual) void cargar();
+    tokenAnterior.current = tokenActual;
+  }, [sesionLeida, tokenActual, cargar]);
 
   useEffect(() => {
     const reloj = window.setInterval(() => setSegundosParaProxima(segundosHastaMedianoche(new Date())), 1000);

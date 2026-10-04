@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { EVENTO_HISTORIAL, guardarPartida, leerHistorial } from "./almacen-historial";
+import { borrarHistorial, EVENTO_HISTORIAL, guardarPartida, leerHistorial } from "./almacen-historial";
 import type { Partida } from "./historial";
 
 const CLAVE = "banda-oriental:historial";
@@ -91,5 +91,19 @@ describe("datos dañados o bloqueados", () => {
 
     expect(leerHistorial()).toEqual([]);
     expect(() => guardarPartida(partida("2026-10-03"))).not.toThrow();
+  });
+});
+
+describe("borrarHistorial", () => {
+  it("borra todo lo guardado en el dispositivo y avisa a la pantalla", () => {
+    guardarPartida({ dia: "2026-10-03", ganada: true, intentos: 2, cancion: { title: "A", artist: "B", album: "C" } });
+    const escucha = vi.fn();
+    window.addEventListener(EVENTO_HISTORIAL, escucha);
+
+    borrarHistorial();
+
+    expect(leerHistorial()).toEqual([]);
+    expect(escucha).toHaveBeenCalled();
+    window.removeEventListener(EVENTO_HISTORIAL, escucha);
   });
 });

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BotonCuenta } from "./BotonCuenta";
 import { MenuMovil } from "./MenuMovil";
 
 const ENLACES = [
@@ -30,9 +31,7 @@ export function Navbar({ actual }: { actual?: string }) {
       </nav>
 
       <div className="navbar__acciones">
-        <Link href="/login" className="boton boton--claro">
-          Iniciar sesión
-        </Link>
+        <BotonCuenta className="boton boton--claro" />
         {actual !== "/jugar" && (
           <Link href="/jugar" className="boton boton--violeta">
             <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">

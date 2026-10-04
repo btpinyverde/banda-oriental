@@ -81,3 +81,13 @@ Celular (390 px y 360 px):
 - [ ] Primera semana de canciones del día cargada, con sus pistas (el juego no puede quedarse sin canción).
 - [ ] Un ping cada 5 minutos a `/api/health/` (por ejemplo UptimeRobot) para que Render no se duerma, o pasar a un plan pago: sin eso el primer visitante espera hasta un minuto.
 - [ ] Textos legales revisados (son preliminares) y correo de contacto definido.
+
+## 6. Cuentas (cuando esté el correo: ver `docs/activar-correo.md`)
+
+- [ ] Crear cuenta → llega el correo → el enlace confirma y entra. La barra dice "Mi cuenta".
+- [ ] Entrar con contraseña, con enlace por correo y "Olvidé mi contraseña" (al cambiarla se cierran las demás sesiones).
+- [ ] Jugar un intento sin cuenta y entrar: el intento pasa a la cuenta. Desde otro navegador con la misma cuenta se ve el mismo intento, con la fila completa.
+- [ ] Una cuenta no puede jugar dos veces el mismo día desde dos dispositivos.
+- [ ] `/historial` muestra los días de la cuenta.
+- [ ] Borrar la cuenta borra partidas y puntajes (también salen del ranking).
+- [ ] Una cuenta sin confirmar que intenta entrar con la contraseña recibe "Confirmá tu correo" y la opción de pedir un enlace.
