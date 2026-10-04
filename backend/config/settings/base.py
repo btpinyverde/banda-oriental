@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "storages",
     "core",
+    "accounts",
     "catalog",
     "gameplay",
 ]
@@ -135,3 +136,20 @@ GAMEPLAY_SPEED_BONUS = {
     # producing an absurd or negative score (spec §8).
     "max_elapsed_seconds": 60,
 }
+
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 10},
+    },
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+# Base URL of the frontend, used to build the links in emails.
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Banda Oriental <no-reply@xami.uy>")
+# There is no email provider yet. The dummy backend sends and logs nothing, so confirmation links never end up
+# in production logs. Development overrides it with the console backend.
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.dummy.EmailBackend")
