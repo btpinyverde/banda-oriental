@@ -41,8 +41,9 @@ Ejemplo: `https://bandaoriental.xami.uy/cuenta/entrar#token=<token>&tipo=acceso`
 ## Reglas que el front no tiene que adivinar
 
 - Los endpoints que mandan correo (`register`, `magic/request`, `password-reset/request`) **responden siempre lo mismo**, con o sin cuenta, con o sin límite: no revelan nada. No hay forma de saber si el correo salió; el texto debe decir "si el correo es válido, te enviamos un mensaje".
-- Límite de envío: 5 correos por hora por dirección y un tope diario de todo el sitio. Pasado el límite la API sigue respondiendo `202` pero no manda nada.
-- Registrarse otra vez con un correo **sin confirmar** manda un enlace nuevo; la contraseña que vale es la del enlace que se usó. Con un correo ya confirmado manda un aviso de "ya tenés una cuenta".
+- Límite de envío: 5 correos por hora por dirección y dos topes diarios: uno de todo el sitio y otro, más chico, para direcciones **sin cuenta confirmada** (así quien no tiene cuenta no puede agotar el cupo de quienes sí la tienen). Pasado el límite la API sigue respondiendo `202` pero no manda nada, y queda un aviso en el log del servidor.
+- Los correos se mandan **después** de responder, para que todas las ramas tarden lo mismo (si no, el tiempo de respuesta delataría qué direcciones tienen cuenta). Si el proveedor falla, el pedido igual responde `202` y el error queda en el log (sin la dirección ni el enlace).
+- Una cuenta **sin confirmar no tiene contraseña propia**: la que se eligió viaja con el enlace de confirmación y recién se aplica al confirmar (así quien registra primero un correo ajeno no puede quedarse con una contraseña). Entrar con enlace por correo confirma la cuenta y descarta cualquier contraseña, sesión o enlace pendiente que tuviera. Registrarse otra vez con un correo **sin confirmar** manda un enlace nuevo; la contraseña que vale es la del enlace que se usó. Con un correo ya confirmado manda un aviso de "ya tenés una cuenta".
 - Una cuenta bloqueada desde el admin no puede entrar por ningún camino (todos los enlaces dan "no válido").
 - Sin cuenta se puede seguir jugando: el encabezado `Authorization` es opcional.
 

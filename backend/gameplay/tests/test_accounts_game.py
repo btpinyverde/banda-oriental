@@ -364,3 +364,61 @@ class TestDeletingTheAccount:
         client.delete("/api/me/", **auth)
 
         assert client.get(reverse("gameplay:leaderboard-today")).json()["entries"] == []
+
+
+class TestSharedDevicesAndLoggingOut:
+    """Found by the independent review: the per-device uniqueness used to collide with the per-account games."""
+
+    def test_an_account_can_keep_playing_on_a_device_where_it_also_played_anonymously_after_logging_out(
+        self, client, published_today, other_song
+    ):
+        user = make_user()
+        auth = bearer(user)
+        for number in (1, 2, 3):
+            assert guess(client, other_song, number, device=DEVICE_A, auth=auth).status_code == 200
+        assert guess(client, other_song, 1, device=DEVICE_A).status_code == 200  # logged out: starts its own game
+
+        login(client, device=DEVICE_A)
+        continued = guess(client, other_song, 4, device=DEVICE_A, auth=auth)
+
+        assert continued.status_code == 200
+        assert GuessAttempt.objects.filter(user=user).count() == 4
+
+    def test_two_accounts_can_play_the_same_day_on_the_same_computer(self, client, published_today, other_song):
+        ana, beto = make_user("ana@example.com"), make_user("beto@example.com")
+        guess(client, other_song, 1, auth=bearer(ana))
+
+        response = guess(client, other_song, 1, auth=bearer(beto))
+
+        assert response.status_code == 200
+
+    def test_someone_without_an_account_does_not_see_the_game_an_account_played_on_that_device(
+        self, client, published_today, target_song
+    ):
+        user = make_user()
+        guess(client, target_song, 1, auth=bearer(user))  # the account won on this device
+
+        anonymous = daily(client).json()
+
+        assert anonymous["finished"] is False
+        assert anonymous["attempt_number"] == 1
+
+    def test_an_anonymous_win_on_a_device_does_not_block_the_accounts_own_score(self, client, published_today, target_song):
+        user = make_user()
+        guess(client, target_song, 1, device=DEVICE_B, auth=bearer(user))  # the account won elsewhere, no score yet
+        guess(client, target_song, 1, device=DEVICE_A)  # a stranger wins anonymously on device A...
+        assert score(client, device=DEVICE_A).status_code == 201  # ...and sends their score
+
+        mine = score(client, device=DEVICE_A, auth=bearer(user))  # the account sends its own from device A
+
+        assert mine.status_code == 201
+
+    def test_after_logging_out_nobody_can_send_a_score_with_the_accounts_winning_attempt(
+        self, client, published_today, target_song
+    ):
+        user = make_user()
+        guess(client, target_song, 1, device=DEVICE_A, auth=bearer(user))
+
+        stolen = score(client, device=DEVICE_A)  # no session
+
+        assert stolen.status_code == 400

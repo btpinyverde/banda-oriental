@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -13,7 +14,7 @@ from .emails import send_already_registered, send_confirmation, send_magic_link,
 from .models import AuthToken, EmailChallenge
 from gameplay.models import GuessAttempt, ScoreEntry
 
-from .users import find_user, is_confirmed, mark_confirmed
+from .users import find_user, is_confirmed, mark_confirmed, matches_pending_password
 from .limits import TOO_MANY, can_send_email, clear_login_failures, login_locked, register_login_failure
 from .serializers import EmailSerializer, LoginSerializer, RegisterSerializer, ResetConfirmSerializer, TokenSerializer
 
@@ -44,26 +45,30 @@ class RegisterView(PublicView):
         password_hash = make_password(password)
 
         # Always the same answer, whether or not the email already has an account.
-        user, created = self._get_or_create(email, password_hash)
-        if not user.is_active or not can_send_email(email):
+        user, created = self._get_or_create(email)
+        has_account = not created and is_confirmed(user)
+        if not user.is_active or not can_send_email(email, new_address=not has_account):
             pass  # blocked by the admin, or over the sending limit: no mail, same answer
-        elif not created and is_confirmed(user):
+        elif has_account:
             EmailChallenge.issue(email, EmailChallenge.NOTICE)  # so it counts against the limit
             send_already_registered(email)
         else:
-            # New, or still unconfirmed: send the link. The password is stored with the link, not on the account:
-            # confirming applies it, so whoever registered the email first can't keep a password of their own.
-            send_confirmation(email, EmailChallenge.issue(email, EmailChallenge.CONFIRM, password_hash))
+            # New, or still unconfirmed: send the link. The account itself gets NO usable password, so whoever
+            # registered the email first can't keep one: the chosen password waits on the link, and confirming it
+            # (reading that mailbox) is what applies it.
+            send_confirmation(
+                email, EmailChallenge.issue(email, EmailChallenge.CONFIRM, password_hash, new_address=True)
+            )
         return Response({"detail": REGISTER_DETAIL}, status=status.HTTP_202_ACCEPTED)
 
     @staticmethod
-    def _get_or_create(email, password_hash):
+    def _get_or_create(email):
         existing = find_user(email)
         if existing:
             return existing, False
         try:
             with transaction.atomic():
-                return User.objects.create(username=email, email=email, password=password_hash), True
+                return User.objects.create_user(email, email, None), True
         except IntegrityError:
             # Another request created it between our check and our insert.
             return find_user(email), False
@@ -109,6 +114,13 @@ class LoginView(PublicView):
             password_ok = False
         else:
             password_ok = user.check_password(password)
+        if not password_ok and user is not None and user.is_active and not is_confirmed(user):
+            # An unconfirmed account has no password of its own yet; the right one is whatever its pending link carries.
+            if matches_pending_password(email, password):
+                return Response(
+                    {"detail": "Confirmá tu correo antes de entrar.", "code": "email_not_confirmed"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
         if not password_ok or not user.is_active:
             register_login_failure(email)
             return Response({"detail": "Correo o contraseña incorrectos."}, status=status.HTTP_400_BAD_REQUEST)
@@ -137,8 +149,9 @@ class MagicRequestView(PublicView):
         email = data.validated_data["email"]
         user = find_user(email)
         # An unknown email gets a link too: using it creates the account. Blocked accounts get nothing.
-        if (user is None or user.is_active) and can_send_email(email):
-            send_magic_link(email, EmailChallenge.issue(email, EmailChallenge.MAGIC))
+        new_address = user is None or not is_confirmed(user)
+        if (user is None or user.is_active) and can_send_email(email, new_address=new_address):
+            send_magic_link(email, EmailChallenge.issue(email, EmailChallenge.MAGIC, new_address=new_address))
         return Response({"detail": REGISTER_DETAIL}, status=status.HTTP_202_ACCEPTED)
 
 
@@ -153,6 +166,13 @@ class MagicVerifyView(PublicView):
         user = find_user(challenge.email) or self._create(challenge.email)
         if not user.is_active:
             return Response(BAD_LINK, status=status.HTTP_400_BAD_REQUEST)
+        if not is_confirmed(user):
+            # Whoever registered this address first may have left a password or a session on it: the real owner
+            # just proved they read the mailbox, so none of that survives. Their pending links are cancelled too.
+            user.set_unusable_password()
+            user.save(update_fields=["password"])
+            user.auth_tokens.all().delete()
+            EmailChallenge.cancel_pending(user.username, [EmailChallenge.CONFIRM])
         mark_confirmed(user)
         return Response({"token": start_session(request, user)})
 
@@ -188,6 +208,7 @@ class PasswordResetConfirmView(PublicView):
         user.set_password(data.validated_data["password"])
         user.save(update_fields=["password"])
         user.auth_tokens.all().delete()  # every other session ends
+        EmailChallenge.cancel_pending(user.username, [EmailChallenge.MAGIC, EmailChallenge.RESET])
         mark_confirmed(user)
         return Response({"token": start_session(request, user)})
 
@@ -202,7 +223,7 @@ class MeView(APIView):
     def delete(self, request):
         """Deletes the account and everything tied to it: sessions, games, scores and emailed links."""
         user = request.user
-        EmailChallenge.objects.filter(email=user.email).delete()
+        EmailChallenge.objects.filter(Q(email__iexact=user.email) | Q(email__iexact=user.username)).delete()
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -101,8 +101,11 @@ class GuessAttempt(models.Model):
     class Meta:
         ordering = ["attempt_number"]
         constraints = [
+            # Only for games without an account: an account's games are kept apart by the per-user constraint
+            # below, so signing in or out on a shared device never collides with the anonymous ones.
             models.UniqueConstraint(
                 fields=["device_id", "daily_song", "attempt_number"],
+                condition=models.Q(user__isnull=True),
                 name="unique_attempt_number_per_device_per_day",
             ),
             # An account plays once a day whatever device it uses.
@@ -129,7 +132,9 @@ class ScoreEntry(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["device_id", "daily_song"], name="one_score_per_device_per_day"
+                fields=["device_id", "daily_song"],
+                condition=models.Q(user__isnull=True),
+                name="one_score_per_device_per_day",
             ),
             models.UniqueConstraint(
                 fields=["user", "daily_song"],

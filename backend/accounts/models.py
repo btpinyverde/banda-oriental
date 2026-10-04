@@ -61,18 +61,34 @@ class EmailChallenge(models.Model):
     # Hash of the password chosen when this link was requested (confirm links only). Confirming applies it, so the
     # password always belongs to the person who actually received and used the link.
     password_hash = models.CharField(max_length=128, blank=True, default="")
+    # Sent to an address with no confirmed account. Those emails share a smaller daily pool, so strangers can't use
+    # up the whole mail quota and leave people who already have an account without their emails.
+    to_new_address = models.BooleanField(default=False)
 
     @classmethod
-    def issue(cls, email: str, purpose: str, password_hash: str = "") -> str:
+    def issue(cls, email: str, purpose: str, password_hash: str = "", new_address: bool = False) -> str:
         raw = new_token()
         cls.objects.create(
             email=email,
             purpose=purpose,
             password_hash=password_hash,
+            to_new_address=new_address,
             token_hash=hash_token(raw),
             expires_at=timezone.now() + cls.LIFETIMES[purpose],
         )
         return raw
+
+    @classmethod
+    def peek(cls, raw: str, purpose: str):
+        """The link, without using it up (None if it is unknown, used, expired or for another purpose)."""
+        return cls.objects.filter(
+            token_hash=hash_token(raw), purpose=purpose, used_at__isnull=True, expires_at__gt=timezone.now()
+        ).first()
+
+    @classmethod
+    def cancel_pending(cls, email: str, purposes) -> None:
+        """Uses up every link of these kinds still pending for the address."""
+        cls.objects.filter(email=email, purpose__in=purposes, used_at__isnull=True).update(used_at=timezone.now())
 
     @classmethod
     def consume(cls, raw: str, purpose: str):
