@@ -212,10 +212,12 @@
 }
 
 .jugar .stem__circulo img { width: 22px; height: 22px; }
-.jugar .stem--abierta .stem__circulo--drums { background: var(--menta); }
-.jugar .stem--abierta .stem__circulo--bass { background: var(--amarillo); }
-.jugar .stem--abierta .stem__circulo--other { background: var(--rosa); }
-.jugar .stem--abierta .stem__circulo--vocals { background: var(--violeta-claro); }
+/* Ningún color de pista se parece a los de la tabla de intentos (verde = acierto, amarillo = casi, rosa = error):
+   si no, una pista abierta se lee como un acierto. Lo comprueba colores-de-pistas.test.ts. */
+.jugar .stem--abierta .stem__circulo--drums { background: #ffab73; }
+.jugar .stem--abierta .stem__circulo--bass { background: #8cc8ff; }
+.jugar .stem--abierta .stem__circulo--other { background: #a99dff; }
+.jugar .stem--abierta .stem__circulo--vocals { background: #e0a3ff; }
 .jugar .stem--bloqueada { color: var(--tinta-suave); }
 
 /* ---------- Buscador ---------- */
