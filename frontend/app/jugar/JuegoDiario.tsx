@@ -12,7 +12,10 @@ import { useSesion } from "../lib/cuenta/useSesion";
 import { useDiaActual } from "../lib/juego/useDiaActual";
 import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
+import { leerHistorial } from "../lib/juego/almacen-historial";
+import { marcarTutorialVisto, tutorialVisto } from "../lib/tutorial/visto";
 import { AyudaColores } from "./AyudaColores";
+import { TutorialInteractivo } from "./TutorialInteractivo";
 import { BuscadorCanciones } from "./BuscadorCanciones";
 import { FilaStems } from "./FilaStems";
 import { PantallaFinal } from "./PantallaFinal";
@@ -41,6 +44,8 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   const inicioIntento = useRef(0);
   const audioRenovadoEn = useRef<{ intento: number; en: number } | null>(null);
   const [tardando, setTardando] = useState(false);
+  const [tutorial, setTutorial] = useState(false);
+  const tutorialOfrecido = useRef(false);
 
   /** Intentos de un estado en curso: lo que dice el backend más lo guardado en este navegador. */
   const intentosDe = useCallback((estado: EstadoEnCurso): IntentoMostrado[] => {
@@ -100,6 +105,19 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   }, []);
 
   const estado = vista.tipo === "listo" ? vista.estado : null;
+
+  // La primera vez en el dispositivo se ofrece el tutorial (salvo a quien ya jugó antes, que sabe cómo es).
+  const primerIntentoCargado = estado !== null && !estado.finished && estado.attempt_number === 1;
+  useEffect(() => {
+    if (!primerIntentoCargado || tutorialOfrecido.current) return;
+    tutorialOfrecido.current = true;
+    if (!tutorialVisto() && leerHistorial().length === 0) setTutorial(true);
+  }, [primerIntentoCargado]);
+
+  const cerrarTutorial = useCallback(() => {
+    marcarTutorialVisto();
+    setTutorial(false);
+  }, []);
 
   // Si la carga tarda, probablemente el servidor estaba dormido: se avisa para que no parezca que se colgó.
   const cargando = vista.tipo === "cargando";
@@ -280,6 +298,9 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
       <div className="jugar__titulo-fila">
         <h1 className="jugar__titulo">¿Qué canción es?</h1>
         <AyudaColores />
+        <button type="button" className="boton boton--claro tutorial__reabrir" onClick={() => setTutorial(true)}>
+          Ver el tutorial
+        </button>
       </div>
 
       {/* Una clave por día e intento: hay 4 pistas y 6 intentos, así que las pistas se repiten y sin esto el
@@ -298,6 +319,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
           {errorEnvio}
         </p>
       )}
+      {tutorial && <TutorialInteractivo alCerrar={cerrarTutorial} />}
     </div>
   );
 }

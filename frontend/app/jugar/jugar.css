@@ -733,3 +733,17 @@
 .cambiar-nombre form { display: grid; gap: 8px; margin-top: 10px; }
 .cambiar-nombre__ayuda { margin: 0; font-size: 0.85rem; }
 .cambiar-nombre__error { margin: 0; color: #b3261e; font-weight: 600; }
+
+/* ---------- Tutorial interactivo de la primera vez (funcional; se afina después) ---------- */
+.tutorial { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(20, 17, 15, 0.55); overflow-y: auto; }
+.tutorial__ventana { width: min(720px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; display: grid; gap: 14px; padding: 24px; border-radius: 24px; background: var(--crema); box-shadow: 0 18px 50px rgba(20, 17, 15, 0.3); }
+.tutorial__titulo { margin: 0; font-size: 26px; font-weight: 800; }
+.tutorial__ventana p { margin: 0; line-height: 1.5; }
+.tutorial__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.tutorial__mensaje { padding: 12px 14px; border-radius: 14px; background: var(--violeta-claro); font-size: 14px; font-weight: 600; }
+.tutorial__opciones { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.tutorial__opcion { display: grid; gap: 2px; width: 100%; padding: 10px 14px; border: 2px solid #ebe8e3; border-radius: 14px; background: #fff; text-align: left; font: inherit; cursor: pointer; }
+.tutorial__opcion span { font-size: 13px; color: var(--tinta-suave); }
+.tutorial__opcion:hover:not(:disabled) { border-color: var(--violeta); }
+.tutorial__opcion:disabled { opacity: 0.45; cursor: default; }
+.tutorial__reabrir { margin-left: auto; padding: 4px 12px; font-size: 13px; }
