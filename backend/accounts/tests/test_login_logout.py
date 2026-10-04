@@ -38,7 +38,7 @@ def test_a_wrong_password_and_an_unknown_email_get_the_same_answer(api, make_use
 
 
 def test_an_unconfirmed_account_with_the_right_password_is_told_to_confirm(api, make_user):
-    make_user("ana@example.com", active=False)
+    make_user("ana@example.com", confirmed=False)
 
     response = login(api)
 
@@ -48,12 +48,22 @@ def test_an_unconfirmed_account_with_the_right_password_is_told_to_confirm(api, 
 
 
 def test_an_unconfirmed_account_with_the_wrong_password_is_not_told_anything_special(api, make_user):
-    make_user("ana@example.com", active=False)
+    make_user("ana@example.com", confirmed=False)
 
     response = login(api, password="otra-clave-larga-2")
 
     assert response.status_code == 400
     assert response.data == WRONG
+
+
+def test_a_blocked_account_gets_the_generic_answer_even_with_the_right_password(api, make_user):
+    make_user("ana@example.com", active=False)
+
+    response = login(api)
+
+    assert response.status_code == 400
+    assert response.data == WRONG
+    assert AuthToken.objects.count() == 0
 
 
 def test_each_login_creates_its_own_session(api, make_user):

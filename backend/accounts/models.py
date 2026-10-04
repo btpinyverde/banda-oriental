@@ -84,3 +84,14 @@ class EmailChallenge(models.Model):
         if updated == 0:
             return None
         return cls.objects.get(token_hash=token_hash)
+
+
+class Profile(models.Model):
+    """What the API knows about an account beyond Django's user.
+
+    `User.is_active` is the admin's on/off switch (a blocked account stays blocked whatever email links arrive).
+    Whether the owner proved they read the mailbox is a separate fact, kept here.
+    """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    email_confirmed_at = models.DateTimeField(null=True, blank=True)
