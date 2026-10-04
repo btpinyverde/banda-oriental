@@ -203,3 +203,7 @@ PURGE_IN_BACKGROUND = True
 
 # A player can change their public name once every this many days (0 = no wait).
 PUBLIC_NAME_CHANGE_COOLDOWN_DAYS = 7
+
+# Where replies to the account emails go. The sender address (hola@bandaoriental...) cannot receive mail, so set this to a
+# mailbox somebody reads; it also helps the emails reach the inbox. Empty = no Reply-To header.
+REPLY_TO_EMAIL = os.environ.get("REPLY_TO_EMAIL", "")
