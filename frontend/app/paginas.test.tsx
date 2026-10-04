@@ -10,7 +10,7 @@ import { PaginaDeContenido } from "./ui/PaginaDeContenido";
 afterEach(cleanup);
 
 const DE_TEXTO = ["como-funciona", "acerca", "contacto", "sugerencias", "terminos", "privacidad"];
-const PROXIMAMENTE = ["batalla", "artistas", "epocas", "generos"];
+const PROXIMAMENTE = ["batalla"];
 
 describe("registro de páginas", () => {
   it("cubre todos los enlaces del sitio que antes daban 404", () => {
@@ -223,6 +223,16 @@ describe("sitemap del archivo", () => {
 
     expect(urls).toContain(`${SITIO_URL}/archivo`);
     expect(urls.filter((u) => /\/archivo\/\d/.test(u))).toEqual([]);
+  });
+});
+
+describe("sitemap de explorar el catálogo", () => {
+  it("lista artistas, épocas y géneros, que ya tienen contenido", async () => {
+    vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([]);
+
+    const urls = (await sitemap()).map((e) => e.url);
+
+    expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/artistas`, `${SITIO_URL}/epocas`, `${SITIO_URL}/generos`]));
   });
 });
 
