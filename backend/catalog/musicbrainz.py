@@ -1,12 +1,25 @@
+import logging
 import time
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = "https://musicbrainz.org/ws/2"
 USER_AGENT = "BandaOriental/0.1 ( https://github.com/btpinyverde/banda-oriental )"
 
 _last_request_at = 0.0
-_MIN_INTERVAL_SECONDS = 1.0
+# MusicBrainz asks for at most one request per second on average; a little over that keeps long runs under the limit.
+_MIN_INTERVAL_SECONDS = 1.2
+
+# MusicBrainz answers 503 (and sometimes 429) when it is overloaded or when a client has been asking too much, and
+# says how long to wait in Retry-After. Those, and a network that hiccups, are worth waiting for; anything else
+# (400, 404...) is a real error and is raised at once.
+REQUEST_TIMEOUT_SECONDS = 30
+MAX_ATTEMPTS = 6
+RETRY_STATUSES = {429, 502, 503, 504}
+BASE_WAIT_SECONDS = 15
+MAX_WAIT_SECONDS = 300
 
 
 def _throttle():
@@ -17,16 +30,41 @@ def _throttle():
     _last_request_at = time.time()
 
 
+def _wait_before_retry(attempt, response=None):
+    """What the server asked for (Retry-After, in seconds) or, without it, a wait that doubles each time."""
+    asked = response.headers.get("Retry-After") if response is not None else None
+    try:
+        seconds = float(asked)
+    except (TypeError, ValueError):
+        seconds = BASE_WAIT_SECONDS * 2 ** (attempt - 1)
+    return min(MAX_WAIT_SECONDS, max(0.0, seconds))
+
+
 def _get(path, params):
-    _throttle()
-    response = requests.get(
-        f"{BASE_URL}/{path}",
-        params={**params, "fmt": "json"},
-        headers={"User-Agent": USER_AGENT},
-        timeout=10,
-    )
-    response.raise_for_status()
-    return response
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        _throttle()
+        last_try = attempt == MAX_ATTEMPTS
+        try:
+            response = requests.get(
+                f"{BASE_URL}/{path}",
+                params={**params, "fmt": "json"},
+                headers={"User-Agent": USER_AGENT},
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+        except (requests.Timeout, requests.ConnectionError) as error:
+            if last_try:
+                raise
+            wait = _wait_before_retry(attempt)
+            logger.warning("MusicBrainz no respondió (%s); espero %.0f s (intento %d de %d)", type(error).__name__, wait, attempt, MAX_ATTEMPTS)
+            time.sleep(wait)
+            continue
+        if response.status_code in RETRY_STATUSES and not last_try:
+            wait = _wait_before_retry(attempt, response)
+            logger.warning("MusicBrainz respondió %s; espero %.0f s (intento %d de %d)", response.status_code, wait, attempt, MAX_ATTEMPTS)
+            time.sleep(wait)
+            continue
+        response.raise_for_status()
+        return response
 
 
 def search_uruguayan_artists(offset, limit=25):

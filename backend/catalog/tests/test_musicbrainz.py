@@ -172,3 +172,128 @@ def test_consecutive_requests_are_rate_limited(mock_requests_get, mock_sleep):
     search_uruguayan_artists(offset=0, limit=25)
     search_uruguayan_artists(offset=25, limit=25)
     assert mock_sleep.called
+
+
+# ---------- resilience: MusicBrainz says "slow down" or the network hiccups ----------
+
+import pytest
+import requests
+
+from catalog import musicbrainz
+
+
+def _http(status, body=None, headers=None):
+    response = MagicMock()
+    response.status_code = status
+    response.headers = headers or {}
+    response.json.return_value = body if body is not None else {}
+    if status >= 400:
+        response.raise_for_status.side_effect = requests.HTTPError(f"{status} error", response=response)
+    else:
+        response.raise_for_status.return_value = None
+    return response
+
+
+def _waits(mock_sleep):
+    """The long waits (retries), leaving out the ~1 s spacing between requests."""
+    return [call.args[0] for call in mock_sleep.call_args_list if call.args[0] >= 5]
+
+
+@patch("catalog.musicbrainz.time.sleep")
+@patch("catalog.musicbrainz.requests.get")
+class TestRetries:
+    def test_a_503_is_retried_and_the_data_comes_back(self, mock_get, mock_sleep):
+        mock_get.side_effect = [_http(503), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        artists, total = search_uruguayan_artists(offset=0, limit=25)
+
+        assert total == 1040 and len(artists) == 2
+        assert mock_get.call_count == 2
+        assert len(_waits(mock_sleep)) == 1
+
+    @pytest.mark.parametrize("status", [429, 502, 503, 504])
+    def test_every_try_again_later_status_is_retried(self, mock_get, mock_sleep, status):
+        mock_get.side_effect = [_http(status), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        artists, _ = search_uruguayan_artists(offset=0, limit=25)
+
+        assert len(artists) == 2 and mock_get.call_count == 2
+
+    def test_it_waits_as_long_as_retry_after_asks(self, mock_get, mock_sleep):
+        mock_get.side_effect = [_http(503, headers={"Retry-After": "42"}), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        search_uruguayan_artists(offset=0, limit=25)
+
+        assert _waits(mock_sleep) == [42]
+
+    def test_it_never_waits_more_than_five_minutes_whatever_the_server_asks(self, mock_get, mock_sleep):
+        mock_get.side_effect = [_http(429, headers={"Retry-After": "99999"}), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        search_uruguayan_artists(offset=0, limit=25)
+
+        assert _waits(mock_sleep) == [300]
+
+    def test_without_retry_after_it_waits_longer_each_time(self, mock_get, mock_sleep):
+        mock_get.side_effect = [_http(503), _http(503), _http(503), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        search_uruguayan_artists(offset=0, limit=25)
+
+        waits = _waits(mock_sleep)
+        assert len(waits) == 3 and waits == sorted(waits) and len(set(waits)) == 3
+
+    def test_a_retry_after_that_is_not_a_number_falls_back_to_the_growing_wait(self, mock_get, mock_sleep):
+        mock_get.side_effect = [_http(503, headers={"Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"}), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        search_uruguayan_artists(offset=0, limit=25)
+
+        assert len(_waits(mock_sleep)) == 1 and _waits(mock_sleep)[0] <= 300
+
+    def test_after_six_tries_it_gives_up_with_the_http_error(self, mock_get, mock_sleep):
+        mock_get.side_effect = [_http(503)] * 10
+
+        with pytest.raises(requests.HTTPError):
+            search_uruguayan_artists(offset=0, limit=25)
+
+        assert mock_get.call_count == 6
+
+    def test_a_timeout_or_a_dropped_connection_is_retried_too(self, mock_get, mock_sleep):
+        mock_get.side_effect = [requests.Timeout("lento"), requests.ConnectionError("cortada"), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        artists, _ = search_uruguayan_artists(offset=0, limit=25)
+
+        assert len(artists) == 2 and mock_get.call_count == 3
+
+    def test_a_timeout_that_never_ends_is_raised_not_swallowed(self, mock_get, mock_sleep):
+        mock_get.side_effect = requests.Timeout("lento")
+
+        with pytest.raises(requests.Timeout):
+            search_uruguayan_artists(offset=0, limit=25)
+
+        assert mock_get.call_count == 6
+
+    @pytest.mark.parametrize("status", [400, 404])
+    def test_a_real_error_is_not_retried(self, mock_get, mock_sleep, status):
+        mock_get.side_effect = [_http(status), _http(200, ARTIST_SEARCH_RESPONSE)]
+
+        with pytest.raises(requests.HTTPError):
+            search_uruguayan_artists(offset=0, limit=25)
+
+        assert mock_get.call_count == 1
+
+    def test_each_request_may_take_up_to_thirty_seconds(self, mock_get, mock_sleep):
+        mock_get.return_value = _http(200, ARTIST_SEARCH_RESPONSE)
+
+        search_uruguayan_artists(offset=0, limit=25)
+
+        assert mock_get.call_args.kwargs["timeout"] == 30
+
+    def test_it_still_identifies_itself(self, mock_get, mock_sleep):
+        mock_get.return_value = _http(200, ARTIST_SEARCH_RESPONSE)
+
+        search_uruguayan_artists(offset=0, limit=25)
+
+        assert "BandaOriental" in mock_get.call_args.kwargs["headers"]["User-Agent"]
+
+
+def test_requests_are_spaced_a_little_more_than_the_minimum_the_api_asks_for():
+    assert musicbrainz._MIN_INTERVAL_SECONDS >= 1.2
