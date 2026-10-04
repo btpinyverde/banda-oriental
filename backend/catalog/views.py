@@ -8,6 +8,11 @@ from .models import Song
 CACHE_SECONDS = 300
 
 
+def has_readable_title(song) -> bool:
+    """Falso para títulos que son solo símbolos ("-", "...", "( )"): no se pueden buscar ni adivinar."""
+    return any(char.isalnum() for char in song.title)
+
+
 class SongListView(APIView):
     """Todas las canciones del catálogo, para el buscador del juego.
 
@@ -28,6 +33,7 @@ class SongListView(APIView):
                         "genre": song.album.genre,
                     }
                     for song in songs
+                    if has_readable_title(song)
                 ]
             }
         )
