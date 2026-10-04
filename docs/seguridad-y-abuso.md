@@ -12,19 +12,24 @@ Criterio del dueño: **el sitio es para personas.** Se puede leer la portada; ju
 | **Middleware de la API** | Los mismos agentes reciben 403 en toda la API (menos `/api/health/`, para los monitores). | Activo |
 | **Límites por visitante (API)** | Cuenta los pedidos por **dirección IP real** y responde `429` en español con `Retry-After`: 240/min en general; login 30/hora; correos 12/hora; adivinar 60/min; puntaje 10/hora; lista de canciones 30/min. | Activo (verificado en producción) |
 | **Límites por cuenta y por correo** | 5 correos/hora por dirección, tope diario del sitio y de direcciones sin cuenta, bloqueo de login tras 10 fallos por correo. | Activo |
-| **Comprobación humana (Cloudflare Turnstile)** | Adivinar, mandar puntaje y los formularios de cuenta piden un pase firmado de 30 min atado a la IP, que se consigue resolviendo un desafío casi siempre invisible. | **Apagada hasta cargar las claves** (abajo) |
+| **Comprobación humana (Cloudflare Turnstile)** | Adivinar, mandar puntaje y los formularios de cuenta piden un pase firmado de 30 min atado a la IP, que se consigue resolviendo un desafío casi siempre invisible. | **Sitio listo; falta la clave secreta en Render** (abajo) |
 | **Cuerpo y costo** | Pedidos de más de 256 KB se rechazan sin leerse; la lista de canciones (1,4 MB) se guarda unos minutos en el servidor. | Activo |
 | **Términos y privacidad** | Prohíben bots, scripts y agentes de IA y avisan de la comprobación y de las IP en los registros. | Activo (textos preliminares) |
 
-## Encender la comprobación humana (lo hace Brandon)
+## Comprobación humana (Cloudflare Turnstile): casi lista
 
-1. Cloudflare → *Turnstile* → *Add widget*. Nombre: Banda Oriental. Dominios: `bandaoriental.xami.uy`. Modo: **Managed**. Copiar la **Site Key** (pública) y la **Secret Key** (privada).
-2. Render (servicio `banda-oriental-backend`) → *Environment*: `TURNSTILE_SECRET_KEY` = la clave **secreta**. Redespliega solo.
-3. Vercel (proyecto `banda-oriental`) → *Environment Variables*: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = la clave **pública**, variable normal. Redeploy.
-4. Probar: abrir `/jugar` en una ventana privada, tocar play y adivinar. Tiene que funcionar igual (a lo sumo se ve un recuadro de Cloudflare un instante).
-5. Si algo sale mal, **apagarla** es borrar `TURNSTILE_SECRET_KEY` en Render (la API deja de exigir el pase) y la variable pública en Vercel.
+Ya hecho:
+- **Widget creado** en la cuenta de Cloudflare (*Turnstile* → "Banda Oriental", modo **Managed**, dominio `bandaoriental.xami.uy`).
+- **Clave pública** cargada en Vercel (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, variable normal) y sitio redesplegado. El juego ya pide el pase al abrirse y la comprobación se resuelve sola, sin mostrar nada. Mientras el backend no tenga la clave secreta, no exige nada (el pase llega vacío y se ignora), así que **hoy el juego anda igual que antes**.
 
-Importante: encender solo el lado del backend (con la secreta) **sin** la clave pública en el sitio dejaría a todos sin poder jugar; por eso se cargan las dos juntas.
+**Falta un solo paso, que tiene que hacer Brandon** (una clave secreta no se pasa por el chat ni por el navegador de otra persona):
+1. Cloudflare → *Turnstile* → widget "Banda Oriental" → copiar la **Secret key** (*Click to copy*).
+2. Render → servicio `banda-oriental-backend` → *Environment* → *Add Environment Variable*: nombre `TURNSTILE_SECRET_KEY`, valor = la clave secreta → *Save, rebuild, and deploy*.
+3. Probar en `/jugar` (ventana privada): tocar play y adivinar tiene que funcionar igual.
+
+Para **apagarla**: borrar `TURNSTILE_SECRET_KEY` en Render (la API deja de exigir el pase; el sitio sigue funcionando).
+
+El orden importa: primero la clave pública en el sitio (ya está) y después la secreta en el backend; al revés, el backend exigiría un pase que el sitio todavía no sabe pedir.
 
 ## Cómo mirar qué pasa
 
@@ -44,3 +49,7 @@ Importante: encender solo el lado del backend (con la secreta) **sin** la clave 
 - Una IP compartida (oficina, universidad, red móvil) comparte el límite: están holgados para uso normal.
 - Un agente que maneja un navegador real **no se puede distinguir por el nombre**: solo la comprobación humana lo frena, y no es infalible. Lo que sí hace este conjunto es impedir que lo hagan en masa o sin esfuerzo.
 - El juego usa los audios desde el bucket de Cloudflare R2 con direcciones firmadas de 1 hora: quien ya tiene la página puede descargar esas pistas. No hay forma de impedir que una persona grabe lo que escucha.
+
+## ¿Pasar el DNS de `xami.uy` a Cloudflare?
+
+Se evaluó y **no se recomienda por ahora**. Hoy el DNS está en Antel Data; Cloudflare daría reglas de firewall y límites en el borde para todo el dominio, pero (1) Vercel desaconseja poner un proxy delante de su red y puede romper certificados y la analítica, (2) Render ya pasa por Cloudflare, así que sería un proxy sobre otro proxy, (3) hay que cambiar los *nameservers* en nic.com.uy y volver a crear todos los registros (incluidos los del correo Zoho), con riesgo de dejar el sitio o el correo sin servicio, y (4) lo que aportaría ya está cubierto en la aplicación (límites por IP, bloqueo de agentes, comprobación humana) y en Vercel/Render. Conviene reconsiderarlo si el tráfico real o los ataques crecen.
