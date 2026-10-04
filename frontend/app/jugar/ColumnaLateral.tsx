@@ -14,6 +14,7 @@ import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import { useHistorial } from "../lib/juego/useHistorial";
 import { Ondulada } from "../ui/Ondulada";
 import { CambiarNombre } from "./CambiarNombre";
+import { RankingDelDia } from "./RankingDelDia";
 import { RankingEjemplo } from "./RankingEjemplo";
 
 const DIAS_RACHA = 5;
@@ -30,7 +31,7 @@ const coma = (numero: number) => String(numero).replace(".", ",");
 /**
  * Columna derecha de /jugar: la racha y las estadísticas de quien juega. Las cifras son las que calculó y guardó el
  * servidor; si no responde, se muestran las que salen de lo guardado en este dispositivo. Los cinco puntos de los
- * últimos días salen siempre del dispositivo. El ranking de ejemplo solo se muestra en el modo demo.
+ * últimos días salen siempre del dispositivo. El ranking del día es el real del servidor; solo en el modo demo se muestra uno de ejemplo.
  */
 export function ColumnaLateral({ conRankingEjemplo = false }: { conRankingEjemplo?: boolean }) {
   const historial = useHistorial();
@@ -123,12 +124,8 @@ export function ColumnaLateral({ conRankingEjemplo = false }: { conRankingEjempl
 
       {datosParaCompartir && <BotonCompartir datos={datosParaCompartir} />}
 
-      {conRankingEjemplo && (
-        <>
-          <Ondulada className="lateral__divisor" />
-          <RankingEjemplo />
-        </>
-      )}
+      <Ondulada className="lateral__divisor" />
+      {conRankingEjemplo ? <RankingEjemplo /> : <RankingDelDia />}
     </aside>
   );
 }
