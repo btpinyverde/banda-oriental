@@ -25,6 +25,9 @@ class StemInline(admin.TabularInline):
 @admin.register(DailySong)
 class DailySongAdmin(admin.ModelAdmin):
     list_display = ("date", "song", "state")
+    list_select_related = ("song__album__artist",)
+    # Thousands of songs, many sharing a title: a search box (catalog.admin.SongAdmin) instead of a drop-down.
+    autocomplete_fields = ("song",)
     list_filter = ("state",)
     date_hierarchy = "date"
     inlines = [StemInline]

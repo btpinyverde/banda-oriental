@@ -39,7 +39,13 @@ class Song(models.Model):
     duration_seconds = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return self.title
+        """Enough to tell apart songs that share a title: who, which record, which year, how long. The admin picker
+        shows exactly this."""
+        record = self.album.name + (f" ({self.album.year})" if self.album.year else "")
+        text = f"{self.title} — {self.album.artist.name} · {record}"
+        if self.duration_seconds:
+            text += f" · {self.duration_seconds // 60}:{self.duration_seconds % 60:02d}"
+        return text
 
 
 class SyncState(models.Model):
