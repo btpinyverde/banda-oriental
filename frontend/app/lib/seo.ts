@@ -11,6 +11,15 @@ export function normalizarUrlSitio(valor: string | undefined): string {
 /** URL pública del sitio. Se puede cambiar con NEXT_PUBLIC_SITE_URL (previews, otro dominio). */
 export const SITIO_URL = normalizarUrlSitio(process.env.NEXT_PUBLIC_SITE_URL);
 
+/**
+ * Código de verificación de Google Search Console (la etiqueta meta "google-site-verification").
+ * Se define con NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION; sin valor no se agrega ninguna etiqueta.
+ */
+export function construirVerificacion(codigo: string | undefined): { google: string } | undefined {
+  const limpio = codigo?.trim();
+  return limpio ? { google: limpio } : undefined;
+}
+
 export const NOMBRE = "Banda Oriental";
 export const TITULO = "Banda Oriental: adiviná la canción uruguaya del día";
 export const DESCRIPCION =
