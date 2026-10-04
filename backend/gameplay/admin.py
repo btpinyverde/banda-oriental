@@ -90,12 +90,12 @@ class PlayerStatsAdmin(admin.ModelAdmin):
     """Each player's stats, as the server calculated them. Only the public name can be changed (to clear an offensive
     one, which frees it); the numbers are recalculated from the attempts and cannot be edited."""
 
-    list_display = ("public_name", "owner", "played", "won", "current_streak", "max_streak", "total_score", "last_played_day", "updated_at")
+    list_display = ("public_name", "owner", "played", "won", "current_streak", "max_streak", "total_score", "last_played_day", "name_changed_at", "updated_at")
     search_fields = ("public_name", "user__email", "device_id")
     ordering = ("-total_score",)
     list_per_page = 50
     list_select_related = ("user",)
-    fields = ("public_name", "user", "device_id", "played", "won", "current_streak", "max_streak", "total_score", "distribution", "last_played_day", "updated_at")
+    fields = ("public_name", "user", "device_id", "played", "won", "current_streak", "max_streak", "total_score", "distribution", "last_played_day", "name_changed_at", "updated_at")
     readonly_fields = tuple(f for f in fields if f != "public_name")
 
     @admin.display(description="De quién")
