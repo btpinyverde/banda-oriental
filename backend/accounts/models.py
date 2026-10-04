@@ -41,11 +41,15 @@ class EmailChallenge(models.Model):
     CONFIRM = "confirm"
     MAGIC = "magic"
     RESET = "reset"
-    PURPOSES = [(CONFIRM, "confirm"), (MAGIC, "magic"), (RESET, "reset")]
+    # Not a link: a record that an informational email ("you already have an account") was sent, so it counts
+    # against the sending limits like the rest. It can never be consumed.
+    NOTICE = "notice"
+    PURPOSES = [(CONFIRM, "confirm"), (MAGIC, "magic"), (RESET, "reset"), (NOTICE, "notice")]
     LIFETIMES = {
         CONFIRM: timedelta(hours=24),
         MAGIC: timedelta(minutes=15),
         RESET: timedelta(minutes=15),
+        NOTICE: timedelta(minutes=15),
     }
 
     email = models.EmailField()
