@@ -18,6 +18,9 @@ export interface DetalleDelDia extends DiaDelArchivo {
 
 const base = () => (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
 const DIEZ_MINUTOS = 600;
+// El servidor gratuito se duerme y puede tardar casi un minuto en despertar. Al armar la página (también cuando se arma el
+// sitio) no se espera tanto: pasado este tiempo se sigue sin los datos y la página avisa, y se renueva sola.
+const ESPERA_MAXIMA_MS = 20_000;
 
 /** Una fecha con forma de día real (2026-10-03). Evita mandar a la API cualquier cosa que venga en la dirección. */
 export function esFechaValida(fecha: string): boolean {
@@ -28,7 +31,7 @@ export function esFechaValida(fecha: string): boolean {
 
 async function pedirAlArchivo(ruta: string): Promise<Response | null> {
   try {
-    return await fetch(`${base()}${ruta}`, { next: { revalidate: DIEZ_MINUTOS } });
+    return await fetch(`${base()}${ruta}`, { next: { revalidate: DIEZ_MINUTOS }, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
   } catch {
     return null;
   }

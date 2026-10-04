@@ -44,6 +44,17 @@ describe("obtenerDias", () => {
   });
 });
 
+describe("tiempo máximo", () => {
+  it("los pedidos al archivo no esperan a la API para siempre (si tarda, la página sale con el aviso y no cuelga el despliegue)", async () => {
+    const mock = simular(respuesta({ days: [] }), respuesta({ date: "2026-10-02", song_title: "A", artist: "B", album: "C", artist_instagram_handle: "" }));
+
+    await obtenerDias();
+    await obtenerDia("2026-10-02");
+
+    for (const [, opciones] of mock.mock.calls) expect(opciones.signal).toBeInstanceOf(AbortSignal);
+  });
+});
+
 describe("obtenerDia", () => {
   const dia = { date: "2026-10-02", song_title: "Luna negra", artist: "Jorge Drexler", album: "Vaivén", artist_instagram_handle: "drexler" };
 
