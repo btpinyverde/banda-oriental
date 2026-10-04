@@ -8,6 +8,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.human import HasHumanPass
+
 from .authentication import BearerTokenAuthentication
 from .claim import claim_device_games, device_id_from
 from .emails import send_already_registered, send_confirmation, send_magic_link, send_password_reset
@@ -36,6 +38,8 @@ class PublicView(APIView):
 
 
 class RegisterView(PublicView):
+    throttle_scope = "send-email"
+    permission_classes = [HasHumanPass]
     def post(self, request):
         data = RegisterSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -75,6 +79,7 @@ class RegisterView(PublicView):
 
 
 class ConfirmView(PublicView):
+    throttle_scope = "auth"
     def post(self, request):
         data = TokenSerializer(data=request.data)
         if not data.is_valid():
@@ -100,6 +105,8 @@ _DUMMY_HASH = make_password("no-account")
 
 
 class LoginView(PublicView):
+    throttle_scope = "auth"
+    permission_classes = [HasHumanPass]
     def post(self, request):
         data = LoginSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -143,6 +150,8 @@ class LogoutView(APIView):
 
 
 class MagicRequestView(PublicView):
+    throttle_scope = "send-email"
+    permission_classes = [HasHumanPass]
     def post(self, request):
         data = EmailSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -156,6 +165,7 @@ class MagicRequestView(PublicView):
 
 
 class MagicVerifyView(PublicView):
+    throttle_scope = "auth"
     def post(self, request):
         data = TokenSerializer(data=request.data)
         if not data.is_valid():
@@ -186,6 +196,8 @@ class MagicVerifyView(PublicView):
 
 
 class PasswordResetRequestView(PublicView):
+    throttle_scope = "send-email"
+    permission_classes = [HasHumanPass]
     def post(self, request):
         data = EmailSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -197,6 +209,7 @@ class PasswordResetRequestView(PublicView):
 
 
 class PasswordResetConfirmView(PublicView):
+    throttle_scope = "auth"
     def post(self, request):
         data = ResetConfirmSerializer(data=request.data)
         # The password is checked before the link is used, so a weak one doesn't burn it.

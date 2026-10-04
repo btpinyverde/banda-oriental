@@ -15,6 +15,7 @@ from .feedback import calculate_feedback
 from .models import DailySong, GuessAttempt, ScoreEntry, Stem
 from .moderation import contains_banned_word
 from .ownership import owner_fields, owner_filter
+from core.human import HasHumanPass
 from .scoring import calculate_score
 
 
@@ -130,6 +131,8 @@ class DailyView(APIView):
 
 
 class GuessView(APIView):
+    throttle_scope = "guess"
+    permission_classes = [HasHumanPass]
     # Optional session: without the header the game works by device, as before. A bad token is a 401.
     authentication_classes = [BearerTokenAuthentication]
 
@@ -206,6 +209,8 @@ class GuessView(APIView):
 
 
 class ScoreView(APIView):
+    throttle_scope = "score"
+    permission_classes = [HasHumanPass]
     # Optional session: without the header the game works by device, as before. A bad token is a 401.
     authentication_classes = [BearerTokenAuthentication]
 

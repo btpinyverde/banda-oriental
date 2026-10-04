@@ -96,3 +96,8 @@ if EMAIL_BACKEND == "django.core.mail.backends.dummy.EmailBackend":
         "El correo está APAGADO: falta RESEND_API_KEY. Nadie va a poder confirmar su cuenta, restablecer la "
         "contraseña ni entrar con enlace hasta que se configure."
     )
+
+# In production the app sits behind Render's Cloudflare edge, which overwrites CF-Connecting-IP with the real visitor
+# address. Without trusting it every visitor would look like the proxy and share one rate limit, so it defaults to on
+# here (set TRUST_CLOUDFLARE_IP_HEADER=0 to turn it off).
+TRUST_CLOUDFLARE_IP_HEADER = os.environ.get("TRUST_CLOUDFLARE_IP_HEADER", "1") == "1"
