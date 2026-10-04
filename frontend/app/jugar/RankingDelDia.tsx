@@ -6,6 +6,7 @@ import { EVENTO_HISTORIAL } from "../lib/juego/almacen-historial";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
 import { pedirRanking } from "../lib/juego/estadisticas-servidor";
 import type { FilaRanking, RankingServidor } from "../lib/juego/tipos";
+import "./ranking-del-dia.css";
 
 const FILAS = 5;
 const numero = new Intl.NumberFormat("es-UY");
