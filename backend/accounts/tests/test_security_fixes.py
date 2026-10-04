@@ -33,6 +33,8 @@ def token_from(mail):
 
 
 def post(api, url, **body):
+    if url == REGISTER:
+        body.setdefault("accepts_terms", True)  # registering always means accepting the Terms
     return api.post(url, body, format="json")
 
 
@@ -98,7 +100,7 @@ class TestEmailFailures:
     @pytest.mark.parametrize(
         "url, body",
         [
-            (REGISTER, {"email": "nueva@example.com", "password": PASSWORD}),
+            (REGISTER, {"accepts_terms": True, "email": "nueva@example.com", "password": PASSWORD}),
             (MAGIC_REQUEST, {"email": "nueva@example.com"}),
             (RESET_REQUEST, {"email": "ana@example.com"}),
         ],

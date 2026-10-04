@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 
@@ -33,3 +34,28 @@ def matches_pending_password(email: str, password: str) -> bool:
         email=email, purpose=EmailChallenge.CONFIRM, used_at__isnull=True, expires_at__gt=timezone.now()
     )
     return any(link.password_hash and check_password(password, link.password_hash) for link in pending)
+
+
+def record_consent(user, accepts_news: bool) -> None:
+    """Records what the person accepted when their account is created (the Terms and the Privacy policy, with the
+    version of the texts) and, if they ticked it, that they want news by email. Only the first time: an account that
+    already accepted keeps what it chose, whatever a later link says."""
+    profile, _ = Profile.objects.get_or_create(user=user)
+    now = timezone.now()
+    changed = []
+    if profile.terms_accepted_at is None:
+        profile.terms_accepted_at, profile.terms_version = now, settings.TERMS_VERSION
+        changed += ["terms_accepted_at", "terms_version"]
+        if accepts_news:
+            profile.news_opt_in, profile.news_opt_in_at = True, now
+            changed += ["news_opt_in", "news_opt_in_at"]
+        profile.save(update_fields=changed)
+
+
+def set_news_opt_in(user, value: bool) -> Profile:
+    """The person changes their mind about news by email: the choice and the moment they made it."""
+    profile, _ = Profile.objects.get_or_create(user=user)
+    if profile.news_opt_in != value:
+        profile.news_opt_in, profile.news_opt_in_at = value, timezone.now()
+        profile.save(update_fields=["news_opt_in", "news_opt_in_at"])
+    return profile

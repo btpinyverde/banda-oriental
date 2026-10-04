@@ -83,3 +83,11 @@
   .cuenta__tarjeta { padding: 22px 18px; border-radius: 22px; }
   .cuenta__acciones .boton { flex: 1 1 100%; }
 }
+
+/* Casillas de consentimiento y preferencias (funcional; el diseño se afina después). */
+.cuenta__consentimientos { display: grid; gap: 10px; margin-top: 4px; }
+.cuenta__casilla { display: flex; align-items: flex-start; gap: 10px; font-size: 0.95rem; line-height: 1.45; cursor: pointer; }
+.cuenta__casilla input { margin-top: 3px; width: 18px; height: 18px; accent-color: var(--violeta); flex: none; }
+.cuenta__casilla em { color: var(--tinta-suave); font-style: normal; }
+.cuenta__casilla a, .cuenta__consentimientos a { color: var(--violeta); font-weight: 700; }
+.cuenta__preferencias { display: grid; gap: 8px; margin: 18px 0; padding: 16px 18px; border-radius: 18px; background: var(--violeta-claro); }

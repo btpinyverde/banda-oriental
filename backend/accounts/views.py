@@ -13,12 +13,19 @@ from core.human import HasHumanPass
 from .authentication import BearerTokenAuthentication
 from .claim import claim_device_games, device_id_from
 from .emails import send_already_registered, send_confirmation, send_magic_link, send_password_reset
-from .models import AuthToken, EmailChallenge
+from .models import AuthToken, EmailChallenge, Profile
 from gameplay.models import GuessAttempt, ScoreEntry
 
-from .users import find_user, is_confirmed, mark_confirmed, matches_pending_password
+from .users import find_user, is_confirmed, mark_confirmed, matches_pending_password, record_consent, set_news_opt_in
 from .limits import TOO_MANY, can_send_email, clear_login_failures, login_locked, register_login_failure
-from .serializers import EmailSerializer, LoginSerializer, RegisterSerializer, ResetConfirmSerializer, TokenSerializer
+from .serializers import (
+    EmailSerializer,
+    LoginSerializer,
+    MagicRequestSerializer,
+    RegisterSerializer,
+    ResetConfirmSerializer,
+    TokenSerializer,
+)
 
 User = get_user_model()
 
@@ -61,7 +68,14 @@ class RegisterView(PublicView):
             # registered the email first can't keep one: the chosen password waits on the link, and confirming it
             # (reading that mailbox) is what applies it.
             send_confirmation(
-                email, EmailChallenge.issue(email, EmailChallenge.CONFIRM, password_hash, new_address=True)
+                email,
+                EmailChallenge.issue(
+                    email,
+                    EmailChallenge.CONFIRM,
+                    password_hash,
+                    new_address=True,
+                    accepts_news=data.validated_data["accepts_news"],
+                ),
             )
         return Response({"detail": REGISTER_DETAIL}, status=status.HTTP_202_ACCEPTED)
 
@@ -93,6 +107,7 @@ class ConfirmView(PublicView):
                 user.password = challenge.password_hash
                 user.save(update_fields=["password"])
             mark_confirmed(user)
+            record_consent(user, challenge.accepts_news)
         # Any other confirmation link still pending for this email is now useless; it must not work as a login.
         EmailChallenge.objects.filter(
             email=challenge.email, purpose=EmailChallenge.CONFIRM, used_at__isnull=True
@@ -153,14 +168,19 @@ class MagicRequestView(PublicView):
     throttle_scope = "send-email"
     permission_classes = [HasHumanPass]
     def post(self, request):
-        data = EmailSerializer(data=request.data)
+        data = MagicRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         email = data.validated_data["email"]
         user = find_user(email)
         # An unknown email gets a link too: using it creates the account. Blocked accounts get nothing.
         new_address = user is None or not is_confirmed(user)
         if (user is None or user.is_active) and can_send_email(email, new_address=new_address):
-            send_magic_link(email, EmailChallenge.issue(email, EmailChallenge.MAGIC, new_address=new_address))
+            send_magic_link(
+                email,
+                EmailChallenge.issue(
+                    email, EmailChallenge.MAGIC, new_address=new_address, accepts_news=data.validated_data["accepts_news"]
+                ),
+            )
         return Response({"detail": REGISTER_DETAIL}, status=status.HTTP_202_ACCEPTED)
 
 
@@ -177,12 +197,18 @@ class MagicVerifyView(PublicView):
         if not user.is_active:
             return Response(BAD_LINK, status=status.HTTP_400_BAD_REQUEST)
         if not is_confirmed(user):
+            # What they ticked when they registered (their confirmation link is about to be cancelled) is not lost.
+            accepts_news = challenge.accepts_news or EmailChallenge.objects.filter(
+                email=user.username, purpose=EmailChallenge.CONFIRM, used_at__isnull=True, accepts_news=True
+            ).exists()
             # Whoever registered this address first may have left a password or a session on it: the real owner
             # just proved they read the mailbox, so none of that survives. Their pending links are cancelled too.
             user.set_unusable_password()
             user.save(update_fields=["password"])
             user.auth_tokens.all().delete()
             EmailChallenge.cancel_pending(user.username, [EmailChallenge.CONFIRM])
+            mark_confirmed(user)
+            record_consent(user, accepts_news)  # continuing with the link accepts the Terms (the form says so)
         mark_confirmed(user)
         return Response({"token": start_session(request, user)})
 
@@ -231,7 +257,25 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({"email": request.user.email, "date_joined": request.user.date_joined})
+        return Response(self._body(request.user))
+
+    def patch(self, request):
+        """The person changes their mind about news by email. Nothing else about the account is changed here."""
+        value = request.data.get("accepts_news") if isinstance(request.data, dict) else None
+        if not isinstance(value, bool):
+            return Response({"detail": "accepts_news tiene que ser verdadero o falso."}, status=status.HTTP_400_BAD_REQUEST)
+        set_news_opt_in(request.user, value)
+        return Response(self._body(request.user))
+
+    @staticmethod
+    def _body(user):
+        profile = Profile.objects.filter(user=user).first()
+        return {
+            "email": user.email,
+            "date_joined": user.date_joined,
+            "accepts_news": bool(profile and profile.news_opt_in),
+            "terms_accepted_at": profile.terms_accepted_at if profile else None,
+        }
 
     def delete(self, request):
         """Deletes the account and everything tied to it: sessions, games, scores and emailed links."""

@@ -204,6 +204,29 @@ describe("textos legales: lo que el servidor guarda de verdad", () => {
   });
 });
 
+describe("textos legales: lo que se acepta al crear la cuenta", () => {
+  const privacidad = () => JSON.stringify(paginaPorSlug("privacidad"));
+  const terminos = () => JSON.stringify(paginaPorSlug("terminos"));
+
+  it("los términos dicen que para crear una cuenta hay que aceptarlos (y que continuar con el enlace por correo equivale a aceptarlos)", () => {
+    expect(terminos()).toMatch(/crear una cuenta/i);
+    expect(terminos()).toMatch(/aceptar/i);
+    expect(terminos()).toMatch(/enlace por correo/i);
+  });
+
+  it("la privacidad explica las novedades por correo: opcionales, apagadas salvo que se marquen y se cambian desde Mi cuenta", () => {
+    expect(privacidad()).toMatch(/novedades/i);
+    expect(privacidad()).toMatch(/opcional/i);
+    expect(privacidad()).toMatch(/Mi cuenta/);
+    expect(privacidad()).toMatch(/siempre/i); // los correos de la cuenta se mandan siempre
+  });
+
+  it("la privacidad dice qué se guarda de lo aceptado: términos y política (versión y fecha) y la elección de novedades", () => {
+    expect(privacidad()).toMatch(/versión/i);
+    expect(privacidad()).toMatch(/fecha/i);
+  });
+});
+
 describe("sitemap del archivo", () => {
   afterEach(() => vi.restoreAllMocks());
 
