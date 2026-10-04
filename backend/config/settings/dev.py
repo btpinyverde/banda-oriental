@@ -1,3 +1,5 @@
+import os
+
 from .base import *  # noqa: F401,F403
 
 DEBUG = True
@@ -19,3 +21,5 @@ if not CORS_ALLOWED_ORIGINS:  # noqa: F405
     # Next.js dev server (frontend/), not Vite — the frontend moved off
     # Vite mid-plan (see spec §9).
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
