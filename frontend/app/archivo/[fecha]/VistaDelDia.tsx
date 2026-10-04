@@ -13,10 +13,10 @@ export function VistaDelDia({ dia }: { dia: DetalleDelDia }) {
   const instagram = usuarioDeInstagram(dia.artist_instagram_handle);
 
   return (
-    <main className="archivo archivo--dia">
-      <p className="archivo__fecha">{fechaLarga(dia.date)}</p>
+    <main className="archivo-publico archivo-publico--dia">
+      <p className="archivo-publico__fecha">{fechaLarga(dia.date)}</p>
       <h1>{dia.song_title}</h1>
-      <dl className="archivo__datos">
+      <dl className="archivo-publico__datos">
         <div>
           <dt>Artista</dt>
           <dd>{dia.artist}</dd>
@@ -35,7 +35,7 @@ export function VistaDelDia({ dia }: { dia: DetalleDelDia }) {
         </p>
       )}
 
-      <div className="archivo__acciones">
+      <div className="archivo-publico__acciones">
         <Link href="/archivo" className="boton boton--violeta">
           ← Volver al archivo
         </Link>

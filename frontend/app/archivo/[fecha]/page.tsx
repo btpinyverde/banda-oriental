@@ -39,8 +39,8 @@ export default async function PaginaDelDia({ params }: Props) {
     <>
       <Navbar actual="/archivo" />
       {dia === null ? (
-        <main className="archivo">
-          <div className="archivo__aviso" role="alert">
+        <main className="archivo-publico">
+          <div className="archivo-publico__aviso" role="alert">
             <p>No pudimos cargar este día ahora. Probá de nuevo en un rato.</p>
           </div>
         </main>

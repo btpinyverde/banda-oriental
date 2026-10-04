@@ -20,8 +20,8 @@ function agruparPorMes(dias: DiaDelArchivo[]): { mes: string; dias: DiaDelArchiv
  */
 export function ListaDelArchivo({ dias }: { dias: DiaDelArchivo[] | null }) {
   return (
-    <main className="archivo">
-      <header className="archivo__cabecera">
+    <main className="archivo-publico">
+      <header className="archivo-publico__cabecera">
         <h1>Archivo</h1>
         <p>
           Todas las canciones de los días que ya pasaron. La canción de hoy no aparece hasta mañana, para no arruinar
@@ -30,13 +30,13 @@ export function ListaDelArchivo({ dias }: { dias: DiaDelArchivo[] | null }) {
       </header>
 
       {dias === null && (
-        <div className="archivo__aviso" role="alert">
+        <div className="archivo-publico__aviso" role="alert">
           <p>No pudimos cargar el archivo ahora. Probá de nuevo en un rato.</p>
         </div>
       )}
 
       {dias !== null && dias.length === 0 && (
-        <div className="archivo__aviso">
+        <div className="archivo-publico__aviso">
           <p>Todavía no hay días en el archivo: el primero aparece mañana, cuando venza el de hoy.</p>
           <Link href="/jugar" className="boton boton--grande boton--violeta">
             Jugar el diario
@@ -46,15 +46,15 @@ export function ListaDelArchivo({ dias }: { dias: DiaDelArchivo[] | null }) {
 
       {dias !== null &&
         agruparPorMes(dias).map(({ mes, dias: delMes }) => (
-          <section key={mes} className="archivo__mes" aria-labelledby={`mes-${mes.replace(/\s+/g, "-")}`}>
+          <section key={mes} className="archivo-publico__mes" aria-labelledby={`mes-${mes.replace(/\s+/g, "-")}`}>
             <h2 id={`mes-${mes.replace(/\s+/g, "-")}`}>{mes}</h2>
-            <ul className="archivo__lista">
+            <ul className="archivo-publico__lista">
               {delMes.map((dia) => (
                 <li key={dia.date}>
-                  <Link href={`/archivo/${dia.date}`} className="archivo__dia">
-                    <span className="archivo__fecha">{diaYMes(dia.date)}</span>
-                    <span className="archivo__cancion">{dia.song_title}</span>
-                    <span className="archivo__artista">{dia.artist}</span>
+                  <Link href={`/archivo/${dia.date}`} className="archivo-publico__dia">
+                    <span className="archivo-publico__fecha">{diaYMes(dia.date)}</span>
+                    <span className="archivo-publico__cancion">{dia.song_title}</span>
+                    <span className="archivo-publico__artista">{dia.artist}</span>
                   </Link>
                 </li>
               ))}
