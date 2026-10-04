@@ -34,8 +34,10 @@ export interface CancionCatalogo {
 export interface IntentoHistorial {
   attempt_number: number;
   feedback: Feedback;
-  /** Todavía no lo manda el backend: hasta entonces la tabla usa lo guardado en el navegador. */
+  /** Título de lo que se adivinó. */
   guessed_text?: string;
+  /** La canción adivinada completa: con eso cualquier dispositivo de la cuenta dibuja la fila. `null` en intentos viejos. */
+  guessed_song?: CancionCatalogo | null;
 }
 
 export interface EstadoEnCurso {
@@ -78,11 +80,14 @@ export interface ResultadoPuntaje {
 
 export class ApiError extends Error {
   status: number;
+  /** Código de la API para casos que la pantalla trata distinto (por ejemplo `email_not_confirmed`). */
+  codigo?: string;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, codigo?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.codigo = codigo;
   }
 }
 

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { crearClienteHttp } from "./cliente-http";
 import { ApiError } from "./tipos";
+import { guardarSesion, leerSesion } from "../cuenta/sesion";
 
 const ID = "11111111-2222-4333-8444-555555555555";
 
@@ -137,5 +138,71 @@ describe("red caída o lenta", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.status).toBe(0);
     expect(error.message).toMatch(/tardó/);
+  });
+});
+
+describe("con una sesión de cuenta", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("manda el token en el estado, los intentos y el puntaje", async () => {
+    guardarSesion({ token: "tok-1", email: "ana@example.com" });
+    const mock = simular(
+      respuesta({ finished: false }),
+      respuesta({ is_correct: false }),
+      respuesta({ score: 100 }, 201),
+    );
+    const cliente = crearClienteHttp();
+
+    await cliente.estadoDelDia(ID);
+    await cliente.enviarIntento(ID, 1, 7);
+    await cliente.enviarPuntaje(ID, "ana", 30);
+
+    for (const llamada of mock.mock.calls) expect(llamada[1].headers.Authorization).toBe("Bearer tok-1");
+  });
+
+  it("sin sesión no manda Authorization (sigue siendo por dispositivo)", async () => {
+    const mock = simular(respuesta({ finished: false }));
+
+    await crearClienteHttp().estadoDelDia(ID);
+
+    expect(mock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
+
+  it("el catálogo de canciones es público: no lleva el token", async () => {
+    guardarSesion({ token: "tok-1", email: "ana@example.com" });
+    const mock = simular(respuesta({ songs: [] }));
+
+    await crearClienteHttp().listarCanciones();
+
+    expect(mock.mock.calls[0][1].headers?.Authorization).toBeUndefined();
+  });
+
+  it("si la API dice 401 (la sesión venció o la cerraron en otro lado) la borra y repite el pedido sin sesión", async () => {
+    guardarSesion({ token: "vencido", email: "ana@example.com" });
+    const estado = { finished: false, day: "2026-10-04" };
+    const mock = simular(respuesta({ detail: "Token inválido." }, 401), respuesta(estado));
+
+    const resultado = await crearClienteHttp().estadoDelDia(ID);
+
+    expect(resultado).toEqual(estado);
+    expect(leerSesion()).toBeNull();
+    expect(mock).toHaveBeenCalledTimes(2);
+    expect(mock.mock.calls[0][1].headers.Authorization).toBe("Bearer vencido");
+    expect(mock.mock.calls[1][1].headers.Authorization).toBeUndefined();
+  });
+
+  it("no se queda repitiendo: si también falla sin sesión, devuelve ese error", async () => {
+    guardarSesion({ token: "vencido", email: "ana@example.com" });
+    const mock = simular(respuesta({ detail: "Token inválido." }, 401), respuesta({ detail: "Falla." }, 500));
+
+    await expect(crearClienteHttp().estadoDelDia(ID)).rejects.toMatchObject({ status: 500 });
+    expect(mock).toHaveBeenCalledTimes(2);
+  });
+
+  it("un 401 sin sesión no se repite", async () => {
+    const mock = simular(respuesta({ detail: "No autorizado." }, 401));
+
+    await expect(crearClienteHttp().estadoDelDia(ID)).rejects.toMatchObject({ status: 401 });
+    expect(mock).toHaveBeenCalledTimes(1);
   });
 });

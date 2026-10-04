@@ -256,7 +256,7 @@ const paginas: Pagina[] = [
     titulo: "Política de privacidad",
     eyebrow: "LEGALES",
     descripcion: "Qué datos usa Banda Oriental, para qué y cómo podés ejercer tus derechos sobre ellos.",
-    bajada: "Para jugar no te pedimos nombre, correo ni contraseña. Esto es lo que sí guardamos.",
+    bajada: "Para jugar no te pedimos nombre, correo ni contraseña. Si creás una cuenta, esto es lo que guardamos.",
     preliminar: true,
     actualizada: FECHA_LEGALES,
     secciones: [
@@ -266,13 +266,16 @@ const paginas: Pagina[] = [
           "Un identificador anónimo de tu dispositivo, generado al azar y guardado en tu navegador. Nos permite recordar tus intentos del día.",
           "Tus intentos y resultados de cada día, asociados a ese identificador.",
           "El nombre que elijas para el ranking, solo si decidís guardar tu puntaje.",
+          "Si creás una cuenta: tu correo y tu contraseña (guardada de forma que no podemos leerla), y las partidas y los puntajes asociados a la cuenta, que así te siguen a cualquier dispositivo.",
+          "Los enlaces que te mandamos por correo (confirmar, entrar o cambiar la contraseña), hasta que se usan o vencen.",
           "Datos técnicos que cualquier servidor recibe al conectarse, como la dirección IP y el tipo de navegador, que quedan en los registros de nuestros proveedores de infraestructura.",
         ],
       },
       {
         titulo: "Lo que queda en tu navegador",
         parrafos: [
-          "Tu historial, tus estadísticas y tu racha se guardan solo en tu navegador, en el almacenamiento local. No salen de tu dispositivo: si borrás los datos del navegador, se pierden.",
+          "Tu historial, tus estadísticas y tu racha se guardan en tu navegador, en el almacenamiento local. Sin cuenta no salen de tu dispositivo: si borrás los datos del navegador, se pierden.",
+          "Si iniciás sesión, también se guarda ahí una clave de sesión que identifica tu cuenta en este dispositivo. Al cerrar sesión se borra.",
         ],
       },
       {
@@ -286,6 +289,18 @@ const paginas: Pagina[] = [
         titulo: "Para qué los usamos",
         parrafos: [
           "Para que el juego funcione (recordar tu partida), para armar el ranking del día y para mantener y mejorar el servicio. No vendemos tus datos.",
+        ],
+      },
+      {
+        titulo: "Correos",
+        parrafos: [
+          "Los correos de la cuenta (confirmar el correo, enlace de acceso y cambio de contraseña) los envía un proveedor externo, Resend, por encargo nuestro. Solo mandamos esos mensajes: no enviamos publicidad.",
+        ],
+      },
+      {
+        titulo: "Borrar tu cuenta",
+        parrafos: [
+          "Podés borrar tu cuenta cuando quieras desde Mi cuenta, con el botón Borrar mi cuenta: se borran tu correo, tus sesiones, tus partidas y tus puntajes. Las partidas jugadas sin cuenta en un dispositivo no están asociadas a nadie y no se borran.",
         ],
       },
       {
@@ -303,7 +318,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Cambios",
         parrafos: [
-          "Cuando agreguemos funciones, como las cuentas de usuario, vamos a actualizar esta política y a avisarlo acá antes de empezar a usar datos nuevos.",
+          "Cuando agreguemos funciones que usen datos nuevos, vamos a actualizar esta política y a avisarlo acá antes de empezar a usarlos.",
         ],
       },
     ],
@@ -359,15 +374,6 @@ const paginas: Pagina[] = [
     descripcion: "Explorar la música uruguaya por géneros llega pronto a Banda Oriental.",
     bajada: "Candombe, murga, rock, folklore y mucho más: explorá por género.",
     texto: "Esta sección todavía se está armando.",
-  },
-  {
-    tipo: "proximamente",
-    slug: "login",
-    titulo: "Iniciar sesión",
-    descripcion: "Las cuentas de Banda Oriental, para guardar tu historial en cualquier dispositivo, llegan pronto.",
-    bajada: "Pronto vas a poder crear una cuenta para guardar tu historial en cualquier dispositivo.",
-    texto: "Estamos preparando las cuentas, con correo y contraseña o con un enlace por mail. Mientras tanto, lo que jugás se guarda en este navegador.",
-    alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
   },
 ];
 

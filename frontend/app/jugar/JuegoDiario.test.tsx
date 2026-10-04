@@ -7,6 +7,7 @@ import { ApiError, type ClienteJuego } from "../lib/juego/tipos";
 import { archivoFalso, contextoActual, instalarAudioFalso } from "../lib/juego/audio-falso";
 import { vaciarCache } from "../lib/juego/mezcla";
 import { diaDeMontevideo } from "../lib/juego/logica";
+import { borrarSesion, guardarSesion } from "../lib/cuenta/sesion";
 
 const AUDIO = archivoFalso(...Array(300).fill(0.5));
 const AUDIOS_DEMO = Object.fromEntries([1, 2, 3, 4].map((n) => [`/demo/etapa-${n}.mp3`, AUDIO]));
@@ -107,6 +108,87 @@ describe("JuegoDiario: pistas vencidas", () => {
     await escuchar();
 
     expect(contextoActual().fuentes).toHaveLength(2);
+  });
+});
+
+describe("JuegoDiario: sesión de la cuenta", () => {
+  const conEstadoContado = () => {
+    const demo = crearClienteDemo();
+    const estadoDelDia = vi.fn(demo.estadoDelDia);
+    return { cliente: { ...demo, estadoDelDia }, estadoDelDia };
+  };
+
+  it("al iniciar sesión mientras se juega vuelve a pedir el estado: ahora es el de la cuenta", async () => {
+    const { cliente, estadoDelDia } = conEstadoContado();
+    await cargado(cliente);
+    expect(estadoDelDia).toHaveBeenCalledTimes(1);
+
+    await act(async () => guardarSesion({ token: "tok-1", email: "ana@example.com" }));
+
+    await waitFor(() => expect(estadoDelDia).toHaveBeenCalledTimes(2));
+  });
+
+  it("al cerrar la sesión también vuelve a pedirlo: ahora es el del dispositivo", async () => {
+    guardarSesion({ token: "tok-1", email: "ana@example.com" });
+    const { cliente, estadoDelDia } = conEstadoContado();
+    await cargado(cliente);
+
+    await act(async () => borrarSesion());
+
+    await waitFor(() => expect(estadoDelDia).toHaveBeenCalledTimes(2));
+  });
+
+  it("si ya había una sesión al abrir la página no lo pide dos veces", async () => {
+    guardarSesion({ token: "tok-1", email: "ana@example.com" });
+    const { cliente, estadoDelDia } = conEstadoContado();
+
+    await cargado(cliente);
+    await new Promise((resolver) => setTimeout(resolver, 100));
+
+    expect(estadoDelDia).toHaveBeenCalledTimes(1);
+  });
+
+  it("si la sesión no cambia no lo vuelve a pedir", async () => {
+    const { cliente, estadoDelDia } = conEstadoContado();
+    await cargado(cliente);
+
+    await act(async () => void window.dispatchEvent(new Event("storage")));
+    await new Promise((resolver) => setTimeout(resolver, 100));
+
+    expect(estadoDelDia).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("JuegoDiario: intentos hechos en otro dispositivo", () => {
+  const otraCancion = { id: 9, title: "Otra canción", artist: "No Te Va Gustar", album: "Otra cosa", year: 2010, genre: "Pop" };
+  const estadoConIntento = (guessed_song: unknown) => ({
+    finished: false as const,
+    day: diaDeMontevideo(new Date()),
+    attempt_number: 2,
+    attempts_remaining: 5,
+    unlocked_stems: [{ stem_type: "drums" as const, unlock_order: 1, url: "/demo/etapa-1.mp3" }],
+    feedback_history: [
+      { attempt_number: 1, guessed_text: "Otra canción", guessed_song, feedback: { year: "newer", genre: "same", artist: "different", album: "different" } },
+    ],
+  });
+
+  it("dibuja la fila completa con la canción que manda el backend, sin depender de lo guardado en este navegador", async () => {
+    const demo = crearClienteDemo();
+    const estadoDelDia = vi.fn().mockResolvedValue(estadoConIntento(otraCancion));
+
+    await cargado({ ...demo, estadoDelDia });
+
+    expect(screen.getByText("No Te Va Gustar")).toBeInTheDocument();
+    expect(screen.getByText("Otra cosa")).toBeInTheDocument();
+  });
+
+  it("si el backend no la manda (intentos viejos) muestra al menos el título", async () => {
+    const demo = crearClienteDemo();
+    const estadoDelDia = vi.fn().mockResolvedValue(estadoConIntento(null));
+
+    await cargado({ ...demo, estadoDelDia });
+
+    expect(screen.getByText("Otra canción")).toBeInTheDocument();
   });
 });
 

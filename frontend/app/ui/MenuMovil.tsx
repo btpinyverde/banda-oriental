@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
+import { BotonCuenta } from "./BotonCuenta";
 
 type Enlace = { href: string; etiqueta: string };
 
@@ -48,9 +49,7 @@ export function MenuMovil({ enlaces, actual }: { enlaces: Enlace[]; actual?: str
             ))}
           </ul>
           <div className="menu-movil__acciones">
-            <Link href="/login" className="boton boton--grande boton--claro" onClick={cerrar}>
-              Iniciar sesión
-            </Link>
+            <BotonCuenta className="boton boton--grande boton--claro" alElegir={cerrar} />
             {actual !== "/jugar" && (
               <Link href="/jugar" className="boton boton--grande boton--violeta" onClick={cerrar}>
                 <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">

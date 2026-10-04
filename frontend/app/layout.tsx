@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { COLOR_FONDO, construirVerificacion, DESCRIPCION, IDIOMA, NOMBRE, SITIO_URL, TITULO } from "./lib/seo";
+import { SincronizarCuenta } from "./cuenta/SincronizarCuenta";
 import { Analitica } from "./ui/Analitica";
 import "./globals.css";
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang={IDIOMA}>
       <body>
         {children}
+        <SincronizarCuenta />
         <Analitica activa={process.env.NODE_ENV === "production"} />
       </body>
     </html>

@@ -46,3 +46,13 @@ export function guardarPartida(partida: Partida) {
     // Almacenamiento bloqueado o lleno: se pierde el historial, pero el juego sigue andando.
   }
 }
+
+/** Borra el historial guardado en este dispositivo (por ejemplo al borrar la cuenta) y avisa a la pantalla. */
+export function borrarHistorial() {
+  try {
+    window.localStorage.removeItem(CLAVE);
+    window.dispatchEvent(new Event(EVENTO_HISTORIAL));
+  } catch {
+    // Almacenamiento bloqueado: no hay nada guardado que borrar.
+  }
+}

@@ -9,7 +9,7 @@ import { PaginaDeContenido } from "./ui/PaginaDeContenido";
 afterEach(cleanup);
 
 const DE_TEXTO = ["como-funciona", "acerca", "contacto", "sugerencias", "terminos", "privacidad"];
-const PROXIMAMENTE = ["batalla", "archivo", "ranking", "artistas", "epocas", "generos", "login"];
+const PROXIMAMENTE = ["batalla", "archivo", "ranking", "artistas", "epocas", "generos"];
 
 describe("registro de páginas", () => {
   it("cubre todos los enlaces del sitio que antes daban 404", () => {
@@ -60,6 +60,17 @@ describe("registro de páginas", () => {
     expect(texto).toMatch(/Search Console/);
   });
 
+  it("la política de privacidad explica las cuentas: qué se guarda, el proveedor de correo y cómo borrarla", () => {
+    const texto = JSON.stringify(paginaPorSlug("privacidad"));
+
+    expect(texto).toMatch(/correo y tu contraseña/);
+    expect(texto).toMatch(/no podemos leerla/);
+    expect(texto).toMatch(/Resend/);
+    expect(texto).toMatch(/Borrar mi cuenta/);
+    expect(texto).toMatch(/clave de sesión/);
+    expect(texto).not.toMatch(/Cuando agreguemos funciones, como las cuentas/);
+  });
+
   it("cómo funciona explica las reglas principales", () => {
     const texto = JSON.stringify(paginaPorSlug("como-funciona"));
 
@@ -84,12 +95,6 @@ describe("PaginaDeContenido", () => {
     expect(principal.getByText("PRÓXIMAMENTE")).toBeInTheDocument();
     expect(principal.getByRole("link", { name: /Volver al inicio/ })).toHaveAttribute("href", "/");
     expect(principal.getByRole("link", { name: /Jugar el diario/ })).toHaveAttribute("href", "/jugar");
-  });
-
-  it("el inicio de sesión pendiente manda al historial local mientras tanto", () => {
-    render(<PaginaDeContenido pagina={paginaPorSlug("login")!} />);
-
-    expect(within(screen.getByRole("main")).getByRole("link", { name: /Ver mi historial/ })).toHaveAttribute("href", "/historial");
   });
 
   it("los textos legales llevan el aviso de versión preliminar", () => {
