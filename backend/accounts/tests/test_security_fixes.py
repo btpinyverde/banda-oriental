@@ -106,7 +106,7 @@ class TestEmailFailures:
     def test_when_the_mail_provider_fails_the_answer_is_still_the_same_202(self, api, make_user, url, body):
         make_user("ana@example.com")
 
-        with patch("accounts.emails.send_mail", side_effect=RuntimeError("provider down")):
+        with patch("accounts.emails.EmailMultiAlternatives.send", side_effect=RuntimeError("provider down")):
             response = api.post(url, body, format="json")
 
         assert response.status_code == 202
@@ -114,7 +114,7 @@ class TestEmailFailures:
     def test_the_failure_is_logged_without_the_link_or_the_address(self, api, make_user, caplog):
         make_user("ana@example.com")
 
-        with caplog.at_level(logging.ERROR), patch("accounts.emails.send_mail", side_effect=RuntimeError("provider down")):
+        with caplog.at_level(logging.ERROR), patch("accounts.emails.EmailMultiAlternatives.send", side_effect=RuntimeError("provider down")):
             post(api, RESET_REQUEST, email="ana@example.com")
 
         assert "provider down" in caplog.text
@@ -133,7 +133,7 @@ class TestResponseTimeDoesNotRevealAccounts:
             release.wait(timeout=5)
             delivered.set()
 
-        with patch("accounts.emails.send_mail", side_effect=slow_send):
+        with patch("accounts.emails.EmailMultiAlternatives.send", side_effect=slow_send):
             response = post(api, RESET_REQUEST, email="ana@example.com")
             answered_before_delivery = not delivered.is_set()
             release.set()
