@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { COLOR_FONDO, DESCRIPCION, IDIOMA, NOMBRE, SITIO_URL, TITULO } from "./lib/seo";
+import { COLOR_FONDO, construirVerificacion, DESCRIPCION, IDIOMA, NOMBRE, SITIO_URL, TITULO } from "./lib/seo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
     description: DESCRIPCION,
   },
   robots: { index: true, follow: true },
+  verification: construirVerificacion(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION),
   // La imagen para compartir sale de app/opengraph-image.tsx y los íconos de app/icon.svg,
   // app/apple-icon.png y app/favicon.ico: Next los agrega solo.
 };
