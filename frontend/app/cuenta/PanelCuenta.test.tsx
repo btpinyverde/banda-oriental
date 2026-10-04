@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiCuenta } from "../lib/cuenta/api-cuenta";
 import { guardarSesion, leerSesion } from "../lib/cuenta/sesion";
@@ -10,6 +10,8 @@ function api(extra: Partial<Record<keyof ApiCuenta, unknown>> = {}) {
   return {
     salir: vi.fn().mockResolvedValue(undefined),
     borrarCuenta: vi.fn().mockResolvedValue(undefined),
+    yo: vi.fn().mockResolvedValue({ email: "ana@example.com", date_joined: "2026-10-04T00:00:00Z", accepts_news: false, terms_accepted_at: "2026-10-04T00:00:00Z" }),
+    cambiarNovedades: vi.fn().mockResolvedValue({ email: "ana@example.com", date_joined: "2026-10-04T00:00:00Z", accepts_news: true, terms_accepted_at: "2026-10-04T00:00:00Z" }),
     ...extra,
   } as unknown as ApiCuenta & Record<string, ReturnType<typeof vi.fn>>;
 }
@@ -116,5 +118,59 @@ describe("PanelCuenta", () => {
 
       expect(screen.queryByLabelText(/Escribí BORRAR/)).toBeNull();
     });
+  });
+});
+
+
+describe("PanelCuenta: novedades por correo", () => {
+  it("muestra si la cuenta recibe novedades, apagado si no lo eligió", async () => {
+    conSesion();
+
+    render(<PanelCuenta api={api()} />);
+
+    const casilla = await screen.findByRole("checkbox", { name: /Quiero recibir novedades de Banda Oriental por correo/ });
+    expect(casilla).not.toBeChecked();
+  });
+
+  it("lo muestra encendido si lo eligió al crear la cuenta", async () => {
+    conSesion();
+    const cliente = api({ yo: vi.fn().mockResolvedValue({ email: "ana@example.com", date_joined: "x", accepts_news: true, terms_accepted_at: "x" }) });
+
+    render(<PanelCuenta api={cliente} />);
+
+    expect(await screen.findByRole("checkbox", { name: /Quiero recibir novedades/ })).toBeChecked();
+  });
+
+  it("se puede cambiar de idea: el cambio se manda al servidor con la sesión", async () => {
+    conSesion();
+    const cliente = api();
+    render(<PanelCuenta api={cliente} />);
+
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Quiero recibir novedades/ }));
+
+    await waitFor(() => expect(cliente.cambiarNovedades).toHaveBeenCalledWith("tok-1", true));
+    expect(await screen.findByRole("checkbox", { name: /Quiero recibir novedades/ })).toBeChecked();
+  });
+
+  it("si el servidor no lo pudo guardar, lo dice y deja la casilla como estaba", async () => {
+    conSesion();
+    const cliente = api({ cambiarNovedades: vi.fn().mockRejectedValue(new ApiError("No se pudo guardar.", 500)) });
+    render(<PanelCuenta api={cliente} />);
+
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Quiero recibir novedades/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudo guardar.");
+    expect(screen.getByRole("checkbox", { name: /Quiero recibir novedades/ })).not.toBeChecked();
+  });
+
+  it("si no se pudieron cargar los datos de la cuenta, el panel sigue funcionando sin esa casilla", async () => {
+    conSesion();
+    const cliente = api({ yo: vi.fn().mockRejectedValue(new ApiError("sin red", 0)) });
+
+    render(<PanelCuenta api={cliente} />);
+
+    await waitFor(() => expect(cliente.yo).toHaveBeenCalled());
+    expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /Quiero recibir novedades/ })).toBeNull();
   });
 });

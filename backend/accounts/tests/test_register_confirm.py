@@ -22,7 +22,7 @@ def token_from(mail):
 
 
 def register(api, email="ana@example.com", password=PASSWORD):
-    return api.post(REGISTER, {"email": email, "password": password}, format="json")
+    return api.post(REGISTER, {"accepts_terms": True, "email": email, "password": password}, format="json")
 
 
 def test_register_creates_an_unconfirmed_user_and_emails_a_confirmation_link(api, db, mailoutbox):

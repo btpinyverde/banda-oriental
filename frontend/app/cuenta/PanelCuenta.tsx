@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { crearApiCuenta, type ApiCuenta } from "../lib/cuenta/api-cuenta";
 import { borrarSesion } from "../lib/cuenta/sesion";
 import { useSesion } from "../lib/cuenta/useSesion";
@@ -21,6 +21,23 @@ export function PanelCuenta({ api }: { api?: ApiCuenta }) {
   const [trabajando, setTrabajando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [borrada, setBorrada] = useState(false);
+  // Si recibe novedades por correo; `null` mientras no se sabe (o si no se pudo consultar: entonces no se muestra la casilla).
+  const [novedades, setNovedades] = useState<boolean | null>(null);
+  const [errorNovedades, setErrorNovedades] = useState<string | null>(null);
+  const token = sesion?.token;
+
+  useEffect(() => {
+    if (!token) return;
+    let activo = true;
+    cliente
+      .yo(token)
+      .then((datos) => activo && setNovedades(datos.accepts_news))
+      .catch(() => activo && setNovedades(null));
+    return () => {
+      activo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   if (borrada) {
     return (
@@ -50,6 +67,17 @@ export function PanelCuenta({ api }: { api?: ApiCuenta }) {
         </div>
       </div>
     );
+  }
+
+  async function cambiarNovedades(valor: boolean) {
+    if (!sesion) return;
+    setErrorNovedades(null);
+    try {
+      const datos = await cliente.cambiarNovedades(sesion.token, valor);
+      setNovedades(datos.accepts_news);
+    } catch (fallo) {
+      setErrorNovedades(fallo instanceof ApiError ? fallo.message : "No se pudo guardar. Probá de nuevo.");
+    }
   }
 
   async function cerrarSesion() {
@@ -95,6 +123,21 @@ export function PanelCuenta({ api }: { api?: ApiCuenta }) {
           Cerrar sesión
         </button>
       </div>
+
+      {novedades !== null && (
+        <section className="cuenta__preferencias" aria-label="Preferencias">
+          <label className="cuenta__casilla">
+            <input type="checkbox" checked={novedades} onChange={(evento) => void cambiarNovedades(evento.target.checked)} />
+            <span>Quiero recibir novedades de Banda Oriental por correo</span>
+          </label>
+          <p className="cuenta__ayuda">Los correos de la cuenta (confirmar, entrar y cambiar la contraseña) se mandan siempre.</p>
+          {errorNovedades && (
+            <p className="cuenta__error" role="alert">
+              {errorNovedades}
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="cuenta__peligro" aria-labelledby={`${campo}-titulo`}>
         <h2 id={`${campo}-titulo`}>Borrar mi cuenta</h2>

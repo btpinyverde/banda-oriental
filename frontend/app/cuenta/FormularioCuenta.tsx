@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { crearApiCuenta, type ApiCuenta } from "../lib/cuenta/api-cuenta";
 import { guardarSesion } from "../lib/cuenta/sesion";
@@ -37,6 +38,8 @@ export function FormularioCuenta({ api, alEntrar }: Props) {
   const [olvide, setOlvide] = useState(false);
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [aceptaNovedades, setAceptaNovedades] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [fallo, setFallo] = useState<Fallo | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -68,9 +71,12 @@ export function FormularioCuenta({ api, alEntrar }: Props) {
     }
   }
 
+  // Con el enlace por correo se puede crear la cuenta (la primera vez): ahí se muestran los avisos y la casilla de novedades.
+  const enlaceQuePuedeCrear = !olvide && pestania === "entrar" && metodo === "enlace";
+
   const pedirEnlace = (para: string) =>
     ejecutar(async () => {
-      await cliente.pedirEnlace(para);
+      await cliente.pedirEnlace(para, enlaceQuePuedeCrear ? aceptaNovedades : false);
       setAviso(
         `Si el correo es válido, te enviamos un enlace a ${para}. Sirve una sola vez y vence en 15 minutos. Si no lo ves, revisá la carpeta de spam.`,
       );
@@ -93,11 +99,14 @@ export function FormularioCuenta({ api, alEntrar }: Props) {
 
     if (!contrasena) return setFallo({ mensaje: "Escribí tu contraseña." });
     if (pestania === "crear") {
+      if (!aceptaTerminos) {
+        return setFallo({ mensaje: "Para crear la cuenta tenés que aceptar los Términos y la Política de Privacidad." });
+      }
       if (contrasena.length < MINIMO_CONTRASENA) {
         return setFallo({ mensaje: `La contraseña tiene que tener al menos ${MINIMO_CONTRASENA} caracteres.` });
       }
       return void ejecutar(async () => {
-        await cliente.registrar(para, contrasena);
+        await cliente.registrar(para, contrasena, aceptaNovedades);
         setAviso(
           `Te enviamos un mensaje a ${para}. Confirmá tu correo con el enlace para terminar de crear la cuenta; vence en 24 horas. Si no lo ves, revisá la carpeta de spam.`,
         );
@@ -215,6 +224,52 @@ export function FormularioCuenta({ api, alEntrar }: Props) {
             />
             {pestania === "crear" && <p className="cuenta__ayuda">Al menos {MINIMO_CONTRASENA} caracteres.</p>}
           </>
+        )}
+
+        {pestania === "crear" && !olvide && (
+          <div className="cuenta__consentimientos">
+            <label className="cuenta__casilla">
+              <input type="checkbox" checked={aceptaTerminos} onChange={(evento) => setAceptaTerminos(evento.target.checked)} />
+              <span>
+                Acepto los{" "}
+                <Link href="/terminos" target="_blank" rel="noopener noreferrer">
+                  Términos
+                </Link>{" "}
+                y la{" "}
+                <Link href="/privacidad" target="_blank" rel="noopener noreferrer">
+                  Política de Privacidad
+                </Link>
+              </span>
+            </label>
+            <label className="cuenta__casilla">
+              <input type="checkbox" checked={aceptaNovedades} onChange={(evento) => setAceptaNovedades(evento.target.checked)} />
+              <span>
+                Quiero recibir novedades de Banda Oriental por correo <em>(opcional)</em>
+              </span>
+            </label>
+          </div>
+        )}
+
+        {enlaceQuePuedeCrear && (
+          <div className="cuenta__consentimientos">
+            <p className="cuenta__ayuda">
+              Si todavía no tenés cuenta, al continuar se crea una y aceptás los{" "}
+              <Link href="/terminos" target="_blank" rel="noopener noreferrer">
+                Términos
+              </Link>{" "}
+              y la{" "}
+              <Link href="/privacidad" target="_blank" rel="noopener noreferrer">
+                Política de Privacidad
+              </Link>
+              .
+            </p>
+            <label className="cuenta__casilla">
+              <input type="checkbox" checked={aceptaNovedades} onChange={(evento) => setAceptaNovedades(evento.target.checked)} />
+              <span>
+                Quiero recibir novedades de Banda Oriental por correo <em>(opcional)</em>
+              </span>
+            </label>
+          </div>
         )}
 
         {fallo && (

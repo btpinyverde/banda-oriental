@@ -56,3 +56,21 @@ Ejemplo: `https://bandaoriental.xami.uy/cuenta/entrar#token=<token>&tipo=acceso`
 ## Todavía no existe
 
 Nada de la API de cuentas queda pendiente; falta el front (pantallas de entrar, crear cuenta, recuperar contraseña y la cuenta). En producción **no se envía correo** hasta que se configure `RESEND_API_KEY` (y el dominio de envío esté verificado).
+
+## Lo que se acepta al crear la cuenta (términos y novedades)
+
+- `POST /api/auth/register/` exige `accepts_terms: true` (un booleano de verdad; `"yes"`, `1` o la falta del campo dan
+  `400` con "Para crear la cuenta tenés que aceptar los Términos y la Política de Privacidad."). La respuesta no depende
+  de si el correo ya tiene cuenta. `accepts_news` (opcional, `false` por defecto) es la elección aparte de recibir
+  novedades por correo.
+- `POST /api/auth/magic/request/` acepta `accepts_news` (opcional). El enlace puede crear la cuenta: continuar con él
+  equivale a aceptar los Términos (el formulario lo avisa) y se registra igual.
+- Nada se guarda hasta que la persona confirma su correo (o entra con el enlace): ahí se completa el perfil con
+  `terms_accepted_at`, `terms_version` (ajuste `TERMS_VERSION`, hoy `"2026-10"`; se cambia cuando los textos cambian de
+  forma que haya que volver a aceptarlos) y, si la tildó, `news_opt_in` con `news_opt_in_at`. Solo la primera vez: una
+  cuenta que ya aceptó conserva su elección, diga lo que diga un enlace posterior. Si se registró tildando novedades y
+  confirma con un enlace de entrada, no se pierde lo que tildó.
+- `GET /api/me/` devuelve además `accepts_news` y `terms_accepted_at`. `PATCH /api/me/` con `{"accepts_news": bool}` cambia
+  la elección de novedades (con su fecha); no cambia nada más de la cuenta.
+- Los correos de la cuenta (confirmar, entrar, cambiar la contraseña) se mandan siempre, sin depender de esta elección.
+  Todavía no se manda ningún correo de novedades: esto solo guarda la elección.

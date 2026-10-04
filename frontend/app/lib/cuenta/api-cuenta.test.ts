@@ -32,8 +32,8 @@ afterEach(() => {
 
 describe("crearApiCuenta: pedir un correo", () => {
   it.each([
-    ["registrar", (api: ReturnType<typeof crearApiCuenta>) => api.registrar("ana@example.com", "una-clave-larga-1"), "/api/auth/register/", { email: "ana@example.com", password: "una-clave-larga-1" }],
-    ["pedirEnlace", (api: ReturnType<typeof crearApiCuenta>) => api.pedirEnlace("ana@example.com"), "/api/auth/magic/request/", { email: "ana@example.com" }],
+    ["registrar", (api: ReturnType<typeof crearApiCuenta>) => api.registrar("ana@example.com", "una-clave-larga-1"), "/api/auth/register/", { email: "ana@example.com", password: "una-clave-larga-1", accepts_terms: true, accepts_news: false }],
+    ["pedirEnlace", (api: ReturnType<typeof crearApiCuenta>) => api.pedirEnlace("ana@example.com"), "/api/auth/magic/request/", { email: "ana@example.com", accepts_news: false }],
     ["pedirRestablecer", (api: ReturnType<typeof crearApiCuenta>) => api.pedirRestablecer("ana@example.com"), "/api/auth/password-reset/request/", { email: "ana@example.com" }],
   ])("%s manda el pedido y no devuelve nada (la API responde igual exista o no la cuenta)", async (_nombre, llamar, ruta, cuerpo) => {
     const mock = simular(respuesta({ detail: "Si el correo es válido, te enviamos un mensaje para continuar." }, 202));
@@ -95,6 +95,55 @@ describe("crearApiCuenta: abrir una sesión", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
     await expect(crearApiCuenta().entrar("a@b.co", "x")).rejects.toMatchObject({ status: 0 });
+  });
+});
+
+describe("crearApiCuenta: lo que se acepta al crear la cuenta", () => {
+  const ok = () => simular(respuesta({ detail: "Si el correo es válido, te enviamos un mensaje para continuar." }, 202));
+
+  it("registrar acepta los Términos y la Política de Privacidad (la casilla es obligatoria) y manda las novedades apagadas por defecto", async () => {
+    const mock = ok();
+
+    await crearApiCuenta().registrar("ana@example.com", "una-clave-larga-1");
+
+    expect(ultima(mock).cuerpo).toEqual({ email: "ana@example.com", password: "una-clave-larga-1", accepts_terms: true, accepts_news: false });
+  });
+
+  it("registrar con las novedades tildadas lo manda", async () => {
+    const mock = ok();
+
+    await crearApiCuenta().registrar("ana@example.com", "una-clave-larga-1", true);
+
+    expect(ultima(mock).cuerpo).toMatchObject({ accepts_news: true });
+  });
+
+  it("pedirEnlace manda la elección de novedades (el enlace puede crear la cuenta)", async () => {
+    const mock = ok();
+
+    await crearApiCuenta().pedirEnlace("ana@example.com", true);
+
+    expect(ultima(mock).cuerpo).toEqual({ email: "ana@example.com", accepts_news: true });
+  });
+
+  it("pedirEnlace las manda apagadas si no se dice nada", async () => {
+    const mock = ok();
+
+    await crearApiCuenta().pedirEnlace("ana@example.com");
+
+    expect(ultima(mock).cuerpo).toEqual({ email: "ana@example.com", accepts_news: false });
+  });
+
+  it("cambiarNovedades pide el cambio con la sesión y devuelve los datos de la cuenta", async () => {
+    const mock = simular(respuesta({ email: "ana@example.com", date_joined: "2026-10-04T00:00:00Z", accepts_news: true, terms_accepted_at: "2026-10-04T00:00:00Z" }));
+
+    const datos = await crearApiCuenta().cambiarNovedades("tok", true);
+
+    expect(datos.accepts_news).toBe(true);
+    const { url, opciones, cuerpo } = ultima(mock);
+    expect(url).toBe("https://api.example/api/me/");
+    expect(opciones.method).toBe("PATCH");
+    expect(opciones.headers.Authorization).toBe("Bearer tok");
+    expect(cuerpo).toEqual({ accepts_news: true });
   });
 });
 

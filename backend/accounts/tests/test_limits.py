@@ -31,7 +31,7 @@ def test_the_limit_is_shared_by_every_kind_of_email(api, make_user, mailoutbox):
     for _ in range(3):
         api.post(RESET_REQUEST, {"email": "ana@example.com"}, format="json")
     for _ in range(3):
-        api.post(REGISTER, {"email": "ana@example.com", "password": PASSWORD}, format="json")
+        api.post(REGISTER, {"accepts_terms": True, "email": "ana@example.com", "password": PASSWORD}, format="json")
 
     assert len(mailoutbox) == 5
 

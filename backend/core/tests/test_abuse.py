@@ -110,7 +110,7 @@ class TestThrottling:
         "url, body",
         [
             ("/api/auth/login/", {"email": "a@b.co", "password": "x"}),
-            ("/api/auth/register/", {"email": "a@b.co", "password": "una-clave-larga-1"}),
+            ("/api/auth/register/", {"accepts_terms": True, "email": "a@b.co", "password": "una-clave-larga-1"}),
             ("/api/auth/magic/request/", {"email": "a@b.co"}),
             ("/api/auth/password-reset/request/", {"email": "a@b.co"}),
         ],
@@ -174,7 +174,7 @@ class TestAiAgents:
         assert api.get(reverse("health"), HTTP_USER_AGENT="ClaudeBot/1.0").status_code == 200
 
     def test_writes_are_blocked_too(self, api, db):
-        response = api.post("/api/auth/register/", {"email": "a@b.co", "password": "una-clave-larga-1"}, format="json", HTTP_USER_AGENT="GPTBot/1.1")
+        response = api.post("/api/auth/register/", {"accepts_terms": True, "email": "a@b.co", "password": "una-clave-larga-1"}, format="json", HTTP_USER_AGENT="GPTBot/1.1")
 
         assert response.status_code == 403
         assert User.objects.count() == 0
@@ -207,7 +207,7 @@ class TestHumanCheck:
         for url, body in [
             self.GUESS,
             ("/api/daily/score/", {"display_name": "x", "total_time_seconds": 5}),
-            ("/api/auth/register/", {"email": "a@b.co", "password": "una-clave-larga-1"}),
+            ("/api/auth/register/", {"accepts_terms": True, "email": "a@b.co", "password": "una-clave-larga-1"}),
             ("/api/auth/login/", {"email": "a@b.co", "password": "x"}),
             ("/api/auth/magic/request/", {"email": "a@b.co"}),
             ("/api/auth/password-reset/request/", {"email": "a@b.co"}),

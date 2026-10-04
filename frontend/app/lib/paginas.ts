@@ -232,7 +232,8 @@ const paginas: Pagina[] = [
       {
         titulo: "5. Cuentas",
         parrafos: [
-          "Cuando existan cuentas, vas a ser responsable de cuidar tus credenciales y de lo que se haga con ellas.",
+          "Para crear una cuenta tenés que aceptar estos Términos y la Política de Privacidad: lo hacés con una casilla al registrarte con contraseña y, si creás la cuenta con un enlace por correo, continuar con ese enlace equivale a aceptarlos. Guardamos cuándo lo aceptaste y para qué versión de estos textos.",
+          "Sos responsable de cuidar tus credenciales y de lo que se haga con ellas. Recibir novedades por correo es una elección aparte, opcional, que podés cambiar cuando quieras desde Mi cuenta.",
         ],
       },
       {
@@ -268,6 +269,7 @@ const paginas: Pagina[] = [
           "Tus intentos y resultados de cada día, y tus estadísticas (partidas jugadas, aciertos, racha y puntaje total), que calcula y guarda nuestro servidor, asociados a ese identificador anónimo o, si tenés cuenta, a tu cuenta.",
           "El nombre público que elijas para el ranking, solo si decidís guardar tu puntaje: lo elegís la primera vez y después podés cambiarlo una vez cada 7 días, no puede repetirse con el de otra persona, lo ve cualquiera que mire los rankings y se conserva si después creás una cuenta.",
           "Si creás una cuenta: tu correo y tu contraseña (guardada de forma que no podemos leerla), y las partidas y los puntajes asociados a la cuenta, que así te siguen a cualquier dispositivo.",
+          "Lo que aceptaste al crear la cuenta: los Términos y la Política de Privacidad (la versión de los textos y la fecha) y, si lo marcaste, que querés recibir novedades por correo (con la fecha de esa elección).",
           "Los enlaces que te mandamos por correo (confirmar, entrar o cambiar la contraseña), hasta que se usan o vencen.",
           "Datos técnicos que cualquier servidor recibe al conectarse, como la dirección IP y el tipo de navegador, que quedan en los registros de nuestros proveedores de infraestructura.",
         ],
@@ -308,7 +310,14 @@ const paginas: Pagina[] = [
       {
         titulo: "Correos",
         parrafos: [
-          "Los correos de la cuenta (confirmar el correo, enlace de acceso y cambio de contraseña) los envía un proveedor externo, Resend, por encargo nuestro. Solo mandamos esos mensajes: no enviamos publicidad.",
+          "Los correos de la cuenta (confirmar el correo, enlace de acceso y cambio de contraseña) los envía un proveedor externo, Resend, por encargo nuestro. Esos se mandan siempre: son necesarios para que la cuenta funcione y no dependen de la elección de novedades.",
+        ],
+      },
+      {
+        titulo: "Novedades por correo (opcional)",
+        parrafos: [
+          "Al crear la cuenta podés marcar una casilla aparte, opcional y apagada hasta que la marques: \"Quiero recibir novedades de Banda Oriental por correo\". Si la marcás, podemos escribirte con novedades del juego; no la usamos para nada más ni cedemos tu correo para publicidad de otras empresas.",
+          "Guardamos tu elección con la fecha en que la hiciste. La podés cambiar cuando quieras desde Mi cuenta. Si no la marcás, solo recibís los correos de la cuenta.",
         ],
       },
       {

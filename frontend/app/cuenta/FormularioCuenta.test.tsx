@@ -18,6 +18,7 @@ function api(extra: Partial<Record<keyof ApiCuenta, unknown>> = {}) {
   } as unknown as ApiCuenta & Record<string, ReturnType<typeof vi.fn>>;
 }
 
+const aceptarTerminos = () => fireEvent.click(screen.getByRole("checkbox", { name: /Acepto los Términos/ }));
 const escribir = (etiqueta: RegExp | string, valor: string) =>
   fireEvent.change(screen.getByLabelText(etiqueta), { target: { value: valor } });
 const enviar = async (boton: RegExp | string) => {
@@ -84,7 +85,7 @@ describe("FormularioCuenta: entrar", () => {
 
     await enviar("Enviarme un enlace para entrar");
 
-    expect(cliente.pedirEnlace).toHaveBeenCalledWith("ana@example.com");
+    expect(cliente.pedirEnlace).toHaveBeenCalledWith("ana@example.com", false);
     expect(screen.getByRole("status")).toHaveTextContent("ana@example.com");
   });
 
@@ -124,7 +125,7 @@ describe("FormularioCuenta: enlace por correo", () => {
     escribir("Correo", "Ana@Example.com");
     await enviar("Enviarme el enlace");
 
-    expect(cliente.pedirEnlace).toHaveBeenCalledWith("ana@example.com");
+    expect(cliente.pedirEnlace).toHaveBeenCalledWith("ana@example.com", false);
     expect(screen.getByRole("status")).toHaveTextContent("ana@example.com");
     expect(screen.getByRole("status")).toHaveTextContent("15 minutos");
     expect(leerSesion()).toBeNull();
@@ -152,9 +153,10 @@ describe("FormularioCuenta: crear cuenta", () => {
 
     escribir("Correo", "Nueva@Example.com");
     escribir("Contraseña", "una-clave-larga-1");
+    aceptarTerminos();
     await enviar("Crear cuenta");
 
-    expect(cliente.registrar).toHaveBeenCalledWith("nueva@example.com", "una-clave-larga-1");
+    expect(cliente.registrar).toHaveBeenCalledWith("nueva@example.com", "una-clave-larga-1", false);
     expect(screen.getByRole("status")).toHaveTextContent("nueva@example.com");
     expect(screen.getByRole("status")).toHaveTextContent("Confirmá");
     expect(leerSesion()).toBeNull();
@@ -167,6 +169,7 @@ describe("FormularioCuenta: crear cuenta", () => {
 
     escribir("Correo", "nueva@example.com");
     escribir("Contraseña", "corta");
+    aceptarTerminos();
     await enviar("Crear cuenta");
 
     expect(screen.getByRole("alert")).toHaveTextContent("al menos 10 caracteres");
@@ -179,6 +182,7 @@ describe("FormularioCuenta: crear cuenta", () => {
     abrirCrear();
     escribir("Correo", "nueva@example.com");
     escribir("Contraseña", "1234567890");
+    aceptarTerminos();
 
     await enviar("Crear cuenta");
 
@@ -213,5 +217,82 @@ describe("FormularioCuenta: olvidé mi contraseña", () => {
     fireEvent.click(screen.getByRole("button", { name: "Volver" }));
 
     expect(screen.getByLabelText("Contraseña")).toBeInTheDocument();
+  });
+});
+
+
+describe("FormularioCuenta: lo que se acepta al crear la cuenta", () => {
+  const abrirCrear = () => fireEvent.click(screen.getByRole("tab", { name: "Crear cuenta" }));
+  const llenar = () => {
+    escribir("Correo", "nueva@example.com");
+    escribir("Contraseña", "una-clave-larga-1");
+  };
+
+  it("al crear la cuenta hay una casilla para aceptar los Términos y la Política de Privacidad, con enlaces que abren aparte", () => {
+    render(<FormularioCuenta api={api()} alEntrar={vi.fn()} />);
+    abrirCrear();
+
+    const casilla = screen.getByRole("checkbox", { name: /Acepto los Términos y la Política de Privacidad/ });
+    expect(casilla).not.toBeChecked();
+    const terminos = screen.getByRole("link", { name: "Términos" });
+    const privacidad = screen.getByRole("link", { name: "Política de Privacidad" });
+    expect(terminos).toHaveAttribute("href", "/terminos");
+    expect(privacidad).toHaveAttribute("href", "/privacidad");
+    expect(terminos).toHaveAttribute("target", "_blank");
+    expect(terminos).toHaveAttribute("rel", expect.stringContaining("noopener"));
+  });
+
+  it("las novedades por correo son otra casilla, opcional y apagada: no se tilda sola ni va unida a los términos", () => {
+    render(<FormularioCuenta api={api()} alEntrar={vi.fn()} />);
+    abrirCrear();
+
+    const novedades = screen.getByRole("checkbox", { name: /Quiero recibir novedades de Banda Oriental por correo/ });
+    expect(novedades).not.toBeChecked();
+    expect(screen.getByText(/opcional/i)).toBeInTheDocument();
+    expect(novedades).not.toBe(screen.getByRole("checkbox", { name: /Acepto los Términos/ }));
+  });
+
+  it("sin aceptar los Términos no se crea la cuenta y se explica por qué", async () => {
+    const cliente = api();
+    render(<FormularioCuenta api={cliente} alEntrar={vi.fn()} />);
+    abrirCrear();
+    llenar();
+
+    await enviar("Crear cuenta");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("tenés que aceptar los Términos y la Política de Privacidad");
+    expect(cliente.registrar).not.toHaveBeenCalled();
+  });
+
+  it("tildar las novedades se manda al crear la cuenta", async () => {
+    const cliente = api();
+    render(<FormularioCuenta api={cliente} alEntrar={vi.fn()} />);
+    abrirCrear();
+    llenar();
+    aceptarTerminos();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Quiero recibir novedades/ }));
+
+    await enviar("Crear cuenta");
+
+    expect(cliente.registrar).toHaveBeenCalledWith("nueva@example.com", "una-clave-larga-1", true);
+  });
+
+  it("con el enlace por correo (que puede crear la cuenta) avisa que continuar acepta los Términos y deja elegir las novedades", async () => {
+    const cliente = api();
+    render(<FormularioCuenta api={cliente} alEntrar={vi.fn()} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Con un enlace por correo" }));
+
+    expect(screen.getByText(/si todavía no tenés cuenta, al continuar se crea una y aceptás/i)).toBeInTheDocument();
+    escribir("Correo", "nueva@example.com");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Quiero recibir novedades/ }));
+    await enviar("Enviarme el enlace");
+
+    expect(cliente.pedirEnlace).toHaveBeenCalledWith("nueva@example.com", true);
+  });
+
+  it("entrando con contraseña no se pide nada de esto: ya aceptó al crear la cuenta", () => {
+    render(<FormularioCuenta api={api()} alEntrar={vi.fn()} />);
+
+    expect(screen.queryByRole("checkbox")).toBeNull();
   });
 });

@@ -64,15 +64,21 @@ class EmailChallenge(models.Model):
     # Sent to an address with no confirmed account. Those emails share a smaller daily pool, so strangers can't use
     # up the whole mail quota and leave people who already have an account without their emails.
     to_new_address = models.BooleanField(default=False)
+    # Whether the person ticked "I want news by email" when they asked for this link. It is applied to their profile
+    # when the account is created or confirmed with it, not before.
+    accepts_news = models.BooleanField(default=False)
 
     @classmethod
-    def issue(cls, email: str, purpose: str, password_hash: str = "", new_address: bool = False) -> str:
+    def issue(
+        cls, email: str, purpose: str, password_hash: str = "", new_address: bool = False, accepts_news: bool = False
+    ) -> str:
         raw = new_token()
         cls.objects.create(
             email=email,
             purpose=purpose,
             password_hash=password_hash,
             to_new_address=new_address,
+            accepts_news=accepts_news,
             token_hash=hash_token(raw),
             expires_at=timezone.now() + cls.LIFETIMES[purpose],
         )
@@ -115,3 +121,9 @@ class Profile(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     email_confirmed_at = models.DateTimeField(null=True, blank=True)
+    # What the person accepted when the account was created: the Terms and the Privacy policy (which version of the
+    # texts) and, separately and off by default, whether they want news by email (and when they chose it).
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_version = models.CharField(max_length=20, blank=True, default="")
+    news_opt_in = models.BooleanField(default=False)
+    news_opt_in_at = models.DateTimeField(null=True, blank=True)
