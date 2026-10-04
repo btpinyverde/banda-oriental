@@ -25,7 +25,14 @@ Servicio `banda-oriental-backend` → *Environment*:
 
 Al guardar, Render redespliega. En el log de arranque debe **desaparecer** el aviso "El correo está APAGADO".
 
-## 3. Probarlo
+## 3. Prender las cuentas en el sitio (Vercel)
+
+El sitio publicado mantiene `/login` en "próximamente" hasta que se prenda este interruptor, para que nadie pueda crear una cuenta mientras el correo está apagado. Cuando el correo ya mande (paso 2):
+
+1. En Vercel → proyecto `banda-oriental` → *Environment Variables*: agregar `NEXT_PUBLIC_CUENTAS_ACTIVAS` = `1` (Production), como variable **normal** (no secreta).
+2. *Redeploy* (las variables `NEXT_PUBLIC_` se fijan al compilar).
+
+## 4. Probarlo
 
 1. En `https://bandaoriental.xami.uy/login` → *Crear cuenta* con un correo propio y una contraseña de al menos 10 caracteres.
 2. Debe llegar el mensaje "Confirmá tu correo en Banda Oriental" (revisar spam la primera vez). Abrir el enlace: tiene que decir que el correo quedó confirmado y la barra pasar a "Mi cuenta".

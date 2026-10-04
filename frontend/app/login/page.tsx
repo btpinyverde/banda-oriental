@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { cuentasActivas } from "../lib/cuenta/activas";
+import { PAGINA_CUENTAS_PROXIMAMENTE } from "../lib/paginas";
+import { PaginaDeContenido } from "../ui/PaginaDeContenido";
 import { Footer } from "../ui/Footer";
 import { Navbar } from "../ui/Navbar";
 import { PantallaLogin } from "./PantallaLogin";
@@ -12,6 +15,8 @@ export const metadata: Metadata = {
 };
 
 export default function PaginaLogin() {
+  if (!cuentasActivas()) return <PaginaDeContenido pagina={PAGINA_CUENTAS_PROXIMAMENTE} />;
+
   return (
     <>
       <Navbar />

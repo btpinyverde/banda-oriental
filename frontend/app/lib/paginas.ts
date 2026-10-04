@@ -377,6 +377,18 @@ const paginas: Pagina[] = [
   },
 ];
 
+/** Lo que muestran /login, /cuenta y /cuenta/entrar mientras las cuentas están apagadas (ver cuentas/activas.ts). */
+export const PAGINA_CUENTAS_PROXIMAMENTE: Extract<Pagina, { tipo: "proximamente" }> = {
+  tipo: "proximamente",
+  slug: "login",
+  actual: "/login",
+  titulo: "Iniciar sesión",
+  descripcion: "Las cuentas de Banda Oriental, para guardar tu historial en cualquier dispositivo, llegan pronto.",
+  bajada: "Pronto vas a poder crear una cuenta para guardar tu historial en cualquier dispositivo.",
+  texto: "Estamos terminando las cuentas, con contraseña o con un enlace por correo, a elección. Mientras tanto, lo que jugás se guarda en este navegador.",
+  alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
+};
+
 export const PAGINAS: Record<string, Pagina> = Object.fromEntries(paginas.map((pagina) => [pagina.slug, pagina]));
 export const SLUGS: string[] = paginas.map((pagina) => pagina.slug);
 
