@@ -119,6 +119,6 @@ describe("ArchivoArtistas", () => {
 
   it("enlaza a la página del archivo completo", () => {
     renderizar();
-    expect(screen.getByRole("link", { name: /Ver todo el archivo/ })).toHaveAttribute("href", "/archivo");
+    expect(screen.getByRole("link", { name: /Ver todos los artistas/ })).toHaveAttribute("href", "/artistas");
   });
 });

@@ -346,30 +346,6 @@ const paginas: Pagina[] = [
     bajada: "Desafiá a tus amigos con la misma canción y mirá quién la saca primero.",
     texto: "Estamos terminando de armar el modo batalla. Mientras tanto, podés jugar la canción del día.",
   },
-  {
-    tipo: "proximamente",
-    slug: "artistas",
-    titulo: "Artistas",
-    descripcion: "Explorar los artistas uruguayos de Banda Oriental llega pronto.",
-    bajada: "Explorá a los artistas uruguayos que están en el juego.",
-    texto: "Esta sección todavía se está armando.",
-  },
-  {
-    tipo: "proximamente",
-    slug: "epocas",
-    titulo: "Épocas",
-    descripcion: "Explorar la música uruguaya por épocas llega pronto a Banda Oriental.",
-    bajada: "Recorré la música uruguaya década por década.",
-    texto: "Esta sección todavía se está armando.",
-  },
-  {
-    tipo: "proximamente",
-    slug: "generos",
-    titulo: "Géneros",
-    descripcion: "Explorar la música uruguaya por géneros llega pronto a Banda Oriental.",
-    bajada: "Candombe, murga, rock, folklore y mucho más: explorá por género.",
-    texto: "Esta sección todavía se está armando.",
-  },
 ];
 
 /** Lo que muestran /login, /cuenta y /cuenta/entrar mientras las cuentas están apagadas (ver cuentas/activas.ts). */

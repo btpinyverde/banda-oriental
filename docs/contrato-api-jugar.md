@@ -72,6 +72,13 @@ La columna de racha, estadísticas, "compartir resultado" y ranking del día (`C
 datos inventados y solo se muestra en modo demo. Para activarla de verdad hacen falta endpoints de racha,
 estadísticas y ranking (hoy existe `GET /api/leaderboard/today/`) y cuentas o un identificador de jugador.
 
+## Catálogo por disco
+
+`GET /api/albums/` (público, solo lectura, caché de unos minutos): `{"albums": [{"artist", "album", "year", "genre",
+"songs"}]}`, ordenado por artista, año y disco, sin los discos sin canciones. Lo usan las páginas de explorar el
+catálogo (/artistas, /epocas, /generos): pesa mucho menos que `GET /api/songs/` (que lleva todas las canciones) y no
+dice cuál es la canción del día.
+
 ## Estadísticas y nombre público (las calcula y guarda el servidor)
 
 Racha, jugadas, aciertos, puntaje total y distribución las **calcula el servidor** a partir de los intentos y
