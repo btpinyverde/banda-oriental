@@ -34,10 +34,11 @@ def render(
         for text in paragraphs
     )
     return f"""<!DOCTYPE html>
-<html lang="es" xml:lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="es" xml:lang="es" translate="no" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Language" content="es">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>{escape(heading)}</title>
@@ -73,8 +74,7 @@ def render(
           <p style="margin:0;font-family:{FONT};font-size:14px;line-height:1.5;color:{INK};">{escape(note)}</p>
         </td></tr>
         <tr><td style="padding:26px 0 0 0;">
-          <p style="margin:0 0 6px 0;font-family:{FONT};font-size:13px;line-height:1.5;color:{INK_SOFT};">¿El botón no funciona? Copiá y pegá este enlace en tu navegador:</p>
-          <p style="margin:0;font-family:{FONT};font-size:13px;line-height:1.5;word-break:break-all;"><a href="{href}" target="_blank" style="color:{VIOLET};text-decoration:underline;">{escape(link)}</a></p>
+          <p style="margin:0;font-family:{FONT};font-size:14px;line-height:1.6;color:{INK_SOFT};">¿El botón no funciona? <a href="{href}" target="_blank" style="color:{VIOLET};font-weight:700;text-decoration:underline;">Abrí este enlace</a> en tu navegador.</p>
         </td></tr>
       </table>
     </td></tr>

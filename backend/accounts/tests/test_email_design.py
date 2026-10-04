@@ -114,3 +114,26 @@ class TestSpanishAndIllustration:
         header = f'src="{settings.FRONTEND_URL}/assets/email/cabecera-{HEROES[kind]}.png"'
         assert header in html
         assert re.search(r'<img[^>]+cabecera-[a-z]+\.png"[^>]+alt="[^"]+"', html)
+
+
+@pytest.mark.parametrize("kind,args,marker,label", KINDS)
+class TestGmailDoesNotMisreadTheLanguage:
+    def test_the_raw_link_is_not_printed_as_visible_text_because_a_long_random_token_reads_as_english(
+        self, kind, args, marker, label, mailoutbox
+    ):
+        html = html_of(send(kind, args, mailoutbox))
+        visible = re.sub(r"<[^>]+>", " ", html)  # tags (and so the hrefs) removed
+
+        assert "http" not in visible
+        assert TOKEN not in visible
+
+    def test_the_email_asks_not_to_be_offered_for_translation(self, kind, args, marker, label, mailoutbox):
+        html = html_of(send(kind, args, mailoutbox))
+
+        assert '<meta name="google" content="notranslate">' in html
+        assert 'translate="no"' in html
+
+    def test_the_plain_text_version_still_has_the_full_link_to_copy(self, kind, args, marker, label, mailoutbox):
+        message = send(kind, args, mailoutbox)
+
+        assert "http" in message.body
