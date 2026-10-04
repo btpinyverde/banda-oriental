@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import * as archivoDatos from "./lib/archivo";
 import Pagina, { generateMetadata, generateStaticParams } from "./[pagina]/page";
 import { PAGINAS, SLUGS, paginaPorSlug } from "./lib/paginas";
 import { SITIO_URL } from "./lib/seo";
@@ -9,7 +10,7 @@ import { PaginaDeContenido } from "./ui/PaginaDeContenido";
 afterEach(cleanup);
 
 const DE_TEXTO = ["como-funciona", "acerca", "contacto", "sugerencias", "terminos", "privacidad"];
-const PROXIMAMENTE = ["batalla", "archivo", "artistas", "epocas", "generos"];
+const PROXIMAMENTE = ["batalla", "artistas", "epocas", "generos"];
 
 describe("registro de páginas", () => {
   it("cubre todos los enlaces del sitio que antes daban 404", () => {
@@ -201,17 +202,41 @@ describe("textos legales: lo que el servidor guarda de verdad", () => {
   });
 });
 
+describe("sitemap del archivo", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("lista el archivo y una entrada por cada día vencido, para que Google las encuentre", async () => {
+    vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([
+      { date: "2026-10-03", song_title: "A", artist: "X" },
+      { date: "2026-10-02", song_title: "B", artist: "Y" },
+    ]);
+
+    const urls = (await sitemap()).map((e) => e.url);
+
+    expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/archivo`, `${SITIO_URL}/archivo/2026-10-03`, `${SITIO_URL}/archivo/2026-10-02`]));
+  });
+
+  it("si la API no responde, el sitemap sigue funcionando sin los días", async () => {
+    vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue(null);
+
+    const urls = (await sitemap()).map((e) => e.url);
+
+    expect(urls).toContain(`${SITIO_URL}/archivo`);
+    expect(urls.filter((u) => /\/archivo\/\d/.test(u))).toEqual([]);
+  });
+});
+
 describe("sitemap", () => {
-  it("lista la portada, el juego y las páginas con contenido, y deja afuera las que todavía no existen", () => {
-    const urls = sitemap().map((e) => e.url);
+  it("lista la portada, el juego y las páginas con contenido, y deja afuera las que todavía no existen", async () => {
+    const urls = (await sitemap()).map((e) => e.url);
 
     expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/`, `${SITIO_URL}/jugar`, ...DE_TEXTO.map((s) => `${SITIO_URL}/${s}`)]));
     for (const slug of PROXIMAMENTE) expect(urls).not.toContain(`${SITIO_URL}/${slug}`);
     expect(urls).not.toContain(`${SITIO_URL}/historial`);
   });
 
-  it("lista el ranking, que ahora tiene datos reales y cambia todos los días", () => {
-    const entrada = sitemap().find((e) => e.url === `${SITIO_URL}/ranking`);
+  it("lista el ranking, que ahora tiene datos reales y cambia todos los días", async () => {
+    const entrada = (await sitemap()).find((e) => e.url === `${SITIO_URL}/ranking`);
 
     expect(entrada).toBeDefined();
     expect(entrada?.changeFrequency).toBe("daily");
