@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from django.conf import settings
 from django.core import signing
@@ -5,6 +7,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from .clientip import client_ip
+
+logger = logging.getLogger(__name__)
 
 SALT = "human-pass"
 SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -27,8 +31,13 @@ def verify_turnstile(token: str, ip: str) -> bool:
             SITEVERIFY, data={"secret": settings.TURNSTILE_SECRET_KEY, "response": token, "remoteip": ip}, timeout=5
         ).json()
     except Exception:
+        logger.warning("No se pudo consultar a Turnstile (Cloudflare); nadie obtiene pase mientras tanto.")
         return False
-    return answer.get("success") is True
+    if answer.get("success") is True:
+        return True
+    # Only Cloudflare's reason codes are logged (e.g. invalid-input-secret = wrong secret key), never the token.
+    logger.warning("Turnstile rechazó la comprobación: %s", answer.get("error-codes"))
+    return False
 
 
 def issue_pass(request) -> str:
