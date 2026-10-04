@@ -6,11 +6,12 @@ import { COLOR_FONDO } from "./seo";
 export const TAMANO_COMPARTIR = { width: 1200, height: 630 };
 export const ALT_COMPARTIR = "Banda Oriental: el juego diario de canciones uruguayas";
 
-const leer = (...partes: string[]) => readFile(join(process.cwd(), ...partes));
+// La ruta queda acotada a public/assets: con piezas libres, Turbopack no sabe qué se lee y empaqueta todo el proyecto.
+const leerAsset = (archivo: string) => readFile(join(process.cwd(), "public", "assets", archivo));
 
 /** Lee un SVG de public/assets y lo devuelve como data URI, que es lo que admite ImageResponse. */
 async function svg(nombre: string) {
-  const contenido = await leer("public", "assets", `${nombre}.svg`);
+  const contenido = await leerAsset(`${nombre}.svg`);
   return `data:image/svg+xml;base64,${contenido.toString("base64")}`;
 }
 
