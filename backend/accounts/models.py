@@ -54,13 +54,17 @@ class EmailChallenge(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
+    # Hash of the password chosen when this link was requested (confirm links only). Confirming applies it, so the
+    # password always belongs to the person who actually received and used the link.
+    password_hash = models.CharField(max_length=128, blank=True, default="")
 
     @classmethod
-    def issue(cls, email: str, purpose: str) -> str:
+    def issue(cls, email: str, purpose: str, password_hash: str = "") -> str:
         raw = new_token()
         cls.objects.create(
             email=email,
             purpose=purpose,
+            password_hash=password_hash,
             token_hash=hash_token(raw),
             expires_at=timezone.now() + cls.LIFETIMES[purpose],
         )

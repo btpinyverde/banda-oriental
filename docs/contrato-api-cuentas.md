@@ -24,7 +24,7 @@ Lo que el front puede usar hoy. Diseño completo: `docs/superpowers/specs/2026-1
 
 El correo de confirmación trae un enlace como `https://bandaoriental.xami.uy/cuenta/entrar#token=<token>&tipo=confirmar`. El token va en el **fragmento** (después del `#`) para que no llegue a ningún servidor. La página `/cuenta/entrar` lo lee del fragmento y lo manda a `POST /api/auth/confirm/`. Sirve una sola vez y vence a las 24 horas.
 
-Registrarse con un correo que ya tiene cuenta confirmada no cambia nada: la API responde igual y el correo avisa "ya tenés una cuenta". Registrarse otra vez con un correo **sin confirmar** reenvía el enlace pero **no cambia la contraseña guardada**.
+Registrarse con un correo que ya tiene cuenta confirmada no cambia nada: la API responde igual y el correo avisa "ya tenés una cuenta". Registrarse otra vez con un correo **sin confirmar** reenvía un enlace nuevo; la contraseña que vale es la que se eligió con el enlace que la persona usó para confirmar (los demás enlaces pendientes quedan sin efecto al confirmar).
 
 ## Todavía no existe
 

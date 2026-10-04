@@ -145,3 +145,51 @@ def test_an_expired_confirmation_link_is_rejected_and_the_account_stays_inactive
 @pytest.mark.parametrize("body", [{"token": "inventado"}, {"token": ""}, {}])
 def test_garbage_confirmation_tokens_are_a_400(api, db, body):
     assert api.post(CONFIRM, body, format="json").status_code == 400
+
+
+def login(api, email, password):
+    return api.post("/api/auth/login/", {"email": email, "password": password}, format="json")
+
+
+def test_the_password_is_the_one_chosen_with_the_link_the_person_actually_used(api, db, mailoutbox):
+    # An attacker pre-registers the victim's email with a password of their own; the victim then registers
+    # for real, receives the link, and confirms. The attacker's password must not survive.
+    register(api, password="clave-del-atacante-1")
+    register(api, password="clave-de-la-victima-1")
+    victim_link = token_from(mailoutbox[-1])
+
+    api.post(CONFIRM, {"token": victim_link}, format="json")
+
+    assert login(api, "ana@example.com", "clave-de-la-victima-1").status_code == 200
+    assert login(api, "ana@example.com", "clave-del-atacante-1").status_code == 400
+
+
+def test_registering_again_with_a_new_password_and_confirming_keeps_the_new_one(api, db, mailoutbox):
+    register(api, password="primera-clave-larga-1")
+    register(api, password="segunda-clave-larga-2")
+
+    api.post(CONFIRM, {"token": token_from(mailoutbox[-1])}, format="json")
+
+    assert login(api, "ana@example.com", "segunda-clave-larga-2").status_code == 200
+
+
+def test_confirming_cancels_the_other_pending_confirmation_links(api, db, mailoutbox):
+    register(api)
+    register(api)
+    first, second = token_from(mailoutbox[0]), token_from(mailoutbox[1])
+
+    assert api.post(CONFIRM, {"token": first}, format="json").status_code == 200
+    assert api.post(CONFIRM, {"token": second}, format="json").status_code == 400
+
+
+@pytest.mark.parametrize("existing", [None, "active", "unconfirmed"])
+def test_register_hashes_the_password_exactly_once_so_timing_does_not_reveal_the_email(
+    api, make_user, existing, mailoutbox
+):
+    if existing:
+        make_user("ana@example.com", active=existing == "active")
+
+    with patch.object(views, "make_password", wraps=views.make_password) as hasher:
+        register(api)
+
+    assert hasher.call_count == 1

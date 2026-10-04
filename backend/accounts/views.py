@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -32,24 +33,27 @@ class RegisterView(PublicView):
         data.is_valid(raise_exception=True)
         email, password = data.validated_data["email"], data.validated_data["password"]
 
+        # Hashed exactly once on every path, so the response time doesn't reveal whether the email has an account.
+        password_hash = make_password(password)
+
         # Always the same answer, whether or not the email already has an account.
-        user, created = self._get_or_create(email, password)
+        user, created = self._get_or_create(email, password_hash)
         if not created and user.is_active:
             send_already_registered(email)
         else:
-            # New, or still unconfirmed: send the link. An existing unconfirmed account keeps its old password,
-            # otherwise anyone could set the password of an account before its owner confirms it.
-            send_confirmation(email, EmailChallenge.issue(email, EmailChallenge.CONFIRM))
+            # New, or still unconfirmed: send the link. The password is stored with the link, not on the account:
+            # confirming applies it, so whoever registered the email first can't keep a password of their own.
+            send_confirmation(email, EmailChallenge.issue(email, EmailChallenge.CONFIRM, password_hash))
         return Response({"detail": REGISTER_DETAIL}, status=status.HTTP_202_ACCEPTED)
 
     @staticmethod
-    def _get_or_create(email, password):
+    def _get_or_create(email, password_hash):
         existing = find_user(email)
         if existing:
             return existing, False
         try:
             with transaction.atomic():
-                return User.objects.create_user(email, email, password, is_active=False), True
+                return User.objects.create(username=email, email=email, password=password_hash, is_active=False), True
         except IntegrityError:
             # Another request created it between our check and our insert.
             return find_user(email), False
@@ -65,8 +69,14 @@ class ConfirmView(PublicView):
         if user is None:
             return Response(BAD_LINK, status=status.HTTP_400_BAD_REQUEST)
         if not user.is_active:
+            if challenge.password_hash:
+                user.password = challenge.password_hash
             user.is_active = True
-            user.save(update_fields=["is_active"])
+            user.save(update_fields=["password", "is_active"])
+        # Any other confirmation link still pending for this email is now useless; it must not work as a login.
+        EmailChallenge.objects.filter(
+            email=challenge.email, purpose=EmailChallenge.CONFIRM, used_at__isnull=True
+        ).update(used_at=timezone.now())
         return Response({"token": AuthToken.issue(user)})
 
 
