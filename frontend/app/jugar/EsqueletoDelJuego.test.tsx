@@ -1,31 +1,35 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { EsqueletoDelJuego } from "./EsqueletoDelJuego";
 
 afterEach(cleanup);
 
 describe("EsqueletoDelJuego", () => {
-  it("muestra la forma del juego (título y las cuatro pistas bloqueadas) en vez de un hueco vacío", () => {
-    render(<EsqueletoDelJuego tardando={false} />);
-
-    expect(screen.getByRole("heading", { level: 1, name: "¿Qué canción es?" })).toBeInTheDocument();
-    const pistas = within(screen.getByRole("list", { name: "Pistas" })).getAllByRole("listitem");
-    expect(pistas).toHaveLength(4);
-  });
-
-  it("lleva un aviso de carga para quien usa lector de pantalla, y la zona figura como ocupada", () => {
+  it("dibuja la forma completa del juego en gris: título, reproductor, cuatro pistas, seis filas de intentos y el buscador", () => {
     const { container } = render(<EsqueletoDelJuego tardando={false} />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Cargando la canción de hoy…");
-    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(container.querySelectorAll(".esqueleto__pista")).toHaveLength(4);
+    expect(container.querySelectorAll(".esqueleto__fila")).toHaveLength(6);
+    for (const parte of [".esqueleto__titulo", ".esqueleto__reproductor", ".esqueleto__buscador"]) {
+      expect(container.querySelector(parte), parte).not.toBeNull();
+    }
   });
 
-  it("no ofrece nada para tocar mientras carga: ni buscador ni botones", () => {
-    render(<EsqueletoDelJuego tardando={false} />);
+  it("todo el dibujo es decoración: está oculto para los lectores de pantalla y no hay nada para tocar", () => {
+    const { container } = render(<EsqueletoDelJuego tardando={false} />);
 
-    expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(container.querySelector(".esqueleto__dibujo")).toHaveAttribute("aria-hidden", "true");
     expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("heading")).toBeNull();
+  });
+
+  it("lleva un solo aviso de carga y la zona figura como ocupada", () => {
+    const { container } = render(<EsqueletoDelJuego tardando={false} />);
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando la canción de hoy…");
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
   });
 
   it("si tarda, explica que el servidor está despertando; si no, no dice nada", () => {
@@ -37,11 +41,10 @@ describe("EsqueletoDelJuego", () => {
     expect(screen.getByText(/está despertando/)).toBeInTheDocument();
   });
 
-  it("el recuadro de carga es una ventana propia encima del esqueleto", () => {
+  it("el aviso es una cápsula chica y no una ventana que tapa el dibujo", () => {
     const { container } = render(<EsqueletoDelJuego tardando={false} />);
 
-    const ventana = container.querySelector(".esqueleto__ventana");
-    expect(ventana).not.toBeNull();
-    expect(within(ventana as HTMLElement).getByRole("status")).toBeInTheDocument();
+    expect(container.querySelector(".esqueleto__ventana")).toBeNull();
+    expect(container.querySelector(".esqueleto__aviso")).not.toBeNull();
   });
 });
