@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.core.files.storage import storages
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -86,6 +87,10 @@ class Stem(models.Model):
 
 class GuessAttempt(models.Model):
     device_id = models.CharField(max_length=64)
+    # Set when it was played with a session or claimed at sign-in. Deleting the account deletes the games.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="attempts"
+    )
     daily_song = models.ForeignKey(DailySong, on_delete=models.CASCADE, related_name="attempts")
     attempt_number = models.PositiveSmallIntegerField()
     guessed_text = models.CharField(max_length=255)
@@ -96,15 +101,27 @@ class GuessAttempt(models.Model):
     class Meta:
         ordering = ["attempt_number"]
         constraints = [
+            # Only for games without an account: an account's games are kept apart by the per-user constraint
+            # below, so signing in or out on a shared device never collides with the anonymous ones.
             models.UniqueConstraint(
                 fields=["device_id", "daily_song", "attempt_number"],
+                condition=models.Q(user__isnull=True),
                 name="unique_attempt_number_per_device_per_day",
+            ),
+            # An account plays once a day whatever device it uses.
+            models.UniqueConstraint(
+                fields=["user", "daily_song", "attempt_number"],
+                condition=models.Q(user__isnull=False),
+                name="unique_attempt_number_per_user_per_day",
             ),
         ]
 
 
 class ScoreEntry(models.Model):
     device_id = models.CharField(max_length=64)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="scores"
+    )
     daily_song = models.ForeignKey(DailySong, on_delete=models.CASCADE, related_name="scores")
     display_name = models.CharField(max_length=50)
     score = models.PositiveIntegerField()
@@ -115,6 +132,13 @@ class ScoreEntry(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["device_id", "daily_song"], name="one_score_per_device_per_day"
+                fields=["device_id", "daily_song"],
+                condition=models.Q(user__isnull=True),
+                name="one_score_per_device_per_day",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "daily_song"],
+                condition=models.Q(user__isnull=False),
+                name="one_score_per_user_per_day",
             ),
         ]

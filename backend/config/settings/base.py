@@ -164,3 +164,7 @@ ANYMAIL = {"RESEND_API_KEY": RESEND_API_KEY}
 # Daily cap on emails sent by the whole site (the free mail plans have a daily quota; this stops a flood of
 # requests from using it all up). Over the cap the API answers the same and just doesn't send.
 EMAIL_DAILY_CAP = int(os.environ.get("EMAIL_DAILY_CAP", "90"))
+# Smaller daily pool for emails to addresses that have no confirmed account (see accounts/limits.py).
+EMAIL_NEW_ADDRESS_DAILY_CAP = int(os.environ.get("EMAIL_NEW_ADDRESS_DAILY_CAP", "50"))
+# Send emails after answering the request, so every branch answers equally fast. On in production (prod.py).
+EMAIL_SEND_IN_BACKGROUND = False

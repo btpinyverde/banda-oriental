@@ -23,6 +23,8 @@ Lo que el front puede usar hoy. Diseño completo: `docs/superpowers/specs/2026-1
 | `POST /api/auth/password-reset/confirm/` | `{token, password}` | `200 {"token"}` y **cierra todas las demás sesiones**. `400` con `password` si es débil (el enlace no se gasta) o `400` "enlace no válido". También sirve para elegir la primera contraseña de una cuenta creada con enlace. |
 | `POST /api/auth/logout/` | (con token) | `204` y borra solo el token usado. `401` sin token válido. |
 | `GET /api/me/` | (con token) | `200 {"email", "date_joined"}`. `401` sin token válido. |
+| `DELETE /api/me/` | (con token) | `204`. Borra la cuenta y **todo lo asociado**: sesiones, partidas, puntajes (también salen del ranking) y enlaces de correo pendientes. Las partidas jugadas sin cuenta que nunca se asociaron no se tocan. La sesión deja de servir. |
+| `GET /api/me/history/` | (con token) | `200 {"days": [...]}`, del día más nuevo al más viejo. Cada día: `day`, `finished`, `won`, `winning_attempt` (o `null`), `score` (o `null`), `attempts` (`attempt_number`, `guessed_text`, `is_correct`, `feedback`) y `song` (`title`, `artist`, `album`, `year`) **solo si el día terminó** (ganó o gastó los 6 intentos); si sigue en curso `song` es `null`. |
 
 ## Los enlaces del correo
 
@@ -39,11 +41,18 @@ Ejemplo: `https://bandaoriental.xami.uy/cuenta/entrar#token=<token>&tipo=acceso`
 ## Reglas que el front no tiene que adivinar
 
 - Los endpoints que mandan correo (`register`, `magic/request`, `password-reset/request`) **responden siempre lo mismo**, con o sin cuenta, con o sin límite: no revelan nada. No hay forma de saber si el correo salió; el texto debe decir "si el correo es válido, te enviamos un mensaje".
-- Límite de envío: 5 correos por hora por dirección y un tope diario de todo el sitio. Pasado el límite la API sigue respondiendo `202` pero no manda nada.
-- Registrarse otra vez con un correo **sin confirmar** manda un enlace nuevo; la contraseña que vale es la del enlace que se usó. Con un correo ya confirmado manda un aviso de "ya tenés una cuenta".
+- Límite de envío: 5 correos por hora por dirección y dos topes diarios: uno de todo el sitio y otro, más chico, para direcciones **sin cuenta confirmada** (así quien no tiene cuenta no puede agotar el cupo de quienes sí la tienen). Pasado el límite la API sigue respondiendo `202` pero no manda nada, y queda un aviso en el log del servidor.
+- Los correos se mandan **después** de responder, para que todas las ramas tarden lo mismo (si no, el tiempo de respuesta delataría qué direcciones tienen cuenta). Si el proveedor falla, el pedido igual responde `202` y el error queda en el log (sin la dirección ni el enlace).
+- Una cuenta **sin confirmar no tiene contraseña propia**: la que se eligió viaja con el enlace de confirmación y recién se aplica al confirmar (así quien registra primero un correo ajeno no puede quedarse con una contraseña). Entrar con enlace por correo confirma la cuenta y descarta cualquier contraseña, sesión o enlace pendiente que tuviera. Registrarse otra vez con un correo **sin confirmar** manda un enlace nuevo; la contraseña que vale es la del enlace que se usó. Con un correo ya confirmado manda un aviso de "ya tenés una cuenta".
 - Una cuenta bloqueada desde el admin no puede entrar por ningún camino (todos los enlaces dan "no válido").
 - Sin cuenta se puede seguir jugando: el encabezado `Authorization` es opcional.
 
+## El juego con cuenta
+
+- `GET /api/daily/`, `POST /api/daily/guess/` y `POST /api/daily/score/` aceptan el encabezado `Authorization`. **Con sesión** las partidas son de la **cuenta** (y se guarda también el dispositivo): el estado, los intentos y el puntaje valen desde cualquier dispositivo y una cuenta juega **una vez por día** aunque cambie de aparato. **Sin sesión** todo sigue igual que antes, por dispositivo. Un token inválido da `401` (no cae a anónimo): el front limpia la sesión y reintenta sin ella.
+- **Al entrar** (`confirm`, `login`, `magic/verify` y `password-reset/confirm`) hay que mandar también `X-Device-Id` (es opcional ahí): el backend asocia a la cuenta las partidas jugadas sin cuenta en ese dispositivo, día por día. Si la cuenta ya había jugado ese día **gana la de la cuenta** y la del dispositivo queda como estaba. Por eso **el front no sube su historial local**: pide `GET /api/me/history/`.
+- Al cerrar sesión se vuelve a jugar como anónimo con el mismo dispositivo.
+
 ## Todavía no existe
 
-Partidas asociadas a la cuenta, `GET /api/me/history/` y borrar la cuenta (entrega 3). En producción **no se envía correo** hasta que se configure `RESEND_API_KEY` (y el dominio de envío esté verificado).
+Nada de la API de cuentas queda pendiente; falta el front (pantallas de entrar, crear cuenta, recuperar contraseña y la cuenta). En producción **no se envía correo** hasta que se configure `RESEND_API_KEY` (y el dominio de envío esté verificado).

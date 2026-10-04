@@ -33,7 +33,7 @@ def test_register_creates_an_unconfirmed_user_and_emails_a_confirmation_link(api
     user = User.objects.get(username="ana@example.com")
     assert user.is_active is True
     assert is_confirmed(user) is False
-    assert user.check_password(PASSWORD)
+    assert user.has_usable_password() is False  # the chosen password waits on the link
     assert len(mailoutbox) == 1
     assert mailoutbox[0].to == ["ana@example.com"]
     assert "/cuenta/entrar#token=" in mailoutbox[0].body
@@ -68,7 +68,7 @@ def test_registering_an_unconfirmed_email_again_resends_the_link_and_keeps_the_o
     assert response.status_code == 202
     assert len(mailoutbox) == 1
     assert "#token=" in mailoutbox[0].body
-    assert User.objects.get().check_password(PASSWORD)
+    assert User.objects.get().has_usable_password() is False
     assert not User.objects.get().check_password("clave-del-intruso-9")
 
 
@@ -106,7 +106,7 @@ def test_losing_a_race_for_the_same_email_still_answers_202(api, make_user, mail
 
     assert response.status_code == 202
     assert User.objects.count() == 1
-    assert User.objects.get().check_password(PASSWORD)
+    assert User.objects.get().has_usable_password() is False
     assert len(mailoutbox) == 1
 
 

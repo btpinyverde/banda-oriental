@@ -181,3 +181,14 @@ def test_prod_refuses_email_backends_that_leak_or_lose_the_links(monkeypatch, ba
 
     with pytest.raises(ImproperlyConfigured, match="EMAIL_BACKEND"):
         _reload_prod_settings()
+
+
+def test_prod_warns_loudly_when_email_is_switched_off(monkeypatch, caplog):
+    import logging
+
+    _prod_env(monkeypatch)
+
+    with caplog.at_level(logging.WARNING):
+        _reload_prod_settings()
+
+    assert "RESEND_API_KEY" in caplog.text

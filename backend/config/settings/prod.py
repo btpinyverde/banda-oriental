@@ -86,3 +86,13 @@ if EMAIL_BACKEND in _LEAKY_EMAIL_BACKENDS:  # noqa: F405
     raise ImproperlyConfigured(f"EMAIL_BACKEND {EMAIL_BACKEND} must not be used in production.")  # noqa: F405
 if EMAIL_BACKEND != "django.core.mail.backends.dummy.EmailBackend" and not FRONTEND_URL.startswith("https://"):  # noqa: F405
     raise ImproperlyConfigured("FRONTEND_URL must be an https:// URL when emails are sent.")
+
+EMAIL_SEND_IN_BACKGROUND = True
+
+if EMAIL_BACKEND == "django.core.mail.backends.dummy.EmailBackend":
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "El correo está APAGADO: falta RESEND_API_KEY. Nadie va a poder confirmar su cuenta, restablecer la "
+        "contraseña ni entrar con enlace hasta que se configure."
+    )

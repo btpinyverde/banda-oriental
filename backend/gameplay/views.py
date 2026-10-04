@@ -9,9 +9,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.authentication import BearerTokenAuthentication
+
 from .feedback import calculate_feedback
 from .models import DailySong, GuessAttempt, ScoreEntry, Stem
 from .moderation import contains_banned_word
+from .ownership import owner_fields, owner_filter
 from .scoring import calculate_score
 
 
@@ -30,6 +33,9 @@ def get_device_id(request):
 
 
 class DailyView(APIView):
+    # Optional session: without the header the game works by device, as before. A bad token is a 401.
+    authentication_classes = [BearerTokenAuthentication]
+
     def get(self, request):
         device_id = get_device_id(request)
         daily_song = DailySong.objects.filter(
@@ -38,14 +44,13 @@ class DailyView(APIView):
         if daily_song is None:
             return Response({"detail": "No hay canción publicada para hoy."}, status=404)
 
-        score = ScoreEntry.objects.filter(device_id=device_id, daily_song=daily_song).first()
+        owner = owner_filter(request, device_id)
+        score = ScoreEntry.objects.filter(owner, daily_song=daily_song).first()
         if score is not None:
             return self._finished_response(daily_song, won=True, score=score)
 
         attempts = list(
-            GuessAttempt.objects.filter(device_id=device_id, daily_song=daily_song).order_by(
-                "attempt_number"
-            )
+            GuessAttempt.objects.filter(owner, daily_song=daily_song).order_by("attempt_number")
         )
         if any(attempt.is_correct for attempt in attempts):
             # A win doesn't create a ScoreEntry by itself (that's a
@@ -105,6 +110,9 @@ class DailyView(APIView):
 
 
 class GuessView(APIView):
+    # Optional session: without the header the game works by device, as before. A bad token is a 401.
+    authentication_classes = [BearerTokenAuthentication]
+
     def post(self, request):
         device_id = get_device_id(request)
         daily_song = DailySong.objects.filter(
@@ -113,10 +121,11 @@ class GuessView(APIView):
         if daily_song is None:
             return Response({"detail": "No hay canción publicada para hoy."}, status=404)
 
-        if ScoreEntry.objects.filter(device_id=device_id, daily_song=daily_song).exists():
+        owner = owner_filter(request, device_id)
+        if ScoreEntry.objects.filter(owner, daily_song=daily_song).exists():
             return Response({"detail": "Ya jugaste hoy."}, status=400)
 
-        device_attempts = GuessAttempt.objects.filter(device_id=device_id, daily_song=daily_song)
+        device_attempts = GuessAttempt.objects.filter(owner, daily_song=daily_song)
         # A win doesn't create a ScoreEntry by itself — that's a separate
         # call the frontend makes afterward (Task 6) — so without this
         # check, a device could keep guessing after already winning, in
@@ -148,6 +157,7 @@ class GuessView(APIView):
             # unusable for any later query in this request/response.
             with transaction.atomic():
                 GuessAttempt.objects.create(
+                    **owner_fields(request),
                     device_id=device_id,
                     daily_song=daily_song,
                     attempt_number=attempt_number,
@@ -175,6 +185,9 @@ class GuessView(APIView):
 
 
 class ScoreView(APIView):
+    # Optional session: without the header the game works by device, as before. A bad token is a 401.
+    authentication_classes = [BearerTokenAuthentication]
+
     def post(self, request):
         device_id = get_device_id(request)
         daily_song = DailySong.objects.filter(
@@ -183,11 +196,12 @@ class ScoreView(APIView):
         if daily_song is None:
             return Response({"detail": "No hay canción publicada para hoy."}, status=404)
 
-        if ScoreEntry.objects.filter(device_id=device_id, daily_song=daily_song).exists():
+        owner = owner_filter(request, device_id)
+        if ScoreEntry.objects.filter(owner, daily_song=daily_song).exists():
             return Response({"detail": "Ya enviaste tu puntaje de hoy."}, status=400)
 
         winning_attempt_obj = (
-            GuessAttempt.objects.filter(device_id=device_id, daily_song=daily_song, is_correct=True)
+            GuessAttempt.objects.filter(owner, daily_song=daily_song, is_correct=True)
             .order_by("attempt_number")
             .first()
         )
@@ -222,6 +236,7 @@ class ScoreView(APIView):
             # TransactionManagementError on the very next query).
             with transaction.atomic():
                 entry = ScoreEntry.objects.create(
+                    **owner_fields(request),
                     device_id=device_id,
                     daily_song=daily_song,
                     display_name=display_name,

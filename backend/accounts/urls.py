@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     ConfirmView,
     LoginView,
+    HistoryView,
     LogoutView,
     MagicRequestView,
     MagicVerifyView,
@@ -23,5 +24,6 @@ urlpatterns = [
     path("auth/magic/verify/", MagicVerifyView.as_view(), name="magic-verify"),
     path("auth/password-reset/request/", PasswordResetRequestView.as_view(), name="password-reset-request"),
     path("auth/password-reset/confirm/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path("me/history/", HistoryView.as_view(), name="history"),
     path("me/", MeView.as_view(), name="me"),
 ]

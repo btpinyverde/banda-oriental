@@ -45,9 +45,15 @@ class ResetConfirmSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=200)
     password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
 
-    def validate_password(self, value):
+    def validate(self, attrs):
+        # Looked at without using the link up, so a weak password doesn't burn it. Knowing the address lets the
+        # "too similar to your email" check run too.
+        from .models import EmailChallenge
+
+        link = EmailChallenge.peek(attrs["token"], EmailChallenge.RESET)
+        user = User(username=link.email, email=link.email) if link else None
         try:
-            validate_password(value)
+            validate_password(attrs["password"], user=user)
         except DjangoValidationError as error:
-            raise serializers.ValidationError(list(error.messages))
-        return value
+            raise serializers.ValidationError({"password": list(error.messages)})
+        return attrs
