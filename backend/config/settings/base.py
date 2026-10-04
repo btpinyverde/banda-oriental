@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "")
@@ -109,6 +111,10 @@ REST_FRAMEWORK = {
     # configure and crashes with a 500. This API is JSON-only, always.
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
 }
+
+# The frontend identifies each player with a custom X-Device-Id header. django-cors-headers only allows a fixed
+# list of headers by default, so without this the browser's preflight fails and every game call is blocked.
+CORS_ALLOW_HEADERS = (*default_headers, "x-device-id")
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
