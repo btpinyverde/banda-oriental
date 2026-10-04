@@ -236,6 +236,26 @@ class TestHumanCheck:
         assert response.status_code == 400
         assert "pass" not in response.json()
 
+    def test_a_refusal_from_cloudflare_is_logged_with_its_reason_but_never_the_token_or_the_secret(
+        self, api, db, turnstile, caplog
+    ):
+        class Respuesta:
+            def json(self):
+                return {"success": False, "error-codes": ["invalid-input-secret"]}
+
+        with caplog.at_level("WARNING", logger="core.human"), patch("core.human.requests.post", return_value=Respuesta()):
+            api.post("/api/human/", {"token": "token-privado"}, format="json")
+
+        assert "invalid-input-secret" in caplog.text
+        assert "token-privado" not in caplog.text
+        assert "secreto-de-prueba" not in caplog.text
+
+    def test_not_reaching_cloudflare_is_logged_too(self, api, db, turnstile, caplog):
+        with caplog.at_level("WARNING", logger="core.human"), patch("core.human.requests.post", side_effect=OSError("sin red")):
+            api.post("/api/human/", {"token": "t"}, format="json")
+
+        assert "Turnstile" in caplog.text
+
     @pytest.mark.parametrize("body", [{}, {"token": ""}, {"token": 5}, {"token": "x" * 5000}])
     def test_garbage_is_rejected_without_asking_cloudflare(self, api, db, turnstile, body):
         with patch("core.human.requests.post") as pedir:
