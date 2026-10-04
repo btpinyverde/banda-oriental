@@ -22,8 +22,11 @@ def _asset(name: str) -> str:
     return f"{settings.FRONTEND_URL}/assets/email/{name}"
 
 
-def render(*, preheader: str, label: str, heading: str, paragraphs: list[str], button: str, link: str, note: str) -> str:
-    """One email: a small label, a heading, a few paragraphs, a big button, a note on the link, and the footer."""
+def render(
+    *, hero: str, preheader: str, label: str, heading: str, paragraphs: list[str], button: str, link: str, note: str
+) -> str:
+    """One email: an illustrated header, a small label, a heading, a few paragraphs, a big button, a note on the
+    link, and the footer. `hero` names the illustration (cabecera-<hero>.png)."""
     href = escape(link, quote=True)
     body = "".join(
         f'<p style="margin:0 0 16px 0;font-family:{FONT};font-size:16px;line-height:1.6;color:{INK_SOFT};">'
@@ -31,14 +34,15 @@ def render(*, preheader: str, label: str, heading: str, paragraphs: list[str], b
         for text in paragraphs
     )
     return f"""<!DOCTYPE html>
-<html lang="es">
+<html lang="es" xml:lang="es" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Language" content="es">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>{escape(heading)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:{CREAM};">
+<body lang="es" style="margin:0;padding:0;background-color:{CREAM};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:{CREAM};">{escape(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{CREAM}" style="background-color:{CREAM};">
 <tr><td align="center" style="padding:32px 16px;">
@@ -48,6 +52,9 @@ def render(*, preheader: str, label: str, heading: str, paragraphs: list[str], b
     </td></tr>
     <tr><td bgcolor="#ffffff" style="background-color:#ffffff;border-radius:28px;padding:40px 36px;border:2px solid {INK};">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="padding:0 0 24px 0;">
+          <img src="{_asset(f"cabecera-{hero}.png")}" width="488" alt="Dos personajes de Banda Oriental sonriendo, entre notas musicales y confeti" style="display:block;width:100%;max-width:488px;height:auto;border:0;border-radius:20px;">
+        </td></tr>
         <tr><td style="padding:0 0 18px 0;">
           <span style="display:inline-block;background-color:{VIOLET_LIGHT};color:{VIOLET};font-family:{FONT};font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:6px 14px;border-radius:999px;">{escape(label)}</span>
         </td></tr>
@@ -73,7 +80,7 @@ def render(*, preheader: str, label: str, heading: str, paragraphs: list[str], b
     </td></tr>
     <tr><td align="center" style="padding:28px 16px 0 16px;">
       <img src="{_asset("asterisco.png")}" width="28" alt="" style="display:block;border:0;margin:0 auto 10px auto;">
-      <p style="margin:0 0 6px 0;font-family:{FONT};font-size:13px;line-height:1.5;color:{INK_SOFT};"><strong>Banda Oriental</strong> · El juego de la música uruguaya</p>
+      <p style="margin:0 0 6px 0;font-family:{FONT};font-size:13px;line-height:1.5;color:{INK_SOFT};"><strong>Banda Oriental</strong> · Una canción uruguaya nueva cada día</p>
       <p style="margin:0;font-family:{FONT};font-size:12px;line-height:1.5;color:{INK_SOFT};">Si no pediste este mensaje, ignoralo: no pasa nada.</p>
     </td></tr>
   </table>
