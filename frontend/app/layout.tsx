@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { COLOR_FONDO, construirVerificacion, DESCRIPCION, IDIOMA, NOMBRE, SITIO_URL, TITULO } from "./lib/seo";
+import { Analitica } from "./ui/Analitica";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,7 +38,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang={IDIOMA}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analitica activa={process.env.NODE_ENV === "production"} />
+      </body>
     </html>
   );
 }
