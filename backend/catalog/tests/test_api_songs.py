@@ -84,3 +84,25 @@ def test_does_not_run_a_query_per_song(client, django_assert_max_num_queries):
 @pytest.mark.django_db
 def test_only_get_is_allowed(client):
     assert client.post(reverse("catalog:songs")).status_code == 405
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("title", ["-", "---", "...", "( )", "(_)", "-‐‐-", "--------------------", "   "])
+def test_hides_songs_whose_title_is_only_symbols(client, title):
+    # Imported tracks titled "-" or "..." can't be told apart in the search box and nobody can guess them.
+    _song("s-bad", title)
+    keep = _song("s-ok", "Alfa")
+
+    songs = client.get(reverse("catalog:songs")).json()["songs"]
+
+    assert [s["id"] for s in songs] == [keep.id]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("title", ["1987", "007", "3:45", "¿Y?", "Y la nave va...", "A.F.C.", "Ñ"])
+def test_keeps_titles_that_have_at_least_a_letter_or_digit(client, title):
+    song = _song("s1", title)
+
+    songs = client.get(reverse("catalog:songs")).json()["songs"]
+
+    assert [s["id"] for s in songs] == [song.id]
