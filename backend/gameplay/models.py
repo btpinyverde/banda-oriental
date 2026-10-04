@@ -170,6 +170,8 @@ class PlayerStats(models.Model):
     device_id = models.CharField(max_length=64, blank=True, default="")
     # Chosen once, shown in the rankings. Unique whatever the case.
     public_name = models.CharField(max_length=50, null=True, blank=True)
+    # When the player last changed their public name (null: never). Changes need a wait between them.
+    name_changed_at = models.DateTimeField(null=True, blank=True)
     played = models.PositiveIntegerField(default=0)
     won = models.PositiveIntegerField(default=0)
     current_streak = models.PositiveIntegerField(default=0)

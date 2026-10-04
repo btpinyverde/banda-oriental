@@ -19,3 +19,21 @@ export async function pedirRanking(periodo: PeriodoRanking, idDispositivo?: stri
   });
   return comoJson<RankingServidor>(respuesta);
 }
+
+/**
+ * Cambia el nombre con el que se aparece en los rankings (el de la cuenta si hay sesión; si no, el del dispositivo).
+ * Las reglas las pone el servidor (filtro de palabras, nombre único, espera entre cambios): si rechaza, el mensaje
+ * viene en el error y se muestra tal cual.
+ */
+export async function cambiarNombre(idDispositivo: string, nombre: string): Promise<EstadisticasServidor> {
+  const respuesta = await pedirDelJuego(
+    "/api/stats/name/",
+    {
+      method: "PUT",
+      headers: { "X-Device-Id": idDispositivo, "Content-Type": "application/json" },
+      body: JSON.stringify({ public_name: nombre }),
+    },
+    true,
+  );
+  return comoJson<EstadisticasServidor>(respuesta);
+}

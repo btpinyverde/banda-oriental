@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { guardarSesion, borrarSesion } from "../lib/cuenta/sesion";
 import { guardarPartida } from "../lib/juego/almacen-historial";
@@ -258,5 +258,31 @@ describe("ColumnaLateral: aviso para quien juega sin cuenta", () => {
 
     await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("12"));
     expect(screen.queryByText(AVISO)).toBeNull();
+  });
+});
+
+
+describe("ColumnaLateral: cambiar el nombre del ranking", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("quien ya tiene un nombre puede cambiarlo desde acá, y se refrescan sus cifras", async () => {
+    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor({ public_name: "Ana" }));
+    const cambiar = vi.spyOn(servidor, "cambiarNombre").mockResolvedValue(delServidor({ public_name: "Anita" }));
+
+    render(<ColumnaLateral />);
+    fireEvent.click(await screen.findByText("Cambiar mi nombre"));
+    fireEvent.change(screen.getByLabelText("Tu nombre en el ranking"), { target: { value: "Anita" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar" })));
+
+    expect(cambiar).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), "Anita");
+  });
+
+  it("quien todavía no eligió nombre no ve la opción: se elige al guardar el primer puntaje", async () => {
+    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor({ public_name: null }));
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("12"));
+    expect(screen.queryByText("Cambiar mi nombre")).toBeNull();
   });
 });
