@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { COLOR_FONDO, construirVerificacion, DESCRIPCION, IDIOMA, NOMBRE, SITIO_URL, TITULO } from "./lib/seo";
 import { SincronizarCuenta } from "./cuenta/SincronizarCuenta";
 import { Analitica } from "./ui/Analitica";
+import { MensajeEnLaConsola } from "./ui/MensajeEnLaConsola";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         {children}
         <SincronizarCuenta />
+        <MensajeEnLaConsola />
         <Analitica activa={process.env.NODE_ENV === "production"} />
       </body>
     </html>
