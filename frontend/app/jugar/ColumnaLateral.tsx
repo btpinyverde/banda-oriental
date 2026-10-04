@@ -5,11 +5,15 @@ import { BotonCompartir } from "../compartir/BotonCompartir";
 import { datosDePartida } from "../lib/compartir/story";
 import { cuentasActivas } from "../lib/cuenta/activas";
 import { useSesion } from "../lib/cuenta/useSesion";
+import { EVENTO_HISTORIAL } from "../lib/juego/almacen-historial";
+import { idDeDispositivo } from "../lib/juego/dispositivo";
+import { cambiarNombre } from "../lib/juego/estadisticas-servidor";
 import { estadisticas, promedioIntentos, ultimosDias, type EstadoDia } from "../lib/juego/historial";
 import { useDiaActual } from "../lib/juego/useDiaActual";
 import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import { useHistorial } from "../lib/juego/useHistorial";
 import { Ondulada } from "../ui/Ondulada";
+import { CambiarNombre } from "./CambiarNombre";
 import { RankingEjemplo } from "./RankingEjemplo";
 
 const DIAS_RACHA = 5;
@@ -94,6 +98,16 @@ export function ColumnaLateral({ conRankingEjemplo = false }: { conRankingEjempl
           Ver historial →
         </Link>
       </section>
+
+      {delServidor?.public_name && (
+        <CambiarNombre
+          nombreActual={delServidor.public_name}
+          alCambiar={async (nombre) => {
+            await cambiarNombre(idDeDispositivo(), nombre);
+            window.dispatchEvent(new Event(EVENTO_HISTORIAL)); // vuelve a pedir las cifras, ya con el nombre nuevo
+          }}
+        />
+      )}
 
       {sugerirCuenta && (
         <section className="lateral__aviso-cuenta" aria-label="Crear una cuenta">

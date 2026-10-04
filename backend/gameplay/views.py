@@ -4,8 +4,10 @@ from datetime import date
 
 from catalog.models import Song
 import logging
+from datetime import timedelta
 
 from django.db import IntegrityError, transaction
+from django.conf import settings
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -304,6 +306,11 @@ class ScoreView(APIView):
                 if not row.public_name:
                     row.public_name = display_name
                     row.save(update_fields=["public_name"])
+                elif row.public_name != display_name:
+                    # The name was changed between reading it and saving the score: the score carries the new one
+                    # (the old one is free for anyone to take).
+                    entry.display_name = display_name = row.public_name
+                    entry.save(update_fields=["display_name"])
         except IntegrityError:
             # Two things can collide: today's score (the .exists() check above has a race, and the UniqueConstraint
             # on ScoreEntry is the real backstop) or the public name (someone took it a moment ago).
@@ -419,3 +426,67 @@ class LeaderboardView(APIView):
             if device_id:
                 me_key = ("d", device_id)
         return Response(leaderboards.build(period, timezone.localdate(), limit=LEADERBOARD_LIMIT, me_key=me_key))
+
+
+class PublicNameView(APIView):
+    """Changes the public name a player appears with in the rankings. Same rules as when it was chosen (word filter,
+    unique whatever the case), a wait between changes, and never creates a player: the name is first chosen with the
+    first score."""
+
+    throttle_scope = "name"
+    permission_classes = [HasHumanPass]
+    authentication_classes = [BearerTokenAuthentication]
+    http_method_names = ["put", "options"]
+
+    def put(self, request):
+        device_id = get_device_id(request)
+        owner = owner_of(request, device_id)
+        lookup = {"user": owner["user"]} if "user" in owner else {"user": None, "device_id": device_id}
+        with transaction.atomic():
+            # The row is locked until the end so two requests at once (or a rename and a score) are ordered.
+            row = PlayerStats.objects.select_for_update().filter(**lookup).first()
+            return self._change(request, row)
+
+    def _change(self, request, row):
+        if row is None or not row.public_name:
+            return Response(
+                {"detail": "Todavía no elegiste un nombre: se elige al guardar tu primer puntaje."}, status=400
+            )
+
+        raw = request.data.get("public_name") if isinstance(request.data, dict) else None
+        if not isinstance(raw, str):
+            return Response({"detail": "Nombre inválido."}, status=400)
+        name = raw.strip()
+        max_length = PlayerStats._meta.get_field("public_name").max_length
+        if not name or len(name) > max_length or contains_banned_word(name):
+            return Response({"detail": "Nombre inválido."}, status=400)
+        if name == row.public_name:
+            return Response(serialize(row))  # nothing to change, and the wait does not start
+
+        wait_days = settings.PUBLIC_NAME_CHANGE_COOLDOWN_DAYS
+        if wait_days > 0 and row.name_changed_at is not None:
+            next_change = row.name_changed_at + timedelta(days=wait_days)
+            if timezone.now() < next_change:
+                return Response(
+                    {
+                        "detail": f"Podés cambiar tu nombre una vez cada {wait_days} días. "
+                        f"El próximo cambio es el {timezone.localtime(next_change):%d/%m}.",
+                        "code": "name_change_too_soon",
+                    },
+                    status=400,
+                )
+        if PlayerStats.objects.exclude(pk=row.pk).filter(public_name__iexact=name).exists():
+            return Response({"detail": "Ese nombre ya está en uso. Elegí otro."}, status=400)
+
+        try:
+            with transaction.atomic():
+                row.public_name = name
+                row.name_changed_at = timezone.now()
+                row.save(update_fields=["public_name", "name_changed_at"])
+                scores = ScoreEntry.objects.filter(user=row.user) if row.user_id else ScoreEntry.objects.filter(
+                    device_id=row.device_id, user__isnull=True
+                )
+                scores.update(display_name=name)  # the daily list shows what each score was saved with
+        except IntegrityError:
+            return Response({"detail": "Ese nombre ya está en uso. Elegí otro."}, status=400)
+        return Response(serialize(row))

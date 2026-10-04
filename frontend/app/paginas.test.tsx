@@ -197,7 +197,9 @@ describe("textos legales: lo que el servidor guarda de verdad", () => {
 
   it("los términos explican el nombre del ranking (único, se elige una vez) y ya no dicen que el ranking se está armando", () => {
     expect(terminos() + comoFunciona()).not.toMatch(/estamos terminando de armar/i);
-    expect(comoFunciona()).toMatch(/una sola vez/i);
+    expect(comoFunciona()).toMatch(/una vez cada 7 días/i);
+    expect(privacidad()).toMatch(/una vez cada 7 días/i);
+    expect(privacidad() + comoFunciona()).not.toMatch(/elegís una sola vez|lo elegís una sola vez/i);
     expect(comoFunciona()).toMatch(/semana/i);
   });
 });

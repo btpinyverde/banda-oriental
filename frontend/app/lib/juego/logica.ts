@@ -99,8 +99,9 @@ export function normalizarTexto(texto: string): string {
 
 export const LARGO_MAXIMO_NOMBRE = 50;
 
-/** Nombre para el ranking: sin espacios en los bordes, de 1 a 50 caracteres. `null` si no sirve. */
+/** Nombre para el ranking: sin espacios en los bordes, de 1 a 50 caracteres (contados como el servidor: un emoji es uno). `null` si no sirve. */
 export function nombreValido(nombre: string): string | null {
   const limpio = nombre.trim();
-  return limpio.length >= 1 && limpio.length <= LARGO_MAXIMO_NOMBRE ? limpio : null;
+  const largo = Array.from(limpio).length;
+  return largo >= 1 && largo <= LARGO_MAXIMO_NOMBRE ? limpio : null;
 }

@@ -78,7 +78,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Puntos",
         parrafos: [
-          "Cuantos menos intentos uses y más rápido aciertes, más puntos. Si ganás, podés guardar tu puntaje en el ranking con un nombre público que elegís una sola vez y que no puede repetirse con el de otra persona. Hay rankings del día, de la semana, del mes y de todos los tiempos.",
+          "Cuantos menos intentos uses y más rápido aciertes, más puntos. Si ganás, podés guardar tu puntaje en el ranking con un nombre público que no puede repetirse con el de otra persona. Lo elegís la primera vez y después podés cambiarlo una vez cada 7 días. Hay rankings del día, de la semana, del mes y de todos los tiempos.",
         ],
       },
       {
@@ -266,7 +266,7 @@ const paginas: Pagina[] = [
         lista: [
           "Un identificador anónimo de tu dispositivo, generado al azar y guardado en tu navegador. Nos permite recordar tus intentos del día.",
           "Tus intentos y resultados de cada día, y tus estadísticas (partidas jugadas, aciertos, racha y puntaje total), que calcula y guarda nuestro servidor, asociados a ese identificador anónimo o, si tenés cuenta, a tu cuenta.",
-          "El nombre público que elijas para el ranking, solo si decidís guardar tu puntaje: lo elegís una sola vez, no puede repetirse con el de otra persona, lo ve cualquiera que mire los rankings y se conserva si después creás una cuenta.",
+          "El nombre público que elijas para el ranking, solo si decidís guardar tu puntaje: lo elegís la primera vez y después podés cambiarlo una vez cada 7 días, no puede repetirse con el de otra persona, lo ve cualquiera que mire los rankings y se conserva si después creás una cuenta.",
           "Si creás una cuenta: tu correo y tu contraseña (guardada de forma que no podemos leerla), y las partidas y los puntajes asociados a la cuenta, que así te siguen a cualquier dispositivo.",
           "Los enlaces que te mandamos por correo (confirmar, entrar o cambiar la contraseña), hasta que se usan o vencen.",
           "Datos técnicos que cualquier servidor recibe al conectarse, como la dirección IP y el tipo de navegador, que quedan en los registros de nuestros proveedores de infraestructura.",

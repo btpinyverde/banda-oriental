@@ -50,6 +50,7 @@ def adopt_device_stats(user, device_id: str) -> None:
     one, and the device's own row goes away when nothing is left on the device."""
     device_row = PlayerStats.objects.filter(device_id=device_id, user__isnull=True).first()
     name = device_row.public_name if device_row else None
+    name_changed_at = device_row.name_changed_at if device_row else None  # the wait between changes comes along
     with transaction.atomic():
         if device_row is not None and name:
             device_row.public_name = None  # releases the name before the account takes it
@@ -57,7 +58,8 @@ def adopt_device_stats(user, device_id: str) -> None:
         row = recompute_stats(user=user)
         if name and not row.public_name:
             row.public_name = name
-            row.save(update_fields=["public_name"])
+            row.name_changed_at = name_changed_at
+            row.save(update_fields=["public_name", "name_changed_at"])
         if device_row is not None:
             leftovers = (
                 GuessAttempt.objects.filter(device_id=device_id, user__isnull=True).exists()

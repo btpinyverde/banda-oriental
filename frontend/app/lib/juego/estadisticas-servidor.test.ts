@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { pedirEstadisticas, pedirRanking } from "./estadisticas-servidor";
+import { cambiarNombre, pedirEstadisticas, pedirRanking } from "./estadisticas-servidor";
 import { ApiError } from "./tipos";
 import { guardarSesion, leerSesion } from "../cuenta/sesion";
 
@@ -119,5 +119,51 @@ describe("pedirRanking", () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("sin red")));
 
     await expect(pedirRanking("day", ID)).rejects.toBeInstanceOf(ApiError);
+  });
+});
+
+describe("cambiarNombre", () => {
+  it("manda el nombre nuevo con un PUT, con el dispositivo, y devuelve las estadísticas con el nombre ya cambiado", async () => {
+    const mock = simular(respuesta({ ...ESTADISTICAS, public_name: "Anita" }));
+
+    const nuevas = await cambiarNombre(ID, "Anita");
+
+    expect(nuevas.public_name).toBe("Anita");
+    const [url, opciones] = mock.mock.calls[0];
+    expect(url).toBe("https://api.example/api/stats/name/");
+    expect(opciones.method).toBe("PUT");
+    expect(opciones.headers["X-Device-Id"]).toBe(ID);
+    expect(opciones.headers["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(opciones.body)).toEqual({ public_name: "Anita" });
+  });
+
+  it("con sesión cambia el nombre de la cuenta", async () => {
+    guardarSesion({ token: "token-de-ana", email: "ana@example.com" });
+    const mock = simular(respuesta(ESTADISTICAS));
+
+    await cambiarNombre(ID, "Anita");
+
+    expect(mock.mock.calls[0][1].headers.Authorization).toBe("Bearer token-de-ana");
+  });
+
+  it("si la sesión venció (401) no repite el pedido como anónimo: cambiaría el nombre del dispositivo y no el de la cuenta", async () => {
+    guardarSesion({ token: "vencido", email: "ana@example.com" });
+    const mock = simular(respuesta({ detail: "Sesión inválida." }, 401), respuesta(ESTADISTICAS));
+
+    await expect(cambiarNombre(ID, "Anita")).rejects.toMatchObject({ name: "ApiError", status: 401 });
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(leerSesion()).toBeNull();
+  });
+
+  it("si el servidor lo rechaza lanza ApiError con su mensaje y su código (por ejemplo, tenés que esperar)", async () => {
+    simular(respuesta({ detail: "Podés cambiar tu nombre una vez cada 7 días.", code: "name_change_too_soon" }, 400));
+
+    await expect(cambiarNombre(ID, "Anita")).rejects.toMatchObject({
+      name: "ApiError",
+      status: 400,
+      codigo: "name_change_too_soon",
+      message: "Podés cambiar tu nombre una vez cada 7 días.",
+    });
   });
 });

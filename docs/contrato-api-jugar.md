@@ -102,6 +102,12 @@ ignoran. Cada vez se recalcula desde los intentos, no se suma a un contador.
   único sin distinguir mayúsculas (`400` "Ese nombre ya está en uso. Elegí otro."), pasa por el filtro de palabras y
   se conserva al crear la cuenta. Con nombre ya elegido, `display_name` es opcional y se ignora: el ranking muestra
   siempre el nombre guardado.
+- **Cambiar el nombre**: `PUT /api/stats/name/` con `{"public_name": "..."}` (sesión opcional + `X-Device-Id`, con la
+  comprobación humana si está encendida; límite 10 por hora). Solo si el jugador ya eligió uno (con el primer puntaje);
+  nunca crea jugadores. Mismas reglas que al elegirlo (largo, filtro de palabras, único sin distinguir mayúsculas) y
+  una espera entre cambios (`PUBLIC_NAME_CHANGE_COOLDOWN_DAYS`, 7; 0 = sin espera): si se pide antes, `400` con
+  `code: "name_change_too_soon"` y la fecha del próximo cambio. Los puntajes viejos pasan a llevar el nombre nuevo y
+  todos los rankings lo muestran. Devuelve las estadísticas del jugador.
 - **Tiempo del puntaje**: `total_time_seconds` nunca puede ser menor que lo que el servidor vio entre el primer
   intento y el ganador.
   Límite conocido: quien gana al primer intento tiene piso 0, y el servidor no mide cuánto escuchó antes de

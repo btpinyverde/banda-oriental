@@ -726,3 +726,10 @@
 .final__ranking:focus-visible {
   text-decoration: underline;
 }
+
+/* Cambiar el nombre del ranking (funcional; el diseño se afina después). */
+.cambiar-nombre { font-size: 0.95rem; color: var(--tinta-suave); }
+.cambiar-nombre summary { cursor: pointer; font-weight: 700; color: var(--violeta); }
+.cambiar-nombre form { display: grid; gap: 8px; margin-top: 10px; }
+.cambiar-nombre__ayuda { margin: 0; font-size: 0.85rem; }
+.cambiar-nombre__error { margin: 0; color: #b3261e; font-weight: 600; }

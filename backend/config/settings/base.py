@@ -123,6 +123,7 @@ REST_FRAMEWORK = {
         "send-email": "12/hour",  # register and the requests for an emailed link
         "guess": "60/min",
         "score": "10/hour",
+        "name": "10/hour",
         "songs": "30/min",
         "human": "30/hour",
     },
@@ -199,3 +200,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 256 * 1024
 # Anonymous players (no account) who have not played for this many days are deleted, once a day. 0 = off.
 PURGE_ANONYMOUS_AFTER_DAYS = 0
 PURGE_IN_BACKGROUND = True
+
+# A player can change their public name once every this many days (0 = no wait).
+PUBLIC_NAME_CHANGE_COOLDOWN_DAYS = 7
