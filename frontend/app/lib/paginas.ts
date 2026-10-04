@@ -134,7 +134,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Un proyecto en construcción",
         parrafos: [
-          "Banda Oriental es un proyecto independiente y está creciendo. Hay cosas que todavía faltan, como el modo batalla, el archivo de canciones y las cuentas, y las vamos sumando de a poco.",
+          "Banda Oriental es un proyecto independiente y está creciendo. Hay cosas que todavía faltan, como el modo batalla, y las vamos sumando de a poco.",
         ],
       },
     ],
@@ -345,16 +345,6 @@ const paginas: Pagina[] = [
     descripcion: "El modo batalla de Banda Oriental, para competir con amigos, llega pronto.",
     bajada: "Desafiá a tus amigos con la misma canción y mirá quién la saca primero.",
     texto: "Estamos terminando de armar el modo batalla. Mientras tanto, podés jugar la canción del día.",
-  },
-  {
-    tipo: "proximamente",
-    slug: "archivo",
-    actual: "/archivo",
-    titulo: "Archivo de canciones",
-    descripcion: "El archivo de Banda Oriental, para explorar canciones y jugar días anteriores, llega pronto.",
-    bajada: "Un lugar para explorar todas las canciones, artistas y discos del juego, y para jugar los días que te perdiste.",
-    texto: "El archivo todavía se está armando. Mientras tanto, mirá cómo te fue en tus partidas.",
-    alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
   },
   {
     tipo: "proximamente",
