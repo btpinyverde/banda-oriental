@@ -241,3 +241,11 @@ def test_dev_and_tests_never_delete_anything_by_themselves():
     from config.settings import base
 
     assert base.PURGE_ANONYMOUS_AFTER_DAYS == 0
+
+
+def test_the_project_passes_djangos_own_system_checks():
+    """The checks that `migrate` and the server run on start-up (an admin pointing at a field that does not exist, for
+    example, only fails there). If they fail the deploy fails, so the tests run them too."""
+    from django.core.management import call_command
+
+    call_command("check")
