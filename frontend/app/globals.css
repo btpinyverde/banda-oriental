@@ -1860,10 +1860,29 @@ button {
 }
 
 /* Comprobación humana (Cloudflare Turnstile): el widget solo aparece si Cloudflare necesita que la persona haga algo. */
+/* Invisible mientras Cloudflare resuelve solo; si necesita un clic, se muestra como un cartel centrado sobre un fondo atenuado. */
 .comprobacion-humana {
   position: fixed;
-  left: 50%;
-  bottom: 24px;
+  inset: 0;
   z-index: 1000;
-  transform: translateX(-50%);
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(20, 16, 30, 0.55);
+}
+.comprobacion-humana--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.comprobacion-humana__texto {
+  margin: 0;
+  max-width: 320px;
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
 }
