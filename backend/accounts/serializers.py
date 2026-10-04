@@ -35,3 +35,19 @@ class TokenSerializer(serializers.Serializer):
 class LoginSerializer(serializers.Serializer):
     email = EmailField(max_length=MAX_EMAIL_LENGTH)
     password = serializers.CharField(trim_whitespace=False, max_length=128)
+
+
+class EmailSerializer(serializers.Serializer):
+    email = EmailField(max_length=MAX_EMAIL_LENGTH)
+
+
+class ResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=200)
+    password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
+
+    def validate_password(self, value):
+        try:
+            validate_password(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(list(error.messages))
+        return value

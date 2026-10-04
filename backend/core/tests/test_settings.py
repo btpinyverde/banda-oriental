@@ -119,3 +119,65 @@ def test_prod_settings_require_each_r2_setting(monkeypatch, missing_var):
             monkeypatch.setenv(name, value)
     with pytest.raises(ImproperlyConfigured, match=missing_var):
         _reload_prod_settings()
+
+
+def _prod_env(monkeypatch, **extra):
+    for key, value in {
+        "DATABASE_URL": "postgres://user:pass@host/db",
+        "ALLOWED_HOSTS": "example.com",
+        "CORS_ALLOWED_ORIGINS": "https://example.com",
+        "R2_ACCESS_KEY_ID": "key",
+        "R2_SECRET_ACCESS_KEY": "secret",
+        "R2_BUCKET_NAME": "bucket",
+        "R2_ENDPOINT_URL": "https://acct.r2.cloudflarestorage.com",
+    }.items():
+        monkeypatch.setenv(key, value)
+    for key in ("RESEND_API_KEY", "EMAIL_BACKEND", "FRONTEND_URL"):
+        monkeypatch.delenv(key, raising=False)
+    for key, value in extra.items():
+        monkeypatch.setenv(key, value)
+
+
+def test_prod_sends_no_email_at_all_until_a_provider_is_configured(monkeypatch):
+    _prod_env(monkeypatch)
+
+    mod = _reload_prod_settings()
+
+    assert mod.EMAIL_BACKEND == "django.core.mail.backends.dummy.EmailBackend"
+
+
+def test_prod_uses_resend_when_its_key_is_set(monkeypatch):
+    _prod_env(monkeypatch, RESEND_API_KEY="re_123", FRONTEND_URL="https://bandaoriental.xami.uy")
+
+    mod = _reload_prod_settings()
+
+    assert mod.EMAIL_BACKEND == "anymail.backends.resend.EmailBackend"
+    assert mod.ANYMAIL["RESEND_API_KEY"] == "re_123"
+    assert "anymail" in mod.INSTALLED_APPS
+
+
+@pytest.mark.parametrize("front", [None, "http://bandaoriental.xami.uy", "http://localhost:3000"])
+def test_prod_refuses_to_send_real_email_with_links_that_are_not_https(monkeypatch, front):
+    extra = {"RESEND_API_KEY": "re_123"}
+    if front:
+        extra["FRONTEND_URL"] = front
+    _prod_env(monkeypatch, **extra)
+
+    with pytest.raises(ImproperlyConfigured, match="FRONTEND_URL"):
+        _reload_prod_settings()
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        "django.core.mail.backends.console.EmailBackend",
+        "django.core.mail.backends.locmem.EmailBackend",
+        "django.core.mail.backends.filebased.EmailBackend",
+    ],
+)
+def test_prod_refuses_email_backends_that_leak_or_lose_the_links(monkeypatch, backend):
+    # The console backend would print every confirmation link into the production logs.
+    _prod_env(monkeypatch, EMAIL_BACKEND=backend, FRONTEND_URL="https://bandaoriental.xami.uy")
+
+    with pytest.raises(ImproperlyConfigured, match="EMAIL_BACKEND"):
+        _reload_prod_settings()

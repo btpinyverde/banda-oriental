@@ -73,3 +73,16 @@ for _r2_var in (
 ):
     if not globals()[_r2_var]:
         raise ImproperlyConfigured(f"{_r2_var} is required in production.")
+
+# Emails carry single-use links. Two ways to get that wrong in production, both refused at startup:
+# - a backend that prints or stores the message (console, locmem, file) would leak every link into the logs;
+# - links built on a non-https frontend URL (or the localhost default) would be broken or sniffable.
+_LEAKY_EMAIL_BACKENDS = {
+    "django.core.mail.backends.console.EmailBackend",
+    "django.core.mail.backends.locmem.EmailBackend",
+    "django.core.mail.backends.filebased.EmailBackend",
+}
+if EMAIL_BACKEND in _LEAKY_EMAIL_BACKENDS:  # noqa: F405
+    raise ImproperlyConfigured(f"EMAIL_BACKEND {EMAIL_BACKEND} must not be used in production.")  # noqa: F405
+if EMAIL_BACKEND != "django.core.mail.backends.dummy.EmailBackend" and not FRONTEND_URL.startswith("https://"):  # noqa: F405
+    raise ImproperlyConfigured("FRONTEND_URL must be an https:// URL when emails are sent.")

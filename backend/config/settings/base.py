@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "storages",
     "core",
     "accounts",
+    "anymail",
     "catalog",
     "gameplay",
 ]
@@ -153,3 +154,13 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Banda Oriental <no-re
 # There is no email provider yet. The dummy backend sends and logs nothing, so confirmation links never end up
 # in production logs. Development overrides it with the console backend.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.dummy.EmailBackend")
+# Real sending goes through Resend's HTTP API (Render's free plan blocks outbound SMTP). Setting the key is all
+# it takes to turn email on; an explicit EMAIL_BACKEND still wins.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+if RESEND_API_KEY and "EMAIL_BACKEND" not in os.environ:
+    EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+ANYMAIL = {"RESEND_API_KEY": RESEND_API_KEY}
+
+# Daily cap on emails sent by the whole site (the free mail plans have a daily quota; this stops a flood of
+# requests from using it all up). Over the cap the API answers the same and just doesn't send.
+EMAIL_DAILY_CAP = int(os.environ.get("EMAIL_DAILY_CAP", "90"))

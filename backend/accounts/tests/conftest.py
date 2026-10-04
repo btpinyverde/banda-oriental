@@ -1,4 +1,5 @@
 import pytest
+from accounts.users import mark_confirmed
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
@@ -13,8 +14,12 @@ def api():
 
 @pytest.fixture
 def make_user(db):
-    def _make(email="ana@example.com", password=PASSWORD, active=True):
-        return User.objects.create_user(email, email, password, is_active=active)
+    def _make(email="ana@example.com", password=PASSWORD, active=True, confirmed=True):
+        """`active` is the admin's on/off switch; `confirmed` says the owner proved they read that mailbox."""
+        user = User.objects.create_user(email, email, password, is_active=active)
+        if confirmed:
+            mark_confirmed(user)
+        return user
 
     return _make
 
