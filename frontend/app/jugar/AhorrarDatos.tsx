@@ -1,4 +1,5 @@
 import { useId } from "react";
+import "./ahorrar-datos.css";
 
 /** Para quien juega con datos móviles o una conexión lenta: las pistas suenan igual, pero pesan la mitad. */
 export function AhorrarDatos({ activo, alCambiar }: { activo: boolean; alCambiar: (valor: boolean) => void }) {
