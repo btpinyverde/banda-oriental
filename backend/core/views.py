@@ -49,7 +49,13 @@ def root(request):
     error). A program asking for JSON gets the same in JSON. Search engines are asked to leave it out."""
     if _wants_json(request):
         response = JsonResponse(
-            {"name": "Banda Oriental API", "status": "ok", "site": settings.FRONTEND_URL, "health": "/api/health/"}
+            {
+                "name": "Banda Oriental API",
+                "mensaje": "¿Qué pretende usted de mí?",
+                "status": "ok",
+                "site": settings.FRONTEND_URL,
+                "health": "/api/health/",
+            }
         )
     else:
         response = render(request, "core/raiz.html")

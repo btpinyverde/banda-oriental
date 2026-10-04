@@ -27,6 +27,11 @@ class TestTheRootOfTheApi:
         assert "Banda Oriental" in page
         assert 'lang="es"' in page
 
+    def test_it_asks_the_question_everyone_asks_when_they_land_here(self, browser):
+        page = browser.get("/").content.decode()
+
+        assert "¿Qué pretende usted de mí?" in page
+
     @override_settings(FRONTEND_URL="https://bandaoriental.xami.uy")
     def test_it_points_to_the_game_and_to_the_health_check(self, browser):
         page = browser.get("/").content.decode()
@@ -47,6 +52,7 @@ class TestTheRootOfTheApi:
         assert response.status_code == 200
         assert response.json() == {
             "name": "Banda Oriental API",
+            "mensaje": "¿Qué pretende usted de mí?",
             "status": "ok",
             "site": "https://bandaoriental.xami.uy",
             "health": "/api/health/",
