@@ -6,6 +6,7 @@ import { sonarPistas } from "../lib/tutorial/sonido";
 import type { TipoStem } from "../lib/juego/tipos";
 import { FilaStems } from "./FilaStems";
 import { TablaIntentos, type IntentoMostrado } from "./TablaIntentos";
+import "./tutorial.css";
 
 type Paso = "bienvenida" | "pistas" | "adivinar" | "final";
 
