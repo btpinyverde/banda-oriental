@@ -279,6 +279,7 @@ const paginas: Pagina[] = [
         titulo: "Cookies y seguimiento",
         parrafos: [
           "No usamos cookies de publicidad ni herramientas para seguirte entre sitios. Usamos el almacenamiento del navegador solo para que el juego funcione.",
+          "Medimos las visitas con Vercel Web Analytics, que cuenta páginas vistas sin cookies y sin identificarte personalmente. También usamos Google Search Console, que nos muestra cómo aparece el sitio en las búsquedas; no instalamos Google Analytics ni otras herramientas de Google en el sitio.",
         ],
       },
       {

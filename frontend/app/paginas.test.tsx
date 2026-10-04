@@ -52,6 +52,14 @@ describe("registro de páginas", () => {
     expect(texto).toMatch(/18\.331/);
   });
 
+  it("la política de privacidad avisa que se miden las visitas, sin cookies", () => {
+    const texto = JSON.stringify(paginaPorSlug("privacidad"));
+
+    expect(texto).toMatch(/Vercel Web Analytics/);
+    expect(texto).toMatch(/sin cookies/i);
+    expect(texto).toMatch(/Search Console/);
+  });
+
   it("cómo funciona explica las reglas principales", () => {
     const texto = JSON.stringify(paginaPorSlug("como-funciona"));
 
