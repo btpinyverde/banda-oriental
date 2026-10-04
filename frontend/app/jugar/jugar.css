@@ -1,0 +1,678 @@
+/* ---------- Página /jugar ----------
+   Reutiliza los tokens y las clases de la home (.chip, .boton, .celda, .stem). Todo va bajo .jugar para
+   no tocar la landing. Acá la unidad --u vale 1px: el juego es una página, no una miniatura escalable. */
+
+.jugar {
+  --u: 1px;
+  position: relative;
+  /* Las manchas se salen de la página por los bordes en vez de quedar cortadas con una línea recta. */
+  overflow: clip;
+  padding: 24px var(--gutter) 72px;
+}
+
+/* Escenario de tres columnas en pantallas anchas: decoración | juego | racha y ranking (solo en demo). */
+.jugar__escenario {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 680px);
+  justify-content: center;
+  gap: 32px;
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+}
+
+.jugar__centro { position: relative; z-index: 1; min-width: 0; }
+.jugar__deco { display: none; }
+
+@media (min-width: 1100px) {
+  .jugar__escenario { grid-template-columns: 240px minmax(0, 680px); }
+  .jugar__deco { display: block; position: relative; }
+  /* Hasta que entran las tres columnas, la de racha y ranking va debajo del juego. */
+  .jugar__escenario--con-lateral .lateral { grid-column: 2; }
+}
+
+@media (min-width: 1280px) {
+  .jugar__escenario--con-lateral { grid-template-columns: 240px minmax(0, 640px) 300px; }
+  .jugar__escenario--con-lateral .lateral { grid-column: auto; }
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.jugar__tarjeta {
+  position: relative;
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(60, 40, 120, 0.14);
+}
+
+.jugar__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip--amarillo { background: var(--amarillo); }
+
+.jugar__cuenta {
+  margin-left: auto;
+  height: 36px;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.jugar__cuenta strong { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.jugar__titulo {
+  margin: 4px 0 0;
+  font-size: clamp(34px, 4.4vw, 54px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.jugar__intento {
+  margin: -4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.jugar__error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--error);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.jugar__mensaje {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 80px 0;
+  text-align: center;
+  color: var(--tinta-suave);
+}
+
+.jugar__mensaje .jugar__titulo { color: var(--tinta); }
+.jugar__mensaje p { margin: 0; }
+.jugar__espera { max-width: 420px; font-size: 14px; }
+
+/* ---------- Reproductor ---------- */
+
+.reproductor {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 8px 20px 8px 8px;
+  border-radius: 999px;
+  background: #f3f0fc;
+}
+
+.reproductor__boton {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violeta);
+  color: #fff;
+  cursor: pointer;
+}
+
+.reproductor__boton:disabled { opacity: 0.7; cursor: progress; }
+
+.reproductor__onda {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+}
+
+/* Onda de adorno: se usa solo si no se pudo leer el audio. */
+.reproductor__onda > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.reproductor__onda-base { opacity: 0.35; }
+
+.onda__barra {
+  flex: 1;
+  min-width: 0; /* las 64 barras se achican en vez de salirse del reproductor en pantallas angostas */
+  border-radius: 99px;
+  background: #cfc8ea;
+}
+
+.onda__barra--hecha { background: var(--violeta); }
+
+.reproductor__tiempo {
+  font-size: 12px;
+  color: var(--tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.reproductor__estado {
+  grid-column: 1 / -1;
+  color: #b3261e;
+  font-weight: 600;
+  margin: 0;
+  padding: 0 0 4px 12px;
+  font-size: 12px;
+}
+
+/* ---------- Pistas ---------- */
+
+.stems {
+  display: flex;
+  justify-content: space-around;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jugar .stem__circulo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #ebe8e3;
+}
+
+.jugar .stem__circulo img { width: 22px; height: 22px; }
+.jugar .stem--abierta .stem__circulo--drums { background: var(--menta); }
+.jugar .stem--abierta .stem__circulo--bass { background: var(--amarillo); }
+.jugar .stem--abierta .stem__circulo--other { background: var(--rosa); }
+.jugar .stem--abierta .stem__circulo--vocals { background: var(--violeta-claro); }
+.jugar .stem--bloqueada { color: var(--tinta-suave); }
+
+/* ---------- Buscador ---------- */
+
+.buscador { position: relative; }
+
+.buscador__campo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 6px 0 18px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px #e4e0ee;
+}
+
+.buscador__campo:focus-within { box-shadow: inset 0 0 0 2px var(--violeta); }
+.buscador__lupa { flex: none; color: var(--tinta-suave); }
+
+.buscador__campo input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--tinta);
+}
+
+.buscador__enviar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violeta);
+  color: #fff;
+  cursor: pointer;
+}
+
+.buscador__enviar:disabled { background: #cfc8ea; cursor: not-allowed; }
+
+.buscador__opciones {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  margin: 6px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(60, 40, 120, 0.22);
+  /* Alto limitado y scroll: un artista puede tener decenas de canciones. */
+  max-height: min(340px, 50vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.buscador__opcion {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.buscador__opcion--activa,
+.buscador__opcion:hover { background: var(--violeta-claro); }
+.buscador__titulo { font-size: 15px; font-weight: 700; }
+.buscador__artista { font-size: 13px; color: var(--tinta-suave); }
+
+.buscador__vacio {
+  margin: 8px 0 0 18px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+}
+
+/* ---------- Tabla de intentos ---------- */
+
+.tabla-intentos {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 5px;
+  margin: -5px;
+  width: calc(100% + 10px);
+}
+
+.jugar .celda {
+  display: table-cell;
+  height: 36px;
+  padding: 0 8px;
+  vertical-align: middle;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+.jugar .celda--encabezado { height: 26px; text-align: center; }
+
+/* Los textos largos pasan a varias líneas en vez de cortarse con "…" (solo se corta el que no entra del todo). */
+.jugar .celda { white-space: normal; line-height: 1.25; }
+.celda__texto {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  hyphens: auto; /* si una palabra no entra, se parte con guion ("batu-cada") en vez de a mitad de sílaba */
+}
+.jugar .celda--desconocido { background: var(--gris-celda); }
+.jugar .celda--anio { white-space: nowrap; }
+
+.final__compartir { display: grid; justify-items: center; gap: 8px; margin-top: 8px; }
+.final__compartir > p { margin: 0; font-size: 13px; color: var(--tinta-suave); }
+
+/* ---------- Pantalla final ---------- */
+
+.final {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 12px 0 4px;
+  text-align: center;
+}
+
+.final__titulo { margin: 0; font-size: clamp(28px, 4vw, 40px); font-weight: 800; }
+.final__festejo { width: 96px; height: auto; margin-bottom: -4px; }
+
+.final__cancion {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 16px 28px;
+  border-radius: 20px;
+  background: var(--violeta-claro);
+}
+
+.final__etiqueta {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.final__nombre { margin: 0; font-size: 22px; font-weight: 800; color: var(--violeta); }
+.final__artista { margin: 0; font-size: 16px; font-weight: 700; }
+.final__disco,
+.final__intentos,
+.final__proxima { margin: 0; font-size: 14px; color: var(--tinta-suave); }
+.final__puntos { margin: 0; font-size: 20px; font-weight: 800; }
+
+.final__formulario {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 12px;
+}
+
+.final__formulario label { font-size: 14px; font-weight: 700; }
+
+.final__formulario input {
+  width: 100%;
+  height: 50px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px #e4e0ee;
+  font: inherit;
+  font-size: 16px;
+  text-align: center;
+}
+
+.final__formulario input:focus { outline: 0; box-shadow: inset 0 0 0 2px var(--violeta); }
+.final__formulario .boton { justify-content: center; width: 100%; border: 0; cursor: pointer; }
+.final__formulario .boton:disabled { opacity: 0.7; cursor: progress; }
+.final__error { margin: 0; padding: 8px 14px; border-radius: 12px; background: var(--error); font-size: 14px; font-weight: 600; }
+
+.final__cuenta {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(20, 17, 15, 0.12);
+  font-weight: 700;
+  color: var(--tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Decoración (pantallas anchas) ---------- */
+
+.jugar__pincelada { position: absolute; pointer-events: none; }
+.jugar__pincelada--arriba { z-index: 0; left: -84px; top: 40px; width: 340px; transform: rotate(-5deg); }
+
+.jugar__rayo { position: absolute; left: 14px; top: 4px; width: 34px; }
+
+/* La foto es un papel rasgado: sin marco, con el borde irregular y una sombra suave que sigue la forma. */
+.jugar__foto {
+  position: relative;
+  z-index: 2;
+  width: 232px;
+  margin: 118px 0 0 -6px;
+  transform: rotate(3deg);
+  filter: drop-shadow(0 8px 14px rgba(20, 17, 15, 0.22));
+}
+
+.jugar__foto-img {
+  display: block;
+  width: 100%;
+  height: auto; /* sin esto, el atributo height de la imagen le gana a la proporción */
+  aspect-ratio: 3 / 4.1;
+  object-fit: cover;
+  object-position: 46% 30%;
+  clip-path: polygon(-0.7% 1.7%, 6.4% 0.5%, 14.2% 1.2%, 19.0% 0.0%, 25.3% 0.2%, 31.6% 0.6%, 37.5% 1.8%, 44.1% 0.1%, 49.2% 0.3%, 56.6% 0.4%, 63.3% 2.2%, 69.9% 0.8%, 75.2% 0.1%, 82.6% 1.9%, 89.0% 2.1%, 95.5% 1.4%, 99.8% -0.0%, 99.7% 8.6%, 99.4% 15.5%, 99.4% 23.2%, 100.0% 27.6%, 98.6% 35.8%, 99.2% 42.8%, 99.1% 48.1%, 99.7% 54.3%, 98.7% 60.7%, 99.6% 67.2%, 98.8% 73.6%, 99.0% 79.5%, 98.6% 87.0%, 98.6% 95.8%, 100.0% 98.7%, 95.7% 99.5%, 91.1% 97.4%, 85.2% 99.8%, 79.0% 98.6%, 73.7% 98.9%, 68.1% 97.5%, 60.7% 96.8%, 55.6% 99.9%, 50.8% 97.3%, 43.0% 98.6%, 37.2% 99.0%, 29.9% 97.4%, 26.5% 96.8%, 22.0% 97.8%, 14.8% 99.1%, 9.8% 97.0%, 3.4% 99.7%, 0.6% 99.3%, 0.9% 91.3%, 0.5% 85.3%, 0.2% 79.1%, 1.0% 73.7%, 1.0% 69.4%, 1.1% 60.0%, 0.1% 55.1%, 1.0% 48.6%, 0.5% 40.9%, 0.4% 36.4%, 0.7% 29.9%, 0.1% 21.8%, 1.1% 15.9%, 1.0% 9.1%, 0.1% 2.8%);
+}
+
+.jugar__recorte { position: absolute; z-index: 3; top: -18px; left: -16px; width: 118px; transform: rotate(-12deg); }
+
+.jugar__nota {
+  position: absolute;
+  z-index: 3;
+  left: -14px;
+  top: 392px;
+  width: 210px;
+  transform: rotate(-9deg);
+  filter: drop-shadow(0 6px 10px rgba(20, 17, 15, 0.16));
+}
+
+.jugar__nota-papel { display: block; width: 100%; height: auto; }
+.jugar__lema { position: absolute; left: 13%; top: 17%; width: 63%; height: auto; }
+.jugar__flor { position: absolute; right: -26px; bottom: 6px; width: 62px; height: auto; transform: rotate(14deg); }
+
+.jugar__garabato-bucle { position: absolute; left: 20px; top: 690px; width: 88px; transform: rotate(-4deg); }
+.jugar__mancha-nota { position: absolute; pointer-events: none; }
+.jugar__mancha-nota--amarilla { z-index: 1; left: -56px; top: 440px; width: 210px; }
+.jugar__mancha-nota--rosa { z-index: 1; left: 140px; top: 470px; width: 130px; }
+.jugar__garabato { display: none; position: absolute; pointer-events: none; }
+
+@media (min-width: 1100px) {
+  .jugar__garabato { display: block; }
+  .jugar__garabato--izq { left: -56px; top: 4px; width: 36px; }
+  .jugar__garabato--titulo { left: 500px; top: 98px; width: 38px; }
+  .jugar__garabato--arriba { right: -40px; top: 4px; width: 34px; }
+  .jugar__garabato--marcas { left: -44px; top: 318px; width: 30px; }
+
+  .jugar__escenario--con-lateral .lateral { position: relative; z-index: 1; }
+}
+
+/* ---------- Columna derecha (maqueta con datos de ejemplo) ---------- */
+
+.lateral { display: grid; gap: 20px; align-content: start; padding-top: 6px; }
+
+.lateral__racha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: var(--violeta-claro);
+}
+
+.lateral__subtitulo { margin: 0; font-size: 13px; font-weight: 700; }
+.lateral__dias { margin: 2px 0 8px; font-size: 28px; font-weight: 800; line-height: 1; }
+.lateral__puntos { display: flex; gap: 5px; margin: 0; }
+.lateral__puntos span { width: 9px; height: 9px; border-radius: 50%; background: var(--violeta); }
+.lateral__puntos .lateral__punto--ganada { background: var(--violeta); }
+.lateral__puntos .lateral__punto--perdida { background: #b9b2d3; }
+.lateral__puntos .lateral__punto--sin-jugar { background: transparent; box-shadow: inset 0 0 0 2px #cbc3f6; }
+.lateral__puntos .lateral__punto--pendiente { background: #cbc3f6; }
+.lateral__invitacion { margin: 8px 0 0; font-size: 12px; color: var(--tinta-suave); }
+.lateral__ver-historial { display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--violeta); }
+
+.lateral__titulo { margin: 0 0 10px; font-size: 15px; font-weight: 800; }
+.lateral__titulo small { font-size: 13px; font-weight: 500; color: var(--tinta-suave); }
+.lateral__divisor { display: block; width: 100%; height: 20px; }
+.lateral__nota { display: flex; align-items: flex-start; gap: 10px; margin: 6px 8px 0; font-size: 13px; line-height: 1.4; color: var(--tinta-suave); }
+.lateral__nota svg { flex: none; margin-top: 1px; }
+
+.lateral__estadisticas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lateral__dato { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--violeta-claro); }
+.lateral__dato strong { font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--violeta); }
+.lateral__dato span { font-size: 12px; color: var(--tinta-suave); }
+.lateral__dato--destacado { background: var(--violeta); }
+.lateral__dato--destacado strong,
+.lateral__dato--destacado span { color: #fff; }
+
+.lateral__cabecera { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.lateral__cabecera .lateral__titulo { margin: 0; }
+.lateral__ver-todos { font-size: 12px; font-weight: 700; color: var(--violeta); }
+
+.lateral__ranking { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+
+.lateral__fila {
+  display: grid;
+  grid-template-columns: 18px 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.lateral__fila--yo { background: var(--violeta-claro); color: var(--violeta); font-weight: 800; }
+.lateral__puesto { font-weight: 700; }
+
+.lateral__avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e3dff7;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--violeta);
+}
+
+.lateral__aciertos { font-variant-numeric: tabular-nums; }
+.lateral__aviso { margin: 0; text-align: center; font-size: 11px; color: var(--tinta-suave); }
+
+/* ---------- Pistas conectadas ---------- */
+
+.jugar .stems { align-items: flex-start; }
+.jugar .stem { position: relative; flex: 1; gap: 4px; }
+.jugar .stem + .stem::before {
+  content: "";
+  position: absolute;
+  top: 22px;
+  right: calc(50% + 32px);
+  width: calc(100% - 64px);
+  height: 2px;
+  border-radius: 2px;
+  background: #e4e0ee;
+}
+.stem__nombre { font-size: 13px; font-weight: 600; }
+.stem__pista { font-size: 11px; color: var(--tinta-suave); opacity: 0.75; }
+
+/* ---------- Título con ayuda ---------- */
+
+.jugar__titulo-fila { display: flex; align-items: center; gap: 14px; }
+
+.ayuda__boton {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #b9aef0;
+  border-radius: 50%;
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--violeta);
+  cursor: pointer;
+}
+
+.ayuda__boton[aria-expanded="true"] { background: var(--violeta-claro); }
+
+.ayuda {
+  position: absolute;
+  z-index: 20;
+  top: 138px;
+  right: 24px;
+  width: 262px;
+  padding: 16px 18px 18px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(60, 40, 120, 0.2);
+}
+
+.ayuda__cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ayuda h2 { margin: 0; font-size: 14px; font-weight: 800; }
+.ayuda__cerrar { display: grid; place-items: center; width: 24px; height: 24px; border: 0; background: none; color: var(--tinta); cursor: pointer; }
+.ayuda ul { display: grid; gap: 12px; margin: 0 0 14px; padding: 0; list-style: none; }
+.ayuda li { display: flex; align-items: center; gap: 12px; font-size: 11.5px; color: var(--tinta-suave); }
+.ayuda li strong { display: block; font-size: 12.5px; color: var(--tinta); }
+.ayuda__punto { flex: none; width: 24px; height: 24px; border-radius: 50%; }
+.ayuda__punto--acierto { background: var(--acierto); }
+.ayuda__punto--cerca { background: var(--cerca); }
+.ayuda__punto--error { background: var(--error); }
+.ayuda p { margin: 0; font-size: 12px; line-height: 1.4; color: var(--tinta-suave); }
+
+/* ---------- Adornos al pie de la escena ---------- */
+
+.jugar__abajo { display: none; }
+.jugar__ondulada { display: none; }
+
+@media (min-width: 1100px) {
+  .jugar__abajo { display: block; position: absolute; right: 20px; bottom: -4px; width: 190px; height: 90px; pointer-events: none; }
+  .jugar__abajo-marcas { position: absolute; left: 0; bottom: 6px; width: 30px; transform: rotate(40deg); }
+  .jugar__abajo-nota { position: absolute; left: 66px; bottom: 0; width: 60px; }
+  .jugar__abajo-flor { position: absolute; right: 0; bottom: 18px; width: 58px; transform: rotate(10deg); }
+  .jugar__ondulada { display: block; width: calc(100% - 2 * var(--gutter)); max-width: calc(var(--ancho-maximo) - 2 * var(--gutter)); height: 24px; margin: 28px auto 0; }
+}
+
+/* ---------- Celular y tablet ---------- */
+
+.jugar__separador { display: none; }
+
+@media (max-width: 1099px) {
+  /* Orden de la escena: el juego, la racha y el ranking, y al final la foto con la nota. */
+  .jugar__centro { order: 1; }
+  .jugar__separador { display: block; order: 2; width: 100%; height: 20px; }
+  .lateral { order: 3; }
+  .jugar__deco { order: 4; }
+
+  .jugar__deco { display: block; position: relative; height: 350px; margin-top: 4px; }
+  .jugar__pincelada--arriba,
+  .jugar__rayo,
+  .jugar__garabato-bucle { display: none; }
+  .jugar__mancha-nota--amarilla { left: -34px; top: 130px; width: 210px; }
+  .jugar__mancha-nota--rosa { left: auto; right: 6px; top: 6px; width: 170px; }
+  .jugar__foto { width: 216px; margin: 28px 18px 0 auto; transform: rotate(4deg); }
+  .jugar__nota { left: -6px; top: 176px; width: 184px; }
+
+  .jugar__abajo { z-index: 4; display: block; position: absolute; right: 14px; bottom: -20px; width: 120px; height: 64px; pointer-events: none; }
+  .jugar__abajo-nota { position: absolute; right: 0; bottom: 0; width: 46px; }
+  .jugar__abajo-marcas { position: absolute; right: 56px; bottom: 28px; width: 26px; transform: rotate(40deg); }
+  .jugar__abajo-flor { display: none; }
+}
+
+@media (max-width: 860px) {
+  .jugar { padding: 8px 16px 40px; }
+  .jugar__escenario { gap: 20px; }
+
+  /* Sin tarjeta blanca: el contenido va directo sobre el fondo, como en el diseño. */
+  .jugar__tarjeta { position: relative; z-index: 1; padding: 0; border-radius: 0; background: none; box-shadow: none; gap: 16px; }
+  .jugar__cabecera { justify-content: flex-start; }
+  .jugar__cuenta { order: 3; margin: 4px auto 0; width: auto; }
+  .jugar__titulo { font-size: clamp(30px, 9.2vw, 42px); line-height: 1.05; white-space: nowrap; }
+  .jugar__titulo-fila { align-items: center; justify-content: space-between; gap: 8px; }
+
+  .ayuda { left: 0; right: 0; width: auto; top: 206px; }
+
+  .jugar .celda { height: 40px; padding: 2px 4px; font-size: 9.5px; }
+  .celda__texto { -webkit-line-clamp: 3; }
+  .reproductor { grid-template-columns: auto minmax(0, 1fr) auto; padding-right: 14px; }
+  .reproductor__tiempo { font-size: 11px; }
+  .reproductor__onda { gap: 1px; }
+
+  .jugar__garabato { display: block; }
+  .jugar__garabato--izq,
+  .jugar__garabato--marcas,
+  .jugar__garabato--arriba { display: none; }
+  .jugar__garabato--titulo { z-index: 0; left: auto; right: 2px; top: 74px; width: 24px; }
+
+  .lateral { position: relative; z-index: 1; gap: 20px; }
+  /* .centro y .lateral son hermanos con z-index 1 y .lateral viene después: sin esto tapa la lista desplegable del buscador. */
+  .jugar__centro { z-index: 2; }
+  .lateral__divisor { display: none; }
+}

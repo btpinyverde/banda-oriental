@@ -97,6 +97,14 @@ button {
   color: var(--tinta);
 }
 
+.navbar__link[aria-current="page"] {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--violeta);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 8px;
+}
+
 .navbar__acciones {
   display: flex;
   align-items: center;
@@ -824,6 +832,30 @@ button {
   .footer--compacto__legales { margin: 0; }
 }
 
+/* Variante mínima: una sola fila, sin columnas ni adornos. */
+.footer--minimo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  flex-wrap: wrap;
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+  padding: 20px var(--gutter) 28px;
+  border-top: 2px solid rgba(20, 17, 15, 0.08);
+  font-size: 14px;
+  color: var(--tinta-suave);
+}
+
+.footer--minimo .footer__logo img { display: block; width: 84px; height: auto; }
+.footer--minimo p { margin: 0; }
+.footer--minimo ul { display: flex; gap: 22px; margin: 0; padding: 0; list-style: none; }
+.footer--minimo a:hover { color: var(--tinta); }
+
+@media (max-width: 860px) {
+  .footer--minimo { flex-direction: column; justify-content: center; gap: 12px; padding-top: 24px; text-align: center; }
+}
+
 .footer__deco {
   position: absolute;
   pointer-events: none;
@@ -1411,6 +1443,12 @@ button {
     padding: 13px 6px;
     font-size: 18px;
     font-weight: 600;
+  }
+
+  /* La página donde se está parado, igual que en la navbar de escritorio. */
+  .menu-movil__panel li a[aria-current="page"] {
+    font-weight: 800;
+    color: var(--violeta);
   }
 
   .menu-movil__acciones {

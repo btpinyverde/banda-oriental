@@ -13,6 +13,27 @@ describe("Footer completo", () => {
   });
 });
 
+describe("Footer mínimo", () => {
+  it("deja solo el logo, los enlaces legales y el copyright", () => {
+    render(<Footer variante="minimo" />);
+
+    expect(screen.getByRole("link", { name: "Banda Oriental, inicio" })).toHaveAttribute("href", "/");
+    expect(screen.getByText(/© 2026 Banda Oriental/)).toBeInTheDocument();
+    for (const [nombre, href] of [["Términos", "/terminos"], ["Privacidad", "/privacidad"], ["Contacto", "/contacto"]]) {
+      expect(screen.getByRole("link", { name: nombre })).toHaveAttribute("href", href);
+    }
+  });
+
+  it("no trae las columnas, las redes ni los adornos de la versión completa", () => {
+    const { container } = render(<Footer variante="minimo" />);
+
+    expect(screen.queryByRole("navigation", { name: "Explorar" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Instagram" })).toBeNull();
+    expect(container.querySelector(".footer__deco, .footer__arte")).toBeNull();
+    expect(container.querySelector("footer")).toHaveClass("footer--minimo");
+  });
+});
+
 describe("Footer compacto", () => {
   it("deja el logo, el lema, las redes y los enlaces legales en una sola fila", () => {
     const { container } = render(<Footer variante="compacto" />);

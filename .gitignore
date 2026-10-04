@@ -17,3 +17,6 @@ frontend/.env
 
 # OS
 .DS_Store
+
+# Audios de demostración de /jugar (solo para probar localmente)
+frontend/public/demo/
