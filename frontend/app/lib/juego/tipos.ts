@@ -99,3 +99,39 @@ export interface ClienteJuego {
   enviarPuntaje(idDispositivo: string, nombre: string, segundosTotales: number): Promise<ResultadoPuntaje>;
   listarCanciones(): Promise<CancionCatalogo[]>;
 }
+
+/** Lo que el servidor calculó y guardó de un jugador (`GET /api/stats/`). El front solo lo muestra. */
+export interface EstadisticasServidor {
+  /** El nombre con el que aparece en los rankings; `null` hasta que guarda su primer puntaje. */
+  public_name: string | null;
+  played: number;
+  won: number;
+  /** 0 a 100, o `null` si todavía no jugó. */
+  win_percentage: number | null;
+  current_streak: number;
+  max_streak: number;
+  total_score: number;
+  /** Intentos promedio de las partidas ganadas, o `null` si todavía no ganó ninguna. */
+  average_attempts: number | null;
+  /** Partidas ganadas en 1, 2, ... 6 intentos. */
+  distribution: number[];
+  last_played_day: string | null;
+}
+
+export type PeriodoRanking = "day" | "week" | "month" | "all";
+
+export interface FilaRanking {
+  rank: number;
+  display_name: string;
+  score: number;
+  games: number;
+}
+
+/** `GET /api/leaderboard/?period=...`. `me` es el puesto de quien pregunta, aunque esté fuera del top. */
+export interface RankingServidor {
+  period: PeriodoRanking;
+  from: string | null;
+  to: string | null;
+  entries: FilaRanking[];
+  me: FilaRanking | null;
+}

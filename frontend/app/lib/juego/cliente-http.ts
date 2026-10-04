@@ -5,27 +5,8 @@ import {
   type ResultadoIntento,
   type ResultadoPuntaje,
 } from "./tipos";
-import { borrarSesion, leerSesion } from "../cuenta/sesion";
-import { pedirConPase } from "../humano/pedir-con-pase";
 import { comoJson, pedir } from "./http";
-
-type Opciones = Omit<RequestInit, "headers"> & { headers?: Record<string, string> };
-
-/**
- * Pide algo del juego con la sesión de la cuenta, si hay una. Si la API dice 401 (la sesión venció o se cerró en otro
- * dispositivo) se borra y el pedido se repite una vez sin sesión: la persona sigue jugando como anónima.
- */
-async function pedirDelJuego(ruta: string, opciones: Opciones = {}, conComprobacion = false): Promise<Response> {
-  const enviar = conComprobacion ? pedirConPase : pedir;
-  const sesion = leerSesion();
-  const respuesta = await enviar(ruta, {
-    ...opciones,
-    headers: { ...opciones.headers, ...(sesion ? { Authorization: `Bearer ${sesion.token}` } : {}) },
-  });
-  if (respuesta.status !== 401 || !sesion) return respuesta;
-  borrarSesion();
-  return enviar(ruta, opciones);
-}
+import { pedirDelJuego } from "./pedir-del-juego";
 
 /** Cliente real: habla con los endpoints del backend. Lo que falta del backend está en docs/contrato-api-jugar.md. */
 export function crearClienteHttp(): ClienteJuego {

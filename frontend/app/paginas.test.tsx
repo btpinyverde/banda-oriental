@@ -9,7 +9,7 @@ import { PaginaDeContenido } from "./ui/PaginaDeContenido";
 afterEach(cleanup);
 
 const DE_TEXTO = ["como-funciona", "acerca", "contacto", "sugerencias", "terminos", "privacidad"];
-const PROXIMAMENTE = ["batalla", "archivo", "ranking", "artistas", "epocas", "generos"];
+const PROXIMAMENTE = ["batalla", "archivo", "artistas", "epocas", "generos"];
 
 describe("registro de páginas", () => {
   it("cubre todos los enlaces del sitio que antes daban 404", () => {
@@ -165,6 +165,42 @@ describe("ruta [pagina]", () => {
   });
 });
 
+describe("textos legales: lo que el servidor guarda de verdad", () => {
+  const privacidad = () => JSON.stringify(paginaPorSlug("privacidad"));
+  const terminos = () => JSON.stringify(paginaPorSlug("terminos"));
+  const comoFunciona = () => JSON.stringify(paginaPorSlug("como-funciona"));
+
+  it("la privacidad ya no dice que las estadísticas se quedan solo en el dispositivo", () => {
+    expect(privacidad()).not.toMatch(/no salen de tu dispositivo/i);
+  });
+
+  it("la privacidad dice que el servidor guarda partidas, estadísticas y racha, y que sin cuenta se asocian al identificador anónimo", () => {
+    expect(privacidad()).toMatch(/estadísticas/i);
+    expect(privacidad()).toMatch(/racha/i);
+    expect(privacidad()).toMatch(/identificador anónimo/i);
+  });
+
+  it("la privacidad avisa que sin cuenta, tras siete días sin jugar, el historial se borra", () => {
+    expect(privacidad()).toMatch(/siete días/i);
+    expect(privacidad()).not.toMatch(/no se borran/i);
+  });
+
+  it("la privacidad dice que el nombre del ranking es público y se conserva al crear la cuenta", () => {
+    expect(privacidad()).toMatch(/nombre público/i);
+    expect(privacidad()).toMatch(/públic[oa]/i);
+  });
+
+  it("la privacidad aclara qué pasa con las estadísticas y el nombre al borrar la cuenta", () => {
+    expect(privacidad()).toMatch(/tus estadísticas/i);
+  });
+
+  it("los términos explican el nombre del ranking (único, se elige una vez) y ya no dicen que el ranking se está armando", () => {
+    expect(terminos() + comoFunciona()).not.toMatch(/estamos terminando de armar/i);
+    expect(comoFunciona()).toMatch(/una sola vez/i);
+    expect(comoFunciona()).toMatch(/semana/i);
+  });
+});
+
 describe("sitemap", () => {
   it("lista la portada, el juego y las páginas con contenido, y deja afuera las que todavía no existen", () => {
     const urls = sitemap().map((e) => e.url);
@@ -172,5 +208,12 @@ describe("sitemap", () => {
     expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/`, `${SITIO_URL}/jugar`, ...DE_TEXTO.map((s) => `${SITIO_URL}/${s}`)]));
     for (const slug of PROXIMAMENTE) expect(urls).not.toContain(`${SITIO_URL}/${slug}`);
     expect(urls).not.toContain(`${SITIO_URL}/historial`);
+  });
+
+  it("lista el ranking, que ahora tiene datos reales y cambia todos los días", () => {
+    const entrada = sitemap().find((e) => e.url === `${SITIO_URL}/ranking`);
+
+    expect(entrada).toBeDefined();
+    expect(entrada?.changeFrequency).toBe("daily");
   });
 });

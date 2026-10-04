@@ -684,3 +684,45 @@
   .jugar__centro { z-index: 2; }
   .lateral__divisor { display: none; }
 }
+
+/* Aviso para quien juega sin cuenta: sin ruido, pero con el motivo claro. */
+.lateral__aviso-cuenta {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: var(--violeta-claro);
+  color: var(--tinta);
+}
+.lateral__aviso-cuenta p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--tinta-suave);
+}
+.lateral__aviso-cuenta strong {
+  color: var(--tinta);
+}
+.lateral__aviso-cuenta .boton {
+  justify-self: start;
+}
+
+.final__nombre-fijo {
+  margin: 0;
+  color: var(--tinta-suave);
+}
+.final__ayuda-nombre {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--tinta-suave);
+}
+.final__ranking {
+  display: inline-block;
+  font-weight: 700;
+  color: var(--violeta);
+  text-decoration: none;
+}
+.final__ranking:hover,
+.final__ranking:focus-visible {
+  text-decoration: underline;
+}

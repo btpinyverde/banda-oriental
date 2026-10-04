@@ -78,7 +78,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Puntos",
         parrafos: [
-          "Cuantos menos intentos uses y más rápido aciertes, más puntos. Si ganás, podés guardar tu puntaje con el nombre que quieras para el ranking del día, que estamos terminando de armar.",
+          "Cuantos menos intentos uses y más rápido aciertes, más puntos. Si ganás, podés guardar tu puntaje en el ranking con un nombre público que elegís una sola vez y que no puede repetirse con el de otra persona. Hay rankings del día, de la semana, del mes y de todos los tiempos.",
         ],
       },
       {
@@ -265,8 +265,8 @@ const paginas: Pagina[] = [
         titulo: "Qué datos guardamos",
         lista: [
           "Un identificador anónimo de tu dispositivo, generado al azar y guardado en tu navegador. Nos permite recordar tus intentos del día.",
-          "Tus intentos y resultados de cada día, asociados a ese identificador.",
-          "El nombre que elijas para el ranking, solo si decidís guardar tu puntaje.",
+          "Tus intentos y resultados de cada día, y tus estadísticas (partidas jugadas, aciertos, racha y puntaje total), que calcula y guarda nuestro servidor, asociados a ese identificador anónimo o, si tenés cuenta, a tu cuenta.",
+          "El nombre público que elijas para el ranking, solo si decidís guardar tu puntaje: lo elegís una sola vez, no puede repetirse con el de otra persona, lo ve cualquiera que mire los rankings y se conserva si después creás una cuenta.",
           "Si creás una cuenta: tu correo y tu contraseña (guardada de forma que no podemos leerla), y las partidas y los puntajes asociados a la cuenta, que así te siguen a cualquier dispositivo.",
           "Los enlaces que te mandamos por correo (confirmar, entrar o cambiar la contraseña), hasta que se usan o vencen.",
           "Datos técnicos que cualquier servidor recibe al conectarse, como la dirección IP y el tipo de navegador, que quedan en los registros de nuestros proveedores de infraestructura.",
@@ -275,8 +275,14 @@ const paginas: Pagina[] = [
       {
         titulo: "Lo que queda en tu navegador",
         parrafos: [
-          "Tu historial, tus estadísticas y tu racha se guardan en tu navegador, en el almacenamiento local. Sin cuenta no salen de tu dispositivo: si borrás los datos del navegador, se pierden.",
+          "Tu historial y tu racha se muestran a partir de lo que guarda nuestro servidor y además quedan copiados en tu navegador, en el almacenamiento local, para que el juego responda rápido. Si borrás los datos del navegador se pierde el identificador anónimo, y entonces ya no podemos vincular lo que jugaste sin cuenta a ese dispositivo.",
           "Si iniciás sesión, también se guarda ahí una clave de sesión que identifica tu cuenta en este dispositivo. Al cerrar sesión se borra.",
+        ],
+      },
+      {
+        titulo: "Si jugás sin cuenta",
+        parrafos: [
+          "Tus partidas y estadísticas quedan en nuestro servidor, asociadas al identificador anónimo de tu navegador. Si pasan siete días sin que juegues, las borramos junto con tu nombre del ranking, porque ya no hay forma de saber de quién son. Si creás una cuenta antes, todo eso pasa a tu cuenta y no se borra.",
         ],
       },
       {
@@ -289,7 +295,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Para qué los usamos",
         parrafos: [
-          "Para que el juego funcione (recordar tu partida), para armar el ranking del día y para mantener y mejorar el servicio. No vendemos tus datos.",
+          "Para que el juego funcione (recordar tu partida), para armar los rankings (del día, de la semana, del mes y de todos los tiempos) y para mantener y mejorar el servicio. No vendemos tus datos.",
         ],
       },
       {
@@ -308,7 +314,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Borrar tu cuenta",
         parrafos: [
-          "Podés borrar tu cuenta cuando quieras desde Mi cuenta, con el botón Borrar mi cuenta: se borran tu correo, tus sesiones, tus partidas y tus puntajes. Las partidas jugadas sin cuenta en un dispositivo no están asociadas a nadie y no se borran.",
+          "Podés borrar tu cuenta cuando quieras desde Mi cuenta, con el botón Borrar mi cuenta: se borran tu correo, tus sesiones, tus partidas, tus puntajes, tus estadísticas y tu nombre del ranking, que queda libre para otra persona. Las partidas jugadas sin cuenta que no llegaron a pasar a ninguna cuenta se borran solas a los siete días sin jugar.",
         ],
       },
       {
@@ -349,15 +355,6 @@ const paginas: Pagina[] = [
     bajada: "Un lugar para explorar todas las canciones, artistas y discos del juego, y para jugar los días que te perdiste.",
     texto: "El archivo todavía se está armando. Mientras tanto, mirá cómo te fue en tus partidas.",
     alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
-  },
-  {
-    tipo: "proximamente",
-    slug: "ranking",
-    actual: "/ranking",
-    titulo: "Ranking",
-    descripcion: "El ranking de Banda Oriental, con los mejores puntajes del día, llega pronto.",
-    bajada: "Los mejores puntajes del día, de la semana y del mes.",
-    texto: "El ranking todavía no está disponible. Si ganás una partida, ya podés guardar tu puntaje para cuando esté listo.",
   },
   {
     tipo: "proximamente",

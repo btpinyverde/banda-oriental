@@ -121,6 +121,7 @@ una vez al día, con la primera visita (no hay tareas programadas en el hosting 
 
 El front de estadísticas y rankings.
 
-Hecho en el backend: ranking diario, semanal, mensual y global (todos los jugadores) y borrado de anónimos
-inactivos a los 7 días. Falta el front (panel de estadísticas del servidor, nombre público pedido una sola vez,
-pantalla de rankings).
+Hecho: ranking diario, semanal, mensual y global (todos los jugadores) y borrado de anónimos inactivos a los 7 días.
+El front ya los usa: el panel de /jugar muestra las estadísticas del servidor (si no responde, cae a lo guardado en
+el dispositivo), el nombre público se pide una sola vez, /ranking tiene las cuatro pestañas con el puesto propio
+(`me`), y quien juega sin cuenta ve el aviso de que a los 7 días sin jugar su historial se borra.

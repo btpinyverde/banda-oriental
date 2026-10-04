@@ -10,6 +10,7 @@ import { etiquetaDelDia, formatoCuentaAtras, pistasParaMezclar, segundosHastaMed
 import { obtenerPase } from "../lib/humano/pase";
 import { useSesion } from "../lib/cuenta/useSesion";
 import { useDiaActual } from "../lib/juego/useDiaActual";
+import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
 import { AyudaColores } from "./AyudaColores";
 import { BuscadorCanciones } from "./BuscadorCanciones";
@@ -36,6 +37,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [segundosParaProxima, setSegundosParaProxima] = useState(() => segundosHastaMedianoche(new Date()));
+  const delServidor = useEstadisticasServidor();
   const inicioIntento = useRef(0);
   const audioRenovadoEn = useRef<{ intento: number; en: number } | null>(null);
   const [tardando, setTardando] = useState(false);
@@ -255,6 +257,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
           segundosParaProxima={segundosParaProxima}
           alGuardarPuntaje={guardarPuntaje}
           compartir={compartir}
+          nombreFijo={delServidor?.public_name}
         />
       </div>
     );
