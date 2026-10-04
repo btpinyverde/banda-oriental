@@ -8,6 +8,8 @@ export interface Pista {
 
 // Audios ya decodificados, por clave. Cada intento desbloquea una pista más y vuelve a pedir el estado del día con
 // direcciones nuevas: con esto solo se baja la pista nueva y las anteriores no se descargan otra vez.
+const MINIMO_PARA_MEDIR = 50_000;
+
 const cache = new Map<string, Promise<AudioBuffer>>();
 
 export function vaciarCache(): void {
@@ -27,7 +29,11 @@ export class Mezcla {
   private desde = 0;
   private reproduciendo = false;
 
-  constructor(private readonly contexto: AudioContext) {}
+  /** `alMedir` recibe la velocidad (bytes por segundo) de cada descarga, para elegir la calidad de las siguientes. */
+  constructor(
+    private readonly contexto: AudioContext,
+    private readonly alMedir?: (bytesPorSegundo: number) => void,
+  ) {}
 
   /** Duración de la mezcla: la de la pista más larga. */
   get duracion(): number {
@@ -45,17 +51,27 @@ export class Mezcla {
   private leer({ clave, url }: Pista): Promise<AudioBuffer> {
     let carga = cache.get(clave);
     if (!carga) {
+      const empezo = performance.now();
       carga = fetch(url)
         .then((respuesta) => {
           if (!respuesta.ok) throw new Error(`No se pudo bajar el audio (${respuesta.status})`);
           return respuesta.arrayBuffer();
         })
-        .then((datos) => this.contexto.decodeAudioData(datos));
+        .then((datos) => {
+          this.medir(datos.byteLength, performance.now() - empezo);
+          return this.contexto.decodeAudioData(datos);
+        });
       cache.set(clave, carga);
       // Una carga fallida no se recuerda: el próximo intento vuelve a pedirla.
       carga.catch(() => cache.delete(clave));
     }
     return carga;
+  }
+
+  private medir(bytes: number, milisegundos: number): void {
+    // Un archivo diminuto baja casi al instante en cualquier conexión: no dice nada de ella.
+    if (!this.alMedir || bytes < MINIMO_PARA_MEDIR || milisegundos <= 0) return;
+    this.alMedir((bytes * 1000) / milisegundos);
   }
 
   /** Alturas (de 0 a 1) de las barras de la onda de la mezcla completa. */

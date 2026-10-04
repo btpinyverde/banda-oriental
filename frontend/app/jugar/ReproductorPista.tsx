@@ -39,6 +39,8 @@ interface Props {
    * segundos). Sirve para pedir direcciones nuevas: las del audio están firmadas y vencen.
    */
   alFallar?: () => void;
+  /** Velocidad de cada descarga (bytes por segundo), para elegir la calidad de las siguientes pistas. */
+  alMedir?: (bytesPorSegundo: number) => void;
 }
 
 /** Cada conjunto de pistas (día e intento) tiene su propio reproductor: al cambiar las direcciones se reinicia todo. */
@@ -46,7 +48,7 @@ export function ReproductorPista(props: Props) {
   return <Reproduccion key={props.pistas.map((pista) => pista.url).join("|")} {...props} />;
 }
 
-function Reproduccion({ pistas, alCambiarListo, alFallar }: Props) {
+function Reproduccion({ pistas, alCambiarListo, alFallar, alMedir }: Props) {
   const mezcla = useRef<Mezcla | null>(null);
   const contexto = useRef<AudioContext | null>(null);
   const carga = useRef<Promise<void> | null>(null);
@@ -99,7 +101,7 @@ function Reproduccion({ pistas, alCambiarListo, alFallar }: Props) {
       return;
     }
     contexto.current = nuevo;
-    mezcla.current = new Mezcla(nuevo);
+    mezcla.current = new Mezcla(nuevo, alMedir);
     cargar().catch(fallo);
     return () => {
       montado.current = false;

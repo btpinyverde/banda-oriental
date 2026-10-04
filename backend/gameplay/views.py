@@ -108,7 +108,12 @@ class DailyView(APIView):
                 "attempt_number": attempt_number,
                 "attempts_remaining": 6 - len(attempts),
                 "unlocked_stems": [
-                    {"stem_type": stem.stem_type, "unlock_order": rank[stem.stem_type], "url": stem.audio_file.url}
+                    {
+                        "stem_type": stem.stem_type,
+                        "unlock_order": rank[stem.stem_type],
+                        "url": stem.playable_url,
+                        "variants": stem.versions(),
+                    }
                     for stem in stems
                 ],
                 "feedback_history": [
