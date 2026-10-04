@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { BotonCompartir } from "../compartir/BotonCompartir";
 import { datosDePartida } from "../lib/compartir/story";
+import { cuentasActivas } from "../lib/cuenta/activas";
+import { useSesion } from "../lib/cuenta/useSesion";
 import { estadisticas, promedioIntentos, ultimosDias, type EstadoDia } from "../lib/juego/historial";
 import { useDiaActual } from "../lib/juego/useDiaActual";
+import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import { useHistorial } from "../lib/juego/useHistorial";
 import { Ondulada } from "../ui/Ondulada";
 import { RankingEjemplo } from "./RankingEjemplo";
@@ -21,16 +24,28 @@ const TEXTO_DIA: Record<EstadoDia, string> = {
 const coma = (numero: number) => String(numero).replace(".", ",");
 
 /**
- * Columna derecha de /jugar: la racha y las estadísticas de quien juega, calculadas con lo que quedó guardado en
- * este dispositivo (sin cuenta). El ranking del día todavía no tiene datos reales: solo se muestra, de ejemplo,
- * si se pide con `conRankingEjemplo` (modo demo).
+ * Columna derecha de /jugar: la racha y las estadísticas de quien juega. Las cifras son las que calculó y guardó el
+ * servidor; si no responde, se muestran las que salen de lo guardado en este dispositivo. Los cinco puntos de los
+ * últimos días salen siempre del dispositivo. El ranking de ejemplo solo se muestra en el modo demo.
  */
 export function ColumnaLateral({ conRankingEjemplo = false }: { conRankingEjemplo?: boolean }) {
   const historial = useHistorial();
   const hoy = useDiaActual();
 
-  const stats = estadisticas(historial, hoy);
-  const promedio = promedioIntentos(stats.distribucion);
+  const delServidor = useEstadisticasServidor();
+  const { sesion, lista: sesionLeida } = useSesion();
+
+  const local = estadisticas(historial, hoy);
+  const stats = delServidor
+    ? {
+        jugadas: delServidor.played,
+        porcentaje: delServidor.win_percentage,
+        rachaActual: delServidor.current_streak,
+        rachaMaxima: delServidor.max_streak,
+      }
+    : local;
+  const promedio = delServidor ? delServidor.average_attempts : promedioIntentos(local.distribucion);
+  const sugerirCuenta = cuentasActivas() && sesionLeida && !sesion && stats.jugadas > 0;
   const dias = ultimosDias(historial, hoy, DIAS_RACHA);
 
   // Compartir el resultado de hoy: solo si ya se jugó y se guardaron los colores de los intentos para dibujarlo.
@@ -79,6 +94,18 @@ export function ColumnaLateral({ conRankingEjemplo = false }: { conRankingEjempl
           Ver historial →
         </Link>
       </section>
+
+      {sugerirCuenta && (
+        <section className="lateral__aviso-cuenta" aria-label="Crear una cuenta">
+          <p>
+            <strong>Creá tu cuenta para no perder tu racha.</strong> Si pasás una semana sin jugar, tu historial sin
+            cuenta se borra.
+          </p>
+          <Link href="/login" className="boton boton--violeta">
+            Crear mi cuenta
+          </Link>
+        </section>
+      )}
 
       {datosParaCompartir && <BotonCompartir datos={datosParaCompartir} />}
 

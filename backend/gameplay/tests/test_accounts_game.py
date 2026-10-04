@@ -409,7 +409,7 @@ class TestSharedDevicesAndLoggingOut:
         guess(client, target_song, 1, device=DEVICE_A)  # a stranger wins anonymously on device A...
         assert score(client, device=DEVICE_A).status_code == 201  # ...and sends their score
 
-        mine = score(client, device=DEVICE_A, auth=bearer(user))  # the account sends its own from device A
+        mine = score(client, device=DEVICE_A, auth=bearer(user), name="beto")  # the account sends its own from device A
 
         assert mine.status_code == 201
 

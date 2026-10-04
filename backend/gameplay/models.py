@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.files.storage import storages
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.functions import Lower
 
 from catalog.models import Song
 
@@ -145,5 +146,53 @@ class ScoreEntry(models.Model):
                 fields=["user", "daily_song"],
                 condition=models.Q(user__isnull=False),
                 name="one_score_per_user_per_day",
+            ),
+        ]
+
+
+def empty_distribution():
+    """Games won in 1, 2, ... 6 attempts."""
+    return [0, 0, 0, 0, 0, 0]
+
+
+class PlayerStats(models.Model):
+    """What the server knows about a player, saved and updated by the server itself when a game ends.
+
+    Never filled from anything the client sends: it is recomputed from the validated attempts and scores
+    (see gameplay.stats). A player is an account or, until one is created, a device; the row follows the player when
+    the games are claimed by an account.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="stats"
+    )
+    # Only while the player has no account.
+    device_id = models.CharField(max_length=64, blank=True, default="")
+    # Chosen once, shown in the rankings. Unique whatever the case.
+    public_name = models.CharField(max_length=50, null=True, blank=True)
+    played = models.PositiveIntegerField(default=0)
+    won = models.PositiveIntegerField(default=0)
+    current_streak = models.PositiveIntegerField(default=0)
+    max_streak = models.PositiveIntegerField(default=0)
+    total_score = models.PositiveIntegerField(default=0)
+    distribution = models.JSONField(default=empty_distribution)
+    last_played_day = models.DateField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["device_id"],
+                condition=models.Q(user__isnull=True),
+                name="one_stats_row_per_anonymous_device",
+            ),
+            models.UniqueConstraint(
+                Lower("public_name"),
+                condition=models.Q(public_name__isnull=False),
+                name="public_name_is_unique_whatever_the_case",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(user__isnull=False) | ~models.Q(device_id=""),
+                name="stats_row_has_an_owner",
             ),
         ]

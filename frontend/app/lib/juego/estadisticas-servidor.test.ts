@@ -1,0 +1,123 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { pedirEstadisticas, pedirRanking } from "./estadisticas-servidor";
+import { ApiError } from "./tipos";
+import { guardarSesion, leerSesion } from "../cuenta/sesion";
+
+const ID = "11111111-2222-4333-8444-555555555555";
+
+const respuesta = (cuerpo: unknown, estado = 200) => ({
+  ok: estado >= 200 && estado < 300,
+  status: estado,
+  json: () => Promise.resolve(cuerpo),
+});
+
+beforeEach(() => {
+  localStorage.clear();
+  vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.example/");
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
+
+function simular(...respuestas: unknown[]) {
+  const mock = vi.fn();
+  respuestas.forEach((r) => mock.mockResolvedValueOnce(r));
+  vi.stubGlobal("fetch", mock);
+  return mock;
+}
+
+const ESTADISTICAS = {
+  public_name: "Ana",
+  played: 3,
+  won: 2,
+  win_percentage: 67,
+  current_streak: 2,
+  max_streak: 2,
+  total_score: 1700,
+  average_attempts: 2.5,
+  distribution: [0, 1, 1, 0, 0, 0],
+  last_played_day: "2026-10-03",
+};
+
+describe("pedirEstadisticas", () => {
+  it("pide las estadísticas del dispositivo, sin caché, y devuelve lo que calculó el servidor", async () => {
+    const mock = simular(respuesta(ESTADISTICAS));
+
+    expect(await pedirEstadisticas(ID)).toEqual(ESTADISTICAS);
+
+    const [url, opciones] = mock.mock.calls[0];
+    expect(url).toBe("https://api.example/api/stats/");
+    expect(opciones.headers["X-Device-Id"]).toBe(ID);
+    expect(opciones.cache).toBe("no-store");
+    expect(opciones.method ?? "GET").toBe("GET");
+  });
+
+  it("con sesión manda el token, para que sean las estadísticas de la cuenta", async () => {
+    guardarSesion({ token: "token-de-ana", email: "ana@example.com" });
+    const mock = simular(respuesta(ESTADISTICAS));
+
+    await pedirEstadisticas(ID);
+
+    expect(mock.mock.calls[0][1].headers.Authorization).toBe("Bearer token-de-ana");
+  });
+
+  it("si la sesión venció (401) la borra y repite como anónimo", async () => {
+    guardarSesion({ token: "vencido", email: "ana@example.com" });
+    const mock = simular(respuesta({ detail: "Sesión inválida." }, 401), respuesta(ESTADISTICAS));
+
+    expect(await pedirEstadisticas(ID)).toEqual(ESTADISTICAS);
+
+    expect(leerSesion()).toBeNull();
+    expect(mock.mock.calls[1][1].headers.Authorization).toBeUndefined();
+  });
+
+  it("lanza ApiError con el mensaje del servidor si falla", async () => {
+    simular(respuesta({ detail: "Falla interna." }, 500));
+
+    await expect(pedirEstadisticas(ID)).rejects.toMatchObject({ name: "ApiError", status: 500, message: "Falla interna." });
+  });
+});
+
+describe("pedirRanking", () => {
+  const RANKING = {
+    period: "week",
+    from: "2026-10-05",
+    to: "2026-10-11",
+    entries: [{ rank: 1, display_name: "Ana", score: 1850, games: 2 }],
+    me: null,
+  };
+
+  it("pide el ranking del período indicado", async () => {
+    const mock = simular(respuesta(RANKING));
+
+    expect(await pedirRanking("week", ID)).toEqual(RANKING);
+
+    expect(mock.mock.calls[0][0]).toBe("https://api.example/api/leaderboard/?period=week");
+    expect(mock.mock.calls[0][1].headers["X-Device-Id"]).toBe(ID);
+  });
+
+  it("sin identificador de dispositivo no manda el encabezado (y no hay 'me')", async () => {
+    const mock = simular(respuesta(RANKING));
+
+    await pedirRanking("all");
+
+    expect(mock.mock.calls[0][1].headers["X-Device-Id"]).toBeUndefined();
+  });
+
+  it("con sesión manda el token para que el servidor devuelva el puesto de la cuenta", async () => {
+    guardarSesion({ token: "token-de-ana", email: "ana@example.com" });
+    const mock = simular(respuesta(RANKING));
+
+    await pedirRanking("day", ID);
+
+    expect(mock.mock.calls[0][1].headers.Authorization).toBe("Bearer token-de-ana");
+  });
+
+  it("falla con ApiError, y también si no hay conexión", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("sin red")));
+
+    await expect(pedirRanking("day", ID)).rejects.toBeInstanceOf(ApiError);
+  });
+});

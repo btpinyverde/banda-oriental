@@ -1,6 +1,9 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { guardarSesion, borrarSesion } from "../lib/cuenta/sesion";
 import { guardarPartida } from "../lib/juego/almacen-historial";
+import * as servidor from "../lib/juego/estadisticas-servidor";
+import type { EstadisticasServidor } from "../lib/juego/tipos";
 import type { Partida } from "../lib/juego/historial";
 import { ColumnaLateral } from "./ColumnaLateral";
 
@@ -149,5 +152,111 @@ describe("ColumnaLateral: compartir el resultado de hoy", () => {
     render(<ColumnaLateral />);
 
     expect(screen.queryByRole("button", { name: "Compartir resultado" })).toBeNull();
+  });
+});
+
+
+const delServidor = (cambios: Partial<EstadisticasServidor> = {}): EstadisticasServidor => ({
+  public_name: "Ana",
+  played: 12,
+  won: 9,
+  win_percentage: 75,
+  current_streak: 7,
+  max_streak: 8,
+  total_score: 9000,
+  average_attempts: 2.4,
+  distribution: [1, 4, 3, 1, 0, 0],
+  last_played_day: HOY,
+  ...cambios,
+});
+
+describe("ColumnaLateral: con las estadísticas que calculó el servidor", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("muestra las cifras del servidor, no las que salen de lo guardado en el dispositivo", async () => {
+    guardarPartida(partida("2026-10-10", true, 4)); // en el dispositivo hay una sola partida
+    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor());
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("12"));
+    expect(within(screen.getByRole("region", { name: "Racha actual" })).getByText("7 días")).toBeInTheDocument();
+    expect(estadistica("aciertos")).toHaveTextContent("75%");
+    expect(estadistica("racha máx.")).toHaveTextContent("8");
+    expect(estadistica("intentos promedio")).toHaveTextContent("2,4");
+  });
+
+  it("si el servidor no responde, sigue mostrando lo guardado en el dispositivo", async () => {
+    guardarPartida(partida("2026-10-09", true, 3));
+    guardarPartida(partida("2026-10-10", true, 3));
+    const pedir = vi.spyOn(servidor, "pedirEstadisticas").mockRejectedValue(new Error("sin red"));
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(pedir).toHaveBeenCalled());
+    expect(estadistica("jugadas")).toHaveTextContent("2");
+    expect(within(screen.getByRole("region", { name: "Racha actual" })).getByText("2 días")).toBeInTheDocument();
+  });
+
+  it("con cero partidas en el servidor sigue invitando a jugar, y los promedios vacíos se muestran con una raya", async () => {
+    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(
+      delServidor({ played: 0, won: 0, win_percentage: null, current_streak: 0, max_streak: 0, average_attempts: null }),
+    );
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("0"));
+    expect(screen.getByText("Jugá hoy para empezar tu racha.")).toBeInTheDocument();
+    expect(estadistica("aciertos")).toHaveTextContent("—");
+    expect(estadistica("intentos promedio")).toHaveTextContent("—");
+  });
+});
+
+describe("ColumnaLateral: aviso para quien juega sin cuenta", () => {
+  const AVISO = /Creá tu cuenta para no perder tu racha/;
+
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_CUENTAS_ACTIVAS", "1");
+    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor());
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    borrarSesion();
+  });
+
+  it("lo muestra a quien ya jugó y no tiene cuenta, con el motivo y el camino para crearla", async () => {
+    render(<ColumnaLateral />);
+
+    const aviso = await screen.findByText(AVISO);
+    expect(aviso.closest("section, div, p")).toHaveTextContent(/una semana/);
+    expect(screen.getByRole("link", { name: /Crear mi cuenta/ })).toHaveAttribute("href", "/login");
+  });
+
+  it("no lo muestra a quien todavía no jugó nada", async () => {
+    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor({ played: 0, current_streak: 0 }));
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("0"));
+    expect(screen.queryByText(AVISO)).toBeNull();
+  });
+
+  it("no lo muestra a quien ya tiene sesión iniciada", async () => {
+    guardarSesion({ token: "t", email: "ana@example.com" });
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("12"));
+    expect(screen.queryByText(AVISO)).toBeNull();
+  });
+
+  it("no lo muestra mientras las cuentas estén apagadas", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CUENTAS_ACTIVAS", "");
+
+    render(<ColumnaLateral />);
+
+    await waitFor(() => expect(estadistica("jugadas")).toHaveTextContent("12"));
+    expect(screen.queryByText(AVISO)).toBeNull();
   });
 });

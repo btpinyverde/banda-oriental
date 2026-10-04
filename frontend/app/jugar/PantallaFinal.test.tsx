@@ -164,3 +164,44 @@ describe("PantallaFinal cuando se perdió", () => {
     expect(screen.getByText("12:36:08")).toBeInTheDocument();
   });
 });
+
+describe("el nombre del ranking se elige una sola vez", () => {
+  it("con un nombre ya elegido no vuelve a pedirlo: dice con cuál va a aparecer", () => {
+    montar(terminado(), { nombreFijo: "Ana" });
+
+    expect(screen.queryByLabelText("Tu nombre para el ranking")).toBeNull();
+    expect(screen.getByText(/Vas a aparecer en el ranking como/)).toHaveTextContent("Ana");
+    expect(screen.getByRole("button", { name: "Guardar mi puntaje" })).toBeInTheDocument();
+  });
+
+  it("envía el nombre fijo con un solo toque, sin escribir nada", async () => {
+    const { alGuardar } = montar(terminado(), { nombreFijo: "Ana" });
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar mi puntaje" })));
+
+    expect(alGuardar).toHaveBeenCalledWith("Ana");
+  });
+
+  it("sin nombre elegido sigue pidiéndolo como siempre", () => {
+    montar(terminado(), { nombreFijo: null });
+
+    expect(screen.getByLabelText("Tu nombre para el ranking")).toBeInTheDocument();
+  });
+
+  it("si el servidor dice que el nombre ya lo usa otra persona, lo muestra y deja elegir otro", async () => {
+    const { alGuardar } = montar(terminado());
+    alGuardar.mockRejectedValueOnce(new Error("Ese nombre ya está en uso. Elegí otro."));
+
+    fireEvent.change(screen.getByLabelText("Tu nombre para el ranking"), { target: { value: "ana" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar mi puntaje" })));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Ese nombre ya está en uso. Elegí otro.");
+    expect(screen.getByLabelText("Tu nombre para el ranking")).toBeEnabled();
+  });
+
+  it("invita a ver el ranking una vez guardado el puntaje", () => {
+    montar(terminado({ score_submitted: true, score: 900 }));
+
+    expect(screen.getByRole("link", { name: /Ver el ranking/ })).toHaveAttribute("href", "/ranking");
+  });
+});

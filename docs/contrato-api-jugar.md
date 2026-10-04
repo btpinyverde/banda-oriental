@@ -72,6 +72,63 @@ La columna de racha, estadísticas, "compartir resultado" y ranking del día (`C
 datos inventados y solo se muestra en modo demo. Para activarla de verdad hacen falta endpoints de racha,
 estadísticas y ranking (hoy existe `GET /api/leaderboard/today/`) y cuentas o un identificador de jugador.
 
+## Estadísticas y nombre público (las calcula y guarda el servidor)
+
+Racha, jugadas, aciertos, puntaje total y distribución las **calcula el servidor** a partir de los intentos y
+puntajes que él mismo validó y las **guarda** (`PlayerStats`) cuando una partida termina (ganada o sexto intento
+fallado). Ninguna API acepta estadísticas que mande el cliente: los campos extra de `POST /api/daily/score/` se
+ignoran. Cada vez se recalcula desde los intentos, no se suma a un contador.
+
+- Jugador = la cuenta (con sesión) o, mientras no hay cuenta, el dispositivo (`X-Device-Id`). Al crear la cuenta o
+  entrar, las partidas del dispositivo pasan a la cuenta y las estadísticas se recalculan con todo junto: la racha
+  que empezó sin cuenta sigue.
+- Racha: se cuenta sobre los días que tuvieron canción publicada (un día sin canción no corta ni suma); un día
+  publicado que no se jugó o se perdió la corta; el día de hoy todavía abierto no la corta.
+- Al crear la cuenta, el puntaje anónimo de un día que la cuenta ya había jugado se descarta (cada día cuenta una vez
+  por persona); los demás días pasan a la cuenta.
+- Una racha guardada en un día anterior se recalcula al leerla, porque baja con solo pasar los días sin jugar.
+- `recompute_stats` conserva el nombre que ya usaba cada jugador de antes, salvo que otro lo tenga.
+- `GET /api/stats/` (sesión opcional + `X-Device-Id`): `public_name`, `played`, `won`, `win_percentage`,
+  `current_streak`, `max_streak`, `total_score`, `average_attempts`, `distribution` (ganadas en 1…6 intentos),
+  `last_played_day`. Solo lectura (otros métodos dan 405). Sin partidas: todo en cero y `public_name: null`.
+- **Nombre público**: se elige una vez por jugador, con el primer `POST /api/daily/score/` (`display_name`). Es
+  único sin distinguir mayúsculas (`400` "Ese nombre ya está en uso. Elegí otro."), pasa por el filtro de palabras y
+  se conserva al crear la cuenta. Con nombre ya elegido, `display_name` es opcional y se ignora: el ranking muestra
+  siempre el nombre guardado.
+- **Tiempo del puntaje**: `total_time_seconds` nunca puede ser menor que lo que el servidor vio entre el primer
+  intento y el ganador.
+  Límite conocido: quien gana al primer intento tiene piso 0, y el servidor no mide cuánto escuchó antes de
+  responder, así que el bono de velocidad (hasta +50 puntos) es declarado por el cliente. Alcanza para un juego
+  casual; si algún día hay premios, hay que medir el inicio en el servidor.
+- `python manage.py recompute_stats` reconstruye las estadísticas de todos; corre en cada despliegue.
+
+## Rankings
+
+`GET /api/leaderboard/?period=day|week|month|all` (público, solo lectura; sesión o `X-Device-Id` opcionales).
+Semana de lunes a domingo, mes calendario, en horario de Uruguay. Entran todos: una cuenta cuenta una sola vez sin
+importar los dispositivos, y un dispositivo sin cuenta es un jugador más. Mismo puntaje, mismo puesto.
+
+```
+{ "period": "week", "from": "2026-10-05", "to": "2026-10-11",
+  "entries": [ { "rank": 1, "display_name": "Ana", "score": 1850, "games": 2 } ],   // hasta 50
+  "me": { "rank": 7, "display_name": "Beto", "score": 900, "games": 1 } | null }     // aunque esté fuera del top
+```
+
+`period` inválido o ausente: 400. `GET /api/leaderboard/today/` sigue existiendo (equivale a `period=day` sin `me`).
+
+## Borrado de anónimos inactivos
+
+Un jugador anónimo (dispositivo sin cuenta) que no juega durante 7 días se borra: intentos, puntajes y estadísticas.
+Nunca se tocan las cuentas ni lo que un dispositivo ya le pasó a una cuenta. Se libera su nombre público. Corre solo,
+una vez al día, con la primera visita (no hay tareas programadas en el hosting gratuito).
+`PURGE_ANONYMOUS_AFTER_DAYS` (por defecto 7 en producción; 0 lo apaga) y
+`python manage.py purge_inactive_anonymous --days 7 [--dry-run]` para correrlo a mano.
+
 ## Fuera de alcance por ahora
 
-Racha, estadísticas, ranking del día, compartir resultado, cuentas/perfil.
+El front de estadísticas y rankings.
+
+Hecho: ranking diario, semanal, mensual y global (todos los jugadores) y borrado de anónimos inactivos a los 7 días.
+El front ya los usa: el panel de /jugar muestra las estadísticas del servidor (si no responde, cae a lo guardado en
+el dispositivo), el nombre público se pide una sola vez, /ranking tiene las cuatro pestañas con el puesto propio
+(`me`), y quien juega sin cuenta ve el aviso de que a los 7 días sin jugar su historial se borra.

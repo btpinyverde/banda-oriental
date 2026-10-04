@@ -1,0 +1,56 @@
+# Operación de Banda Oriental: qué corre, qué configurar y qué hacer si algo falla
+
+Una página para quien opere el juego (hoy, Brandon). Complementa `docs/seguridad-y-abuso.md`, `docs/activar-correo.md` y
+`docs/lanzamiento-juego.md`.
+
+## Dónde vive cada cosa
+
+| Parte | Dónde | Notas |
+|---|---|---|
+| Sitio (Next.js) | Vercel, `bandaoriental.xami.uy` | Se despliega solo al mergear a `main`. |
+| API (Django) | Render (plan gratuito), `api.bandaoriental.xami.uy` | Se duerme sin visitas: la primera tarda hasta ~50 s. |
+| Base de datos | Neon (Postgres) | Guarda partidas, puntajes, estadísticas y cuentas. |
+| Audios | Cloudflare R2, bucket `banda-oriental-stems` | Direcciones firmadas de 1 hora. |
+| Correo | Resend, dominio `bandaoriental.xami.uy` | Remitente `hola@bandaoriental.xami.uy`. |
+| DNS | Antel Data (nic.com.uy) | Los registros del correo van bajo `bandaoriental`, sin tocar el SPF de Zoho. |
+| Comprobación humana | Cloudflare Turnstile | Apagada si no hay `TURNSTILE_SECRET_KEY` en Render. |
+
+## Variables de entorno
+
+**Render (API)**: `DATABASE_URL`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, claves de R2, `FRONTEND_URL`
+(`https://bandaoriental.xami.uy`), `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL`, `TURNSTILE_SECRET_KEY` (opcional),
+`PURGE_ANONYMOUS_AFTER_DAYS` (7 por defecto; `0` apaga el borrado de anónimos).
+
+**Vercel (sitio)**: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CUENTAS_ACTIVAS=1` (cuentas visibles),
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` (clave pública de Turnstile).
+
+Las claves secretas (`RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, R2, `DATABASE_URL`) las carga siempre el dueño a mano;
+nunca van al chat, al repositorio ni a una captura.
+
+## Estadísticas, rankings y anónimos
+
+- Las estadísticas de cada jugador (cuenta o dispositivo) las calcula y guarda el servidor al terminar cada partida,
+  desde los intentos y puntajes que validó. Ninguna ruta acepta estadísticas del cliente.
+- `python manage.py recompute_stats`: reconstruye las de todos. Corre en cada despliegue (`render.yaml`). Si algún día
+  hay muchos miles de jugadores, sacarlo del despliegue y dejarlo como comando puntual.
+- `python manage.py purge_inactive_anonymous --days 7 --dry-run`: muestra qué se borraría (sin borrar). Sin
+  `--dry-run` borra los anónimos que no juegan hace N días (intentos, puntajes, estadísticas). Nunca toca cuentas ni lo
+  que un dispositivo ya le pasó a una cuenta. Corre solo una vez al día, con la primera visita.
+- Rankings: `GET /api/leaderboard/?period=day|week|month|all`. Semana de lunes a domingo, mes calendario, hora de
+  Uruguay.
+
+## Si algo falla
+
+| Síntoma | Qué mirar |
+|---|---|
+| Nadie puede adivinar ("no pudimos comprobar que sos una persona") | Render → Logs: buscar `Turnstile rechazó`. `invalid-input-secret` = la clave secreta está mal. Salida de emergencia: borrar `TURNSTILE_SECRET_KEY` en Render. |
+| No llegan los correos | Resend → Emails (¿"Delivered"?) y Domains (¿"Verified"?). Render → Logs: "No se pudo enviar el correo". |
+| La API tarda ~1 minuto | Es el plan gratuito durmiendo. Un monitor gratuito que la consulte cada pocos minutos lo evita. |
+| "Límite de pedidos alcanzado" en los logs | Alguien insiste desde una IP; ver `docs/seguridad-y-abuso.md`. |
+| Un nombre del ranking ofensivo | Django admin → Player stats: borrar el nombre público (queda libre). |
+
+## Respaldo del histórico (pendiente)
+
+El plan gratuito de Neon conserva poco historial de restauración. Antes de abrir al público conviene un respaldo
+periódico (por ejemplo, un `pg_dump` semanal guardado fuera de Neon). Necesita la `DATABASE_URL`, que la tiene que
+cargar el dueño.
