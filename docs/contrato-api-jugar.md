@@ -72,6 +72,32 @@ La columna de racha, estadísticas, "compartir resultado" y ranking del día (`C
 datos inventados y solo se muestra en modo demo. Para activarla de verdad hacen falta endpoints de racha,
 estadísticas y ranking (hoy existe `GET /api/leaderboard/today/`) y cuentas o un identificador de jugador.
 
+## Estadísticas y nombre público (las calcula y guarda el servidor)
+
+Racha, jugadas, aciertos, puntaje total y distribución las **calcula el servidor** a partir de los intentos y
+puntajes que él mismo validó y las **guarda** (`PlayerStats`) cuando una partida termina (ganada o sexto intento
+fallado). Ninguna API acepta estadísticas que mande el cliente: los campos extra de `POST /api/daily/score/` se
+ignoran. Cada vez se recalcula desde los intentos, no se suma a un contador.
+
+- Jugador = la cuenta (con sesión) o, mientras no hay cuenta, el dispositivo (`X-Device-Id`). Al crear la cuenta o
+  entrar, las partidas del dispositivo pasan a la cuenta y las estadísticas se recalculan con todo junto: la racha
+  que empezó sin cuenta sigue.
+- Racha: se cuenta sobre los días que tuvieron canción publicada (un día sin canción no corta ni suma); un día
+  publicado que no se jugó o se perdió la corta; el día de hoy todavía abierto no la corta.
+- `GET /api/stats/` (sesión opcional + `X-Device-Id`): `public_name`, `played`, `won`, `win_percentage`,
+  `current_streak`, `max_streak`, `total_score`, `average_attempts`, `distribution` (ganadas en 1…6 intentos),
+  `last_played_day`. Solo lectura (otros métodos dan 405). Sin partidas: todo en cero y `public_name: null`.
+- **Nombre público**: se elige una vez por jugador, con el primer `POST /api/daily/score/` (`display_name`). Es
+  único sin distinguir mayúsculas (`400` "Ese nombre ya está en uso. Elegí otro."), pasa por el filtro de palabras y
+  se conserva al crear la cuenta. Con nombre ya elegido, `display_name` es opcional y se ignora: el ranking muestra
+  siempre el nombre guardado.
+- **Tiempo del puntaje**: `total_time_seconds` nunca puede ser menor que lo que el servidor vio entre el primer
+  intento y el ganador.
+- `python manage.py recompute_stats` reconstruye las estadísticas de todos; corre en cada despliegue.
+
 ## Fuera de alcance por ahora
 
-Racha, estadísticas, ranking del día, compartir resultado, cuentas/perfil.
+Rankings semanal, mensual y global, y el borrado de anónimos inactivos (ver abajo).
+
+Decidido y pendiente: ranking diario (hecho), semanal (lunes a domingo), mensual y global, con todos los jugadores
+incluidos (anónimos también); un anónimo que no juega durante 7 días se borra (intentos, puntajes y estadísticas).
