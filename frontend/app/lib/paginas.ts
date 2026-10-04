@@ -1,0 +1,379 @@
+/**
+ * Contenido de las páginas informativas del sitio (cómo funciona, acerca de, legales...) y de las que todavía
+ * están por hacerse. Todo vive acá, en datos, y lo sirve una sola ruta (app/[pagina]/page.tsx): para cambiar un
+ * texto o sumar una página alcanza con editar este archivo.
+ */
+
+export interface Seccion {
+  titulo: string;
+  parrafos?: string[];
+  lista?: string[];
+  /** Agrega el correo de contacto (o el aviso de que todavía no está habilitado) al final de la sección. */
+  correo?: boolean;
+}
+
+interface Base {
+  slug: string;
+  titulo: string;
+  /** Descripción para los buscadores (meta description). */
+  descripcion: string;
+  /** Ruta de la barra de navegación que se marca como actual, si la página forma parte de ella. */
+  actual?: string;
+}
+
+export interface PaginaDeTexto extends Base {
+  tipo: "texto";
+  eyebrow: string;
+  bajada: string;
+  secciones: Seccion[];
+  /** Los textos legales son un borrador hasta que alguien con criterio jurídico los revise. */
+  preliminar?: boolean;
+  actualizada?: string;
+}
+
+export interface PaginaProximamente extends Base {
+  tipo: "proximamente";
+  bajada: string;
+  texto: string;
+  /** Enlace alternativo para quien llega acá, además de volver al inicio y jugar. */
+  alternativa?: { href: string; etiqueta: string };
+}
+
+export type Pagina = PaginaDeTexto | PaginaProximamente;
+
+const FECHA_LEGALES = "3 de octubre de 2026";
+
+const paginas: Pagina[] = [
+  {
+    tipo: "texto",
+    slug: "como-funciona",
+    titulo: "Cómo funciona",
+    eyebrow: "CÓMO SE JUEGA",
+    descripcion: "Las reglas de Banda Oriental: una canción uruguaya por día, seis intentos, pistas que se desbloquean y los colores de cada intento.",
+    bajada: "Todos los días hay una canción uruguaya nueva. La escuchás de a una pista por vez y tenés seis intentos para adivinar cuál es.",
+    secciones: [
+      {
+        titulo: "Las pistas",
+        parrafos: [
+          "Arrancás escuchando un solo instrumento: la batería. Cada intento que no acierta desbloquea otra pista, y la canción se va armando: primero el bajo, después la voz y por último el resto de los instrumentos.",
+          "Para poder responder, primero tenés que darle play y escuchar la pista.",
+        ],
+      },
+      {
+        titulo: "Cómo responder",
+        parrafos: [
+          "Escribí en el buscador el título de la canción, el nombre del artista o el del disco, elegí una opción de la lista y enviala. Tenés seis intentos.",
+        ],
+      },
+      {
+        titulo: "Los colores",
+        parrafos: ["Cada intento se compara con la canción del día en cuatro datos: año, género, artista y disco."],
+        lista: [
+          "Verde: el dato coincide.",
+          "Amarillo (solo en el año): no es el año exacto. Una flecha te dice hacia dónde ir: ↑ si la canción es más nueva, ↓ si es más vieja.",
+          "Rosa: el dato no coincide.",
+          "Gris: todavía no tenemos ese dato de la canción.",
+        ],
+      },
+      {
+        titulo: "Puntos",
+        parrafos: [
+          "Cuantos menos intentos uses y más rápido aciertes, más puntos. Si ganás, podés guardar tu puntaje con el nombre que quieras para el ranking del día, que estamos terminando de armar.",
+        ],
+      },
+      {
+        titulo: "Una canción por día",
+        parrafos: [
+          "La canción cambia todos los días a la medianoche, hora de Uruguay. Si no la sacás, la respuesta se muestra al terminar tus seis intentos.",
+        ],
+      },
+      {
+        titulo: "Tu historial",
+        parrafos: [
+          "Lo que vas jugando se guarda en tu navegador, sin necesidad de crear una cuenta: tus partidas, tus estadísticas y tu racha, que cuenta los días seguidos que ganaste.",
+        ],
+      },
+    ],
+  },
+  {
+    tipo: "texto",
+    slug: "acerca",
+    actual: "/acerca",
+    titulo: "Acerca de",
+    eyebrow: "ACERCA DE BANDA ORIENTAL",
+    descripcion: "Banda Oriental es un juego diario de música uruguaya: una canción por día, seis intentos y pistas que se desbloquean.",
+    bajada: "Un juego diario para escuchar, adivinar y descubrir música uruguaya.",
+    secciones: [
+      {
+        titulo: "Qué es",
+        parrafos: [
+          "Banda Oriental es un juego gratuito con una canción uruguaya por día. Se arma como un rompecabezas de oído: escuchás un instrumento, probás una respuesta y cada error te revela otra pista.",
+        ],
+      },
+      {
+        titulo: "Por qué",
+        parrafos: [
+          "La música de Uruguay es enorme y variada: candombe, murga, folklore, rock, pop, tango, música tropical y mucho más. Queremos que el juego sea una excusa para reencontrarte con canciones que conocés y para descubrir otras que todavía no.",
+        ],
+      },
+      {
+        titulo: "De dónde salen los datos",
+        parrafos: [
+          "La información de artistas, discos y canciones viene de bases de datos abiertas, como MusicBrainz, y se revisa a mano. Si encontrás un dato equivocado o un artista que falta, contanos desde la página de sugerencias.",
+          "Los derechos de las canciones pertenecen a sus artistas y a sus titulares.",
+        ],
+      },
+      {
+        titulo: "Créditos",
+        lista: [
+          "Datos de discos y canciones: MusicBrainz.",
+          "Tipografía manuscrita: Caveat Brush, con licencia SIL Open Font License.",
+          "Íconos de redes sociales: Simple Icons.",
+        ],
+      },
+      {
+        titulo: "Un proyecto en construcción",
+        parrafos: [
+          "Banda Oriental es un proyecto independiente y está creciendo. Hay cosas que todavía faltan, como el modo batalla, el archivo de canciones y las cuentas, y las vamos sumando de a poco.",
+        ],
+      },
+    ],
+  },
+  {
+    tipo: "texto",
+    slug: "contacto",
+    titulo: "Contacto",
+    eyebrow: "CONTACTO",
+    descripcion: "Cómo comunicarte con el equipo de Banda Oriental: dudas, problemas, sugerencias y consultas de artistas y titulares.",
+    bajada: "¿Una duda, un problema o una idea? Nos gusta leerte.",
+    secciones: [
+      { titulo: "Escribinos", parrafos: ["Podés comunicarte con nosotros por correo electrónico."], correo: true },
+      {
+        titulo: "Si algo no funciona",
+        parrafos: ["Para poder ayudarte rápido, contanos:"],
+        lista: [
+          "Qué estabas haciendo cuando pasó.",
+          "Desde qué dispositivo y navegador jugabas.",
+          "Una captura de pantalla, si podés.",
+        ],
+      },
+      {
+        titulo: "Artistas y titulares de derechos",
+        parrafos: [
+          "Si sos artista o titular de derechos y tenés una consulta sobre una canción del juego, escribinos y la vemos con atención.",
+        ],
+      },
+    ],
+  },
+  {
+    tipo: "texto",
+    slug: "sugerencias",
+    titulo: "Sugerencias",
+    eyebrow: "SUGERENCIAS",
+    descripcion: "Contanos qué canciones o artistas faltan, qué datos corregir y qué ideas tenés para mejorar Banda Oriental.",
+    bajada: "Ayudanos a que Banda Oriental tenga más música uruguaya y funcione mejor.",
+    secciones: [
+      {
+        titulo: "Qué nos podés sugerir",
+        lista: [
+          "Canciones o artistas que faltan en el juego.",
+          "Datos para corregir: año, género, disco o nombre de un artista.",
+          "Ideas para mejorar el juego o nuevos modos.",
+        ],
+      },
+      {
+        titulo: "Cómo enviarla",
+        parrafos: ["Escribinos con el asunto “Sugerencia” y contanos todo lo que sepas: cuanto más detalle, mejor."],
+        correo: true,
+      },
+      {
+        titulo: "Qué pasa después",
+        parrafos: [
+          "Leemos todas las sugerencias. No siempre podemos responder a cada una ni incorporarla, pero todas nos ayudan a decidir qué hacer a continuación.",
+        ],
+      },
+    ],
+  },
+  {
+    tipo: "texto",
+    slug: "terminos",
+    titulo: "Términos y condiciones",
+    eyebrow: "LEGALES",
+    descripcion: "Términos y condiciones de uso de Banda Oriental, el juego diario de música uruguaya.",
+    bajada: "Las reglas básicas para usar Banda Oriental.",
+    preliminar: true,
+    actualizada: FECHA_LEGALES,
+    secciones: [
+      {
+        titulo: "1. Aceptación",
+        parrafos: ["Al usar Banda Oriental aceptás estos términos. Si no estás de acuerdo con alguno, te pedimos que no uses el servicio."],
+      },
+      {
+        titulo: "2. El servicio",
+        parrafos: [
+          "Banda Oriental es un juego gratuito con una canción por día. Podemos cambiar, suspender o dejar de ofrecer cualquier parte del servicio, y puede haber interrupciones o errores.",
+        ],
+      },
+      {
+        titulo: "3. Uso aceptable",
+        lista: [
+          "No uses programas automáticos para jugar, alterar resultados o sobrecargar el servicio.",
+          "Los nombres que elijas para el ranking no pueden ser ofensivos, engañosos ni publicitarios. Podemos rechazarlos o quitarlos.",
+          "No intentes acceder a partes del servicio que no son públicas.",
+        ],
+      },
+      {
+        titulo: "4. Música y contenidos",
+        parrafos: [
+          "Las canciones, grabaciones y marcas mencionadas pertenecen a sus artistas y titulares. El juego las usa para dar a conocer música uruguaya. Si sos titular de derechos y tenés una consulta, escribinos desde la página de contacto.",
+        ],
+      },
+      {
+        titulo: "5. Cuentas",
+        parrafos: [
+          "Cuando existan cuentas, vas a ser responsable de cuidar tus credenciales y de lo que se haga con ellas.",
+        ],
+      },
+      {
+        titulo: "6. Sin garantías",
+        parrafos: [
+          "El servicio se ofrece tal como está, sin garantías de que esté siempre disponible o libre de errores. En la medida que la ley lo permita, no nos hacemos responsables por daños derivados de su uso.",
+        ],
+      },
+      {
+        titulo: "7. Cambios en estos términos",
+        parrafos: ["Podemos actualizar estos términos. La fecha de la última actualización figura al comienzo de esta página."],
+      },
+      {
+        titulo: "8. Ley aplicable",
+        parrafos: ["Estos términos se rigen por las leyes de la República Oriental del Uruguay."],
+      },
+    ],
+  },
+  {
+    tipo: "texto",
+    slug: "privacidad",
+    titulo: "Política de privacidad",
+    eyebrow: "LEGALES",
+    descripcion: "Qué datos usa Banda Oriental, para qué y cómo podés ejercer tus derechos sobre ellos.",
+    bajada: "Para jugar no te pedimos nombre, correo ni contraseña. Esto es lo que sí guardamos.",
+    preliminar: true,
+    actualizada: FECHA_LEGALES,
+    secciones: [
+      {
+        titulo: "Qué datos guardamos",
+        lista: [
+          "Un identificador anónimo de tu dispositivo, generado al azar y guardado en tu navegador. Nos permite recordar tus intentos del día.",
+          "Tus intentos y resultados de cada día, asociados a ese identificador.",
+          "El nombre que elijas para el ranking, solo si decidís guardar tu puntaje.",
+          "Datos técnicos que cualquier servidor recibe al conectarse, como la dirección IP y el tipo de navegador, que quedan en los registros de nuestros proveedores de infraestructura.",
+        ],
+      },
+      {
+        titulo: "Lo que queda en tu navegador",
+        parrafos: [
+          "Tu historial, tus estadísticas y tu racha se guardan solo en tu navegador, en el almacenamiento local. No salen de tu dispositivo: si borrás los datos del navegador, se pierden.",
+        ],
+      },
+      {
+        titulo: "Cookies y seguimiento",
+        parrafos: [
+          "No usamos cookies de publicidad ni herramientas para seguirte entre sitios. Usamos el almacenamiento del navegador solo para que el juego funcione.",
+        ],
+      },
+      {
+        titulo: "Para qué los usamos",
+        parrafos: [
+          "Para que el juego funcione (recordar tu partida), para armar el ranking del día y para mantener y mejorar el servicio. No vendemos tus datos.",
+        ],
+      },
+      {
+        titulo: "Proveedores",
+        parrafos: [
+          "El sitio, la base de datos y los archivos de audio se alojan en servicios de terceros. Esos proveedores pueden procesar datos técnicos para prestarnos el servicio.",
+        ],
+      },
+      {
+        titulo: "Tus derechos",
+        parrafos: [
+          "De acuerdo con la Ley N.º 18.331 de Protección de Datos Personales de Uruguay, podés pedir acceso, rectificación o eliminación de los datos que te correspondan. Escribinos desde la página de contacto e indicá tu identificador de dispositivo si lo conocés.",
+        ],
+      },
+      {
+        titulo: "Cambios",
+        parrafos: [
+          "Cuando agreguemos funciones, como las cuentas de usuario, vamos a actualizar esta política y a avisarlo acá antes de empezar a usar datos nuevos.",
+        ],
+      },
+    ],
+  },
+  {
+    tipo: "proximamente",
+    slug: "batalla",
+    actual: "/batalla",
+    titulo: "Modo batalla",
+    descripcion: "El modo batalla de Banda Oriental, para competir con amigos, llega pronto.",
+    bajada: "Desafiá a tus amigos con la misma canción y mirá quién la saca primero.",
+    texto: "Estamos terminando de armar el modo batalla. Mientras tanto, podés jugar la canción del día.",
+  },
+  {
+    tipo: "proximamente",
+    slug: "archivo",
+    actual: "/archivo",
+    titulo: "Archivo de canciones",
+    descripcion: "El archivo de Banda Oriental, para explorar canciones y jugar días anteriores, llega pronto.",
+    bajada: "Un lugar para explorar todas las canciones, artistas y discos del juego, y para jugar los días que te perdiste.",
+    texto: "El archivo todavía se está armando. Mientras tanto, mirá cómo te fue en tus partidas.",
+    alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
+  },
+  {
+    tipo: "proximamente",
+    slug: "ranking",
+    actual: "/ranking",
+    titulo: "Ranking",
+    descripcion: "El ranking de Banda Oriental, con los mejores puntajes del día, llega pronto.",
+    bajada: "Los mejores puntajes del día, de la semana y del mes.",
+    texto: "El ranking todavía no está disponible. Si ganás una partida, ya podés guardar tu puntaje para cuando esté listo.",
+  },
+  {
+    tipo: "proximamente",
+    slug: "artistas",
+    titulo: "Artistas",
+    descripcion: "Explorar los artistas uruguayos de Banda Oriental llega pronto.",
+    bajada: "Explorá a los artistas uruguayos que están en el juego.",
+    texto: "Esta sección todavía se está armando.",
+  },
+  {
+    tipo: "proximamente",
+    slug: "epocas",
+    titulo: "Épocas",
+    descripcion: "Explorar la música uruguaya por épocas llega pronto a Banda Oriental.",
+    bajada: "Recorré la música uruguaya década por década.",
+    texto: "Esta sección todavía se está armando.",
+  },
+  {
+    tipo: "proximamente",
+    slug: "generos",
+    titulo: "Géneros",
+    descripcion: "Explorar la música uruguaya por géneros llega pronto a Banda Oriental.",
+    bajada: "Candombe, murga, rock, folklore y mucho más: explorá por género.",
+    texto: "Esta sección todavía se está armando.",
+  },
+  {
+    tipo: "proximamente",
+    slug: "login",
+    titulo: "Iniciar sesión",
+    descripcion: "Las cuentas de Banda Oriental, para guardar tu historial en cualquier dispositivo, llegan pronto.",
+    bajada: "Pronto vas a poder crear una cuenta para guardar tu historial en cualquier dispositivo.",
+    texto: "Estamos preparando las cuentas, con correo y contraseña o con un enlace por mail. Mientras tanto, lo que jugás se guarda en este navegador.",
+    alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
+  },
+];
+
+export const PAGINAS: Record<string, Pagina> = Object.fromEntries(paginas.map((pagina) => [pagina.slug, pagina]));
+export const SLUGS: string[] = paginas.map((pagina) => pagina.slug);
+
+export const paginaPorSlug = (slug: string): Pagina | undefined => PAGINAS[slug];
+
+/** Las páginas con contenido real, que se pueden indexar (las que todavía no existen quedan afuera). */
+export const PAGINAS_DE_TEXTO = paginas.filter((pagina): pagina is PaginaDeTexto => pagina.tipo === "texto");

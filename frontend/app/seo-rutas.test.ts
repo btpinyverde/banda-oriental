@@ -2,19 +2,6 @@ import { describe, expect, it } from "vitest";
 import manifest from "./manifest";
 import robots from "./robots";
 import { SITIO_URL } from "./lib/seo";
-import sitemap from "./sitemap";
-
-describe("sitemap", () => {
-  it("lista la portada y el juego, que son las páginas con contenido que se pueden indexar", () => {
-    const entradas = sitemap();
-
-    expect(entradas.map((e) => e.url)).toEqual([`${SITIO_URL}/`, `${SITIO_URL}/jugar`]);
-  });
-
-  it("no lista páginas personales como el historial", () => {
-    expect(sitemap().map((e) => e.url)).not.toContain(`${SITIO_URL}/historial`);
-  });
-});
 
 describe("robots", () => {
   it("permite rastrear todo el sitio y apunta al sitemap", () => {

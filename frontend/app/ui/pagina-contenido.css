@@ -1,0 +1,24 @@
+/* ---------- Páginas informativas (genéricas) ---------- */
+
+.contenido { max-width: 760px; margin: 0 auto; padding: 40px var(--gutter) 64px; }
+
+.contenido__eyebrow { margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: #8f8a94; }
+.contenido__cabecera h1 { margin: 0 0 14px; font-size: clamp(36px, 6vw, 60px); font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+.contenido__bajada { margin: 0 0 18px; font-size: 20px; line-height: 1.45; color: var(--tinta-suave); }
+.contenido__aviso { margin: 0 0 8px; padding: 10px 14px; border-radius: 12px; background: var(--violeta-claro); font-size: 14px; }
+
+.contenido__seccion { margin-top: 32px; }
+.contenido__seccion h2 { margin: 0 0 10px; font-size: 22px; font-weight: 800; }
+.contenido__seccion p { margin: 0 0 12px; font-size: 17px; line-height: 1.6; }
+.contenido__seccion ul { margin: 0 0 12px; padding-left: 22px; font-size: 17px; line-height: 1.6; }
+.contenido__seccion li { margin-bottom: 6px; }
+.contenido__correo a { font-weight: 700; color: var(--violeta); text-decoration: underline; }
+
+.contenido__acciones { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 40px; }
+.contenido__acciones .boton { justify-content: center; }
+.contenido__acciones .boton--claro { box-shadow: inset 0 0 0 1.5px #e0daf7; }
+
+@media (max-width: 640px) {
+  .contenido { padding-top: 24px; }
+  .contenido__acciones .boton { flex: 1 1 100%; }
+}
