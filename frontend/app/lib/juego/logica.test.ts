@@ -192,3 +192,14 @@ describe("diaDeMontevideo", () => {
     expect(diaDeMontevideo(new Date("2026-10-04T03:00:00Z"))).toBe("2026-10-04");
   });
 });
+
+
+describe("nombreValido cuenta caracteres como el servidor (no unidades de UTF-16)", () => {
+  it("50 emojis son 50 caracteres: valen", () => {
+    expect(nombreValido("😀".repeat(50))).toBe("😀".repeat(50));
+  });
+
+  it("51 emojis son demasiados", () => {
+    expect(nombreValido("😀".repeat(51))).toBeNull();
+  });
+});

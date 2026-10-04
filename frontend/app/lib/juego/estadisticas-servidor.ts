@@ -34,6 +34,7 @@ export async function cambiarNombre(idDispositivo: string, nombre: string): Prom
       body: JSON.stringify({ public_name: nombre }),
     },
     true,
+    false, // si la sesión venció, no se repite como anónimo: cambiaría el nombre del dispositivo y no el de la cuenta
   );
   return comoJson<EstadisticasServidor>(respuesta);
 }

@@ -4,13 +4,15 @@ between changes, and the new name shows in every ranking. Accounts and anonymous
 from datetime import timedelta
 
 import pytest
+from accounts.claim import claim_device_games
 from accounts.models import AuthToken
 from catalog.models import Album, Artist, Song
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 
-from gameplay.models import DailySong, PlayerStats, ScoreEntry
+from gameplay import stats as stats_module
+from gameplay.models import DailySong, GuessAttempt, PlayerStats, ScoreEntry
 
 User = get_user_model()
 DEVICE = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -155,11 +157,64 @@ class TestProtection:
         assert response.status_code == 403
         assert response.json()["code"] == "human_check_required"
 
-    def test_it_has_its_own_rate_limit(self, settings):
-        assert "name" in settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
+    def test_it_really_has_its_own_rate_limit(self, client, named, monkeypatch):
+        from core.throttling import IpThrottle, ScopedIpThrottle
+
+        rates = {"global": "1000/min", "name": "2/min"}
+        monkeypatch.setattr(IpThrottle, "THROTTLE_RATES", rates)
+        monkeypatch.setattr(ScopedIpThrottle, "THROTTLE_RATES", rates)
+
+        statuses = [rename(client, "").status_code for _ in range(3)]
+
+        assert statuses == [400, 400, 429]
+
+    @pytest.mark.parametrize("body", [[1], "texto", 5, None])
+    def test_a_body_that_is_not_an_object_is_a_400_not_a_crash(self, client, named, body):
+        response = client.put(
+            reverse("gameplay:change-name"), data=body, content_type="application/json", HTTP_X_DEVICE_ID=DEVICE
+        )
+
+        assert response.status_code == 400
 
     @pytest.mark.parametrize("method", ["get", "post", "patch", "delete"])
     def test_only_put_is_allowed(self, client, named, method):
         response = getattr(client, method)(reverse("gameplay:change-name"), HTTP_X_DEVICE_ID=DEVICE)
 
         assert response.status_code == 405
+
+
+class TestFindingsFromTheReview:
+    def test_the_wait_cannot_be_dodged_by_creating_an_account(self, client, named):
+        rename(client, "Anita")
+        account = User.objects.create_user("a@example.com", "a@example.com", "una-clave-larga-1")
+
+        claim_device_games(account, DEVICE)  # the account adopts the name... and the wait that came with it
+
+        response = rename(client, "Anita2", device=OTHER, auth=bearer(account))
+        assert response.status_code == 400
+        assert response.json()["code"] == "name_change_too_soon"
+        assert PlayerStats.objects.get(user=account).public_name == "Anita"
+
+    def test_a_score_saved_while_the_name_was_being_changed_carries_the_new_name(self, client, day, monkeypatch):
+        PlayerStats.objects.create(device_id=DEVICE, public_name="Ana")
+        GuessAttempt.objects.create(
+            device_id=DEVICE, daily_song=day, attempt_number=1, guessed_text="x", is_correct=True, feedback={}
+        )
+        real = stats_module.recompute_stats
+
+        def rename_in_the_middle(**owner):
+            PlayerStats.objects.filter(device_id=DEVICE).update(public_name="Anita")  # the other request got there first
+            return real(**owner)
+
+        monkeypatch.setattr("gameplay.views.recompute_stats", rename_in_the_middle)
+
+        response = client.post(
+            reverse("gameplay:score"),
+            data={"display_name": "Ana", "total_time_seconds": 30},
+            content_type="application/json",
+            HTTP_X_DEVICE_ID=DEVICE,
+        )
+
+        assert response.status_code == 201
+        assert ScoreEntry.objects.get().display_name == "Anita"
+        assert response.json()["display_name"] == "Anita"

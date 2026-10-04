@@ -67,4 +67,33 @@ describe("CambiarNombre", () => {
     expect(screen.getByRole("button", { name: "Guardando…" })).toBeDisabled();
     await act(async () => terminar());
   });
+
+  it("el aviso de la espera no dice cuántos días (lo decide el servidor y puede cambiar)", () => {
+    montar();
+    abrir();
+
+    expect(document.body).not.toHaveTextContent(/7 días/);
+  });
+
+  it("cuando hay un error lo asocia al campo para los lectores de pantalla", async () => {
+    const { alCambiar } = montar();
+    alCambiar.mockRejectedValueOnce(new Error("Ese nombre ya está en uso. Elegí otro."));
+    abrir();
+
+    fireEvent.change(screen.getByLabelText("Tu nombre en el ranking"), { target: { value: "Beto" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar" })));
+
+    const campo = screen.getByLabelText("Tu nombre en el ranking");
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+    expect(campo.getAttribute("aria-describedby")).toBe(screen.getByRole("alert").id);
+  });
+
+  it("si cambia el nombre de afuera (otra sesión, otra cuenta) el campo muestra el nuevo", () => {
+    const { rerender } = render(<CambiarNombre nombreActual="Ana" alCambiar={vi.fn()} />);
+    abrir();
+
+    rerender(<CambiarNombre nombreActual="Beto" alCambiar={vi.fn()} />);
+
+    expect(screen.getByLabelText("Tu nombre en el ranking")).toHaveValue("Beto");
+  });
 });

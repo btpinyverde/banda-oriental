@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { LARGO_MAXIMO_NOMBRE, nombreValido } from "../lib/juego/logica";
 
 interface Props {
@@ -11,10 +11,14 @@ interface Props {
 
 /** Cambiar el nombre con el que se aparece en los rankings. Cerrado por defecto: se usa pocas veces. */
 export function CambiarNombre({ nombreActual, alCambiar }: Props) {
+  const idError = useId();
   const [nombre, setNombre] = useState(nombreActual);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listo, setListo] = useState<string | null>(null);
+
+  // Si el nombre cambia de afuera (otra sesión, otra cuenta) el campo muestra el nuevo.
+  useEffect(() => setNombre(nombreActual), [nombreActual]);
 
   async function guardar(evento: FormEvent) {
     evento.preventDefault();
@@ -45,14 +49,16 @@ export function CambiarNombre({ nombreActual, alCambiar }: Props) {
           value={nombre}
           maxLength={LARGO_MAXIMO_NOMBRE + 20}
           autoComplete="nickname"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? idError : undefined}
           onChange={(e) => setNombre(e.target.value)}
         />
         <button type="submit" className="boton boton--violeta" disabled={guardando}>
           {guardando ? "Guardando…" : "Guardar"}
         </button>
-        <p className="cambiar-nombre__ayuda">Se puede cambiar una vez cada 7 días y no puede ser el de otra persona.</p>
+        <p className="cambiar-nombre__ayuda">Entre un cambio y otro hay una espera, y el nombre no puede ser el de otra persona.</p>
         {error && (
-          <p className="cambiar-nombre__error" role="alert">
+          <p id={idError} className="cambiar-nombre__error" role="alert">
             {error}
           </p>
         )}

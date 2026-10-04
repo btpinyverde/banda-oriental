@@ -266,7 +266,7 @@ describe("ColumnaLateral: cambiar el nombre del ranking", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("quien ya tiene un nombre puede cambiarlo desde acá, y se refrescan sus cifras", async () => {
-    vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor({ public_name: "Ana" }));
+    const pedir = vi.spyOn(servidor, "pedirEstadisticas").mockResolvedValue(delServidor({ public_name: "Ana" }));
     const cambiar = vi.spyOn(servidor, "cambiarNombre").mockResolvedValue(delServidor({ public_name: "Anita" }));
 
     render(<ColumnaLateral />);
@@ -275,6 +275,8 @@ describe("ColumnaLateral: cambiar el nombre del ranking", () => {
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar" })));
 
     expect(cambiar).toHaveBeenCalledWith(expect.stringMatching(/^[0-9a-f-]{36}$/), "Anita");
+    // y las cifras se vuelven a pedir, ya con el nombre nuevo
+    await waitFor(() => expect(pedir).toHaveBeenCalledTimes(2));
   });
 
   it("quien todavía no eligió nombre no ve la opción: se elige al guardar el primer puntaje", async () => {

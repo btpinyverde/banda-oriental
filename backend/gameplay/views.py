@@ -306,6 +306,11 @@ class ScoreView(APIView):
                 if not row.public_name:
                     row.public_name = display_name
                     row.save(update_fields=["public_name"])
+                elif row.public_name != display_name:
+                    # The name was changed between reading it and saving the score: the score carries the new one
+                    # (the old one is free for anyone to take).
+                    entry.display_name = display_name = row.public_name
+                    entry.save(update_fields=["display_name"])
         except IntegrityError:
             # Two things can collide: today's score (the .exists() check above has a race, and the UniqueConstraint
             # on ScoreEntry is the real backstop) or the public name (someone took it a moment ago).
@@ -437,13 +442,18 @@ class PublicNameView(APIView):
         device_id = get_device_id(request)
         owner = owner_of(request, device_id)
         lookup = {"user": owner["user"]} if "user" in owner else {"user": None, "device_id": device_id}
-        row = PlayerStats.objects.filter(**lookup).first()
+        with transaction.atomic():
+            # The row is locked until the end so two requests at once (or a rename and a score) are ordered.
+            row = PlayerStats.objects.select_for_update().filter(**lookup).first()
+            return self._change(request, row)
+
+    def _change(self, request, row):
         if row is None or not row.public_name:
             return Response(
                 {"detail": "Todavía no elegiste un nombre: se elige al guardar tu primer puntaje."}, status=400
             )
 
-        raw = request.data.get("public_name")
+        raw = request.data.get("public_name") if isinstance(request.data, dict) else None
         if not isinstance(raw, str):
             return Response({"detail": "Nombre inválido."}, status=400)
         name = raw.strip()

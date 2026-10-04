@@ -146,6 +146,16 @@ describe("cambiarNombre", () => {
     expect(mock.mock.calls[0][1].headers.Authorization).toBe("Bearer token-de-ana");
   });
 
+  it("si la sesión venció (401) no repite el pedido como anónimo: cambiaría el nombre del dispositivo y no el de la cuenta", async () => {
+    guardarSesion({ token: "vencido", email: "ana@example.com" });
+    const mock = simular(respuesta({ detail: "Sesión inválida." }, 401), respuesta(ESTADISTICAS));
+
+    await expect(cambiarNombre(ID, "Anita")).rejects.toMatchObject({ name: "ApiError", status: 401 });
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(leerSesion()).toBeNull();
+  });
+
   it("si el servidor lo rechaza lanza ApiError con su mensaje y su código (por ejemplo, tenés que esperar)", async () => {
     simular(respuesta({ detail: "Podés cambiar tu nombre una vez cada 7 días.", code: "name_change_too_soon" }, 400));
 
