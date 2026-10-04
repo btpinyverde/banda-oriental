@@ -105,6 +105,8 @@ class GuessAttempt(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = "intento"
+        verbose_name_plural = "intentos"
         ordering = ["attempt_number"]
         constraints = [
             # Only for games without an account: an account's games are kept apart by the per-user constraint
@@ -136,6 +138,8 @@ class ScoreEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = "puntaje"
+        verbose_name_plural = "puntajes"
         constraints = [
             models.UniqueConstraint(
                 fields=["device_id", "daily_song"],
@@ -182,6 +186,8 @@ class PlayerStats(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        verbose_name = "estadísticas de jugador"
+        verbose_name_plural = "estadísticas de jugadores"
         constraints = [
             models.UniqueConstraint(
                 fields=["device_id"],
