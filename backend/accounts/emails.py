@@ -2,27 +2,31 @@ import logging
 import threading
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+
+from .email_layout import render
 
 logger = logging.getLogger(__name__)
 
 
-def _deliver(email: str, subject: str, body: str) -> None:
+def _deliver(email: str, subject: str, body: str, html: str) -> None:
     try:
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+        message = EmailMultiAlternatives(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+        message.attach_alternative(html, "text/html")
+        message.send()
     except Exception:
         # A provider failure must not turn into a 500 (it would leave half-created state and reveal which addresses
         # have an account). Logged without the address, the body or the link.
         logger.exception("No se pudo enviar el correo %r", subject)
 
 
-def _send(email: str, subject: str, body: str) -> None:
+def _send(email: str, subject: str, body: str, html: str) -> None:
     if getattr(settings, "EMAIL_SEND_IN_BACKGROUND", False):
         # Only some branches send (known, confirmed, within limits...). Sending in the request would make those
         # answer slower than the rest and give away which addresses have an account.
-        threading.Thread(target=_deliver, args=(email, subject, body), daemon=True).start()
+        threading.Thread(target=_deliver, args=(email, subject, body, html), daemon=True).start()
     else:
-        _deliver(email, subject, body)
+        _deliver(email, subject, body, html)
 
 
 def send_confirmation(email: str, raw_token: str) -> None:
@@ -36,17 +40,43 @@ def send_confirmation(email: str, raw_token: str) -> None:
         f"{link}\n\n"
         "Si no fuiste vos, no abras el enlace: ignorá este mensaje y no pasa nada. "
         "Quien lo pidió eligió la contraseña, así que no confirmes una cuenta que no creaste.\n",
+        render(
+            preheader="Un último paso para crear tu cuenta.",
+            label="Confirmá tu correo",
+            heading="Un último paso y tu cuenta está lista",
+            paragraphs=[
+                "¡Hola! Alguien pidió crear una cuenta en Banda Oriental con este correo. "
+                "Si fuiste vos, confirmalo con el botón y ya podés guardar tu historial en cualquier dispositivo."
+            ],
+            button="Confirmar mi correo",
+            link=link,
+            note="El enlace sirve una sola vez y vence en 24 horas. Si no fuiste vos, no lo abras: "
+            "quien lo pidió eligió la contraseña, así que no confirmes una cuenta que no creaste.",
+        ),
     )
 
 
 def send_already_registered(email: str) -> None:
+    link = f"{settings.FRONTEND_URL}/login"
     _send(
         email,
         "Ya tenés una cuenta en Banda Oriental",
         "¡Hola!\n\n"
         "Alguien intentó crear una cuenta con este correo, pero ya tenés una. "
-        f"Podés entrar desde {settings.FRONTEND_URL}/login.\n\n"
+        f"Podés entrar desde {link}.\n\n"
         "Si no fuiste vos, ignorá este mensaje y no pasa nada.\n",
+        render(
+            preheader="Ya tenés una cuenta: entrá desde acá.",
+            label="Tu cuenta",
+            heading="Ya tenés una cuenta en Banda Oriental",
+            paragraphs=[
+                "¡Hola! Alguien intentó crear una cuenta con este correo, pero ya existe una. "
+                "Podés entrar con tu contraseña o pidiendo un enlace por correo."
+            ],
+            button="Ir a iniciar sesión",
+            link=link,
+            note="Si no fuiste vos, ignorá este mensaje: tu cuenta sigue igual y no pasa nada.",
+        ),
     )
 
 
@@ -59,6 +89,15 @@ def send_magic_link(email: str, raw_token: str) -> None:
         "Entrá a tu cuenta con este enlace (sirve una sola vez y vence en 15 minutos):\n\n"
         f"{link}\n\n"
         "Si no lo pediste vos, ignorá este mensaje y no pasa nada.\n",
+        render(
+            preheader="Tu enlace para entrar, válido por 15 minutos.",
+            label="Tu enlace de acceso",
+            heading="Entrá a Banda Oriental",
+            paragraphs=["¡Hola! Tocá el botón para entrar a tu cuenta. No hace falta contraseña."],
+            button="Entrar a Banda Oriental",
+            link=link,
+            note="El enlace sirve una sola vez y vence en 15 minutos. Si no lo pediste vos, ignorá este mensaje.",
+        ),
     )
 
 
@@ -71,4 +110,16 @@ def send_password_reset(email: str, raw_token: str) -> None:
         "Para elegir una contraseña nueva, usá este enlace (sirve una sola vez y vence en 15 minutos):\n\n"
         f"{link}\n\n"
         "Al cambiarla se cierran las demás sesiones. Si no lo pediste vos, ignorá este mensaje.\n",
+        render(
+            preheader="Elegí una contraseña nueva, válido por 15 minutos.",
+            label="Recuperar contraseña",
+            heading="Elegí una contraseña nueva",
+            paragraphs=[
+                "¡Hola! Pediste cambiar tu contraseña. Tocá el botón para elegir una nueva. "
+                "Al cambiarla, se cierran tus sesiones en los demás dispositivos."
+            ],
+            button="Elegir contraseña nueva",
+            link=link,
+            note="El enlace sirve una sola vez y vence en 15 minutos. Si no lo pediste vos, ignorá este mensaje.",
+        ),
     )
