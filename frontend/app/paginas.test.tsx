@@ -71,6 +71,22 @@ describe("registro de páginas", () => {
     expect(texto).not.toMatch(/Cuando agreguemos funciones, como las cuentas/);
   });
 
+  it("los términos dicen que el juego es solo para personas: nada de bots, scripts ni agentes de IA", () => {
+    const texto = JSON.stringify(paginaPorSlug("terminos"));
+
+    expect(texto).toMatch(/solo para personas/);
+    expect(texto).toMatch(/agentes de IA/);
+    expect(texto).toMatch(/rastreadores/);
+  });
+
+  it("la política de privacidad explica la comprobación humana y para qué se guarda la dirección IP", () => {
+    const texto = JSON.stringify(paginaPorSlug("privacidad"));
+
+    expect(texto).toMatch(/Cloudflare Turnstile/);
+    expect(texto).toMatch(/programas automáticos/);
+    expect(texto).toMatch(/dirección IP.*seguridad|seguridad.*dirección IP/);
+  });
+
   it("cómo funciona explica las reglas principales", () => {
     const texto = JSON.stringify(paginaPorSlug("como-funciona"));
 

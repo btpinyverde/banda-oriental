@@ -6,6 +6,7 @@ import { leerHistorial } from "../lib/juego/almacen-historial";
 import { ApiError, type ClienteJuego } from "../lib/juego/tipos";
 import { archivoFalso, contextoActual, instalarAudioFalso } from "../lib/juego/audio-falso";
 import { vaciarCache } from "../lib/juego/mezcla";
+import { olvidarPase } from "../lib/humano/pase";
 import { diaDeMontevideo } from "../lib/juego/logica";
 import { borrarSesion, guardarSesion } from "../lib/cuenta/sesion";
 
@@ -189,6 +190,33 @@ describe("JuegoDiario: intentos hechos en otro dispositivo", () => {
     await cargado({ ...demo, estadoDelDia });
 
     expect(screen.getByText("Otra canción")).toBeInTheDocument();
+  });
+});
+
+describe("JuegoDiario: comprobación humana", () => {
+  afterEach(() => {
+    delete (window as unknown as { turnstile?: unknown }).turnstile;
+    olvidarPase();
+  });
+
+  it("al abrir el juego prepara el pase en segundo plano, para que el primer intento no espere", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "clave-del-sitio");
+    const render = vi.fn(() => "w");
+    (window as unknown as { turnstile: unknown }).turnstile = { render, remove: vi.fn() };
+
+    await cargado();
+
+    expect(render).toHaveBeenCalledTimes(1);
+  });
+
+  it("apagada, no hace nada", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
+    const render = vi.fn();
+    (window as unknown as { turnstile: unknown }).turnstile = { render, remove: vi.fn() };
+
+    await cargado();
+
+    expect(render).not.toHaveBeenCalled();
   });
 });
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { crearApiCuenta, type ApiCuenta } from "../lib/cuenta/api-cuenta";
 import { guardarSesion } from "../lib/cuenta/sesion";
+import { obtenerPase } from "../lib/humano/pase";
 import { ApiError } from "../lib/juego/tipos";
 import "./cuenta.css";
 
@@ -39,6 +40,11 @@ export function FormularioCuenta({ api, alEntrar }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [fallo, setFallo] = useState<Fallo | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  // Si la comprobación humana está encendida, se resuelve al abrir el formulario y no al apretar el botón.
+  useEffect(() => {
+    void obtenerPase().catch(() => {});
+  }, []);
 
   const limpiar = () => {
     setFallo(null);

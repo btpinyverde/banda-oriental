@@ -217,7 +217,8 @@ const paginas: Pagina[] = [
       {
         titulo: "3. Uso aceptable",
         lista: [
-          "No uses programas automáticos para jugar, alterar resultados o sobrecargar el servicio.",
+          "Banda Oriental es un juego solo para personas. No uses programas automáticos, bots, scripts ni agentes de IA para jugar, crear cuentas, alterar resultados o sobrecargar el servicio, ni rastreadores para copiar su contenido más allá de la portada.",
+          "Para cuidar el servicio podemos limitar la cantidad de pedidos, pedirte una comprobación de que sos una persona y bloquear el acceso de programas automáticos.",
           "Los nombres que elijas para el ranking no pueden ser ofensivos, engañosos ni publicitarios. Podemos rechazarlos o quitarlos.",
           "No intentes acceder a partes del servicio que no son públicas.",
         ],
@@ -289,6 +290,13 @@ const paginas: Pagina[] = [
         titulo: "Para qué los usamos",
         parrafos: [
           "Para que el juego funcione (recordar tu partida), para armar el ranking del día y para mantener y mejorar el servicio. No vendemos tus datos.",
+        ],
+      },
+      {
+        titulo: "Seguridad y programas automáticos",
+        parrafos: [
+          "Para distinguir a las personas de los programas automáticos podemos usar Cloudflare Turnstile, un servicio que hace una comprobación breve en tu navegador (casi siempre sin que tengas que hacer nada) y que puede recibir datos técnicos como tu dirección IP y el tipo de navegador. Cloudflare lo presta como proveedor y no lo usamos para publicidad.",
+          "También guardamos en los registros de nuestros servidores la dirección IP de quien alcanza los límites de pedidos, solo para cuidar la seguridad del servicio y por el tiempo que haga falta para eso. La dirección IP se usa para la seguridad y no para identificarte.",
         ],
       },
       {
