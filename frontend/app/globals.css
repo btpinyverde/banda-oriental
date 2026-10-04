@@ -847,6 +847,11 @@ button {
   color: var(--tinta-suave);
 }
 
+/* El enlace del logo hereda el ancho del footer completo (168px, 140px en celular) y la imagen mide 84px: sin esto
+   el logo queda pegado a la izquierda de una caja más ancha y se ve corrido del centro. */
+.footer--minimo .footer__logo,
+.footer--compacto .footer__logo { width: auto; }
+
 .footer--minimo .footer__logo img { display: block; width: 84px; height: auto; }
 .footer--minimo p { margin: 0; }
 .footer--minimo ul { display: flex; gap: 22px; margin: 0; padding: 0; list-style: none; }
