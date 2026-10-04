@@ -93,6 +93,19 @@ class TestThrottling:
         assert response.json()["retry_after"] >= 1
         assert int(response["Retry-After"]) >= 1
 
+    def test_a_blocked_visitor_is_logged_with_the_address_that_was_counted(self, api, rates, settings, caplog):
+        import logging
+
+        settings.TRUST_CLOUDFLARE_IP_HEADER = True
+        rates(**{"global": "1/min"})
+        api.get(reverse("health"), HTTP_CF_CONNECTING_IP="203.0.113.7")
+
+        with caplog.at_level(logging.WARNING):
+            api.get(reverse("health"), HTTP_CF_CONNECTING_IP="203.0.113.7")
+
+        assert "203.0.113.7" in caplog.text
+        assert "límite" in caplog.text.lower()
+
     @pytest.mark.parametrize(
         "url, body",
         [

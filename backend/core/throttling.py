@@ -1,3 +1,4 @@
+import logging
 import math
 
 from rest_framework.exceptions import Throttled
@@ -6,6 +7,7 @@ from rest_framework.throttling import ScopedRateThrottle, SimpleRateThrottle
 
 from .clientip import client_ip
 
+logger = logging.getLogger(__name__)
 TOO_MANY_REQUESTS = "Demasiados pedidos seguidos. Esperá un momento y probá de nuevo."
 
 
@@ -35,6 +37,10 @@ def exception_handler(exc, context):
         return response
     if isinstance(exc, Throttled):
         wait = max(1, math.ceil(exc.wait or 1))
+        # So whoever runs the site can see who is hitting a limit and how often (and check the address is the real one).
+        logger.warning(
+            "Límite de pedidos alcanzado: %s %s desde %s", context["request"].method, context["request"].path, client_ip(context["request"])
+        )
         return Response({"detail": TOO_MANY_REQUESTS, "retry_after": wait}, status=429, headers={"Retry-After": str(wait)})
     code = getattr(getattr(exc, "detail", None), "code", None)
     if code == "human_check_required":
