@@ -101,3 +101,5 @@ if EMAIL_BACKEND == "django.core.mail.backends.dummy.EmailBackend":
 # address. Without trusting it every visitor would look like the proxy and share one rate limit, so it defaults to on
 # here (set TRUST_CLOUDFLARE_IP_HEADER=0 to turn it off).
 TRUST_CLOUDFLARE_IP_HEADER = os.environ.get("TRUST_CLOUDFLARE_IP_HEADER", "1") == "1"
+
+PURGE_ANONYMOUS_AFTER_DAYS = int(os.environ.get("PURGE_ANONYMOUS_AFTER_DAYS", "7"))

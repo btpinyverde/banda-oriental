@@ -95,9 +95,32 @@ ignoran. Cada vez se recalcula desde los intentos, no se suma a un contador.
   intento y el ganador.
 - `python manage.py recompute_stats` reconstruye las estadísticas de todos; corre en cada despliegue.
 
+## Rankings
+
+`GET /api/leaderboard/?period=day|week|month|all` (público, solo lectura; sesión o `X-Device-Id` opcionales).
+Semana de lunes a domingo, mes calendario, en horario de Uruguay. Entran todos: una cuenta cuenta una sola vez sin
+importar los dispositivos, y un dispositivo sin cuenta es un jugador más. Mismo puntaje, mismo puesto.
+
+```
+{ "period": "week", "from": "2026-10-05", "to": "2026-10-11",
+  "entries": [ { "rank": 1, "display_name": "Ana", "score": 1850, "games": 2 } ],   // hasta 50
+  "me": { "rank": 7, "display_name": "Beto", "score": 900, "games": 1 } | null }     // aunque esté fuera del top
+```
+
+`period` inválido o ausente: 400. `GET /api/leaderboard/today/` sigue existiendo (equivale a `period=day` sin `me`).
+
+## Borrado de anónimos inactivos
+
+Un jugador anónimo (dispositivo sin cuenta) que no juega durante 7 días se borra: intentos, puntajes y estadísticas.
+Nunca se tocan las cuentas ni lo que un dispositivo ya le pasó a una cuenta. Se libera su nombre público. Corre solo,
+una vez al día, con la primera visita (no hay tareas programadas en el hosting gratuito).
+`PURGE_ANONYMOUS_AFTER_DAYS` (por defecto 7 en producción; 0 lo apaga) y
+`python manage.py purge_inactive_anonymous --days 7 [--dry-run]` para correrlo a mano.
+
 ## Fuera de alcance por ahora
 
-Rankings semanal, mensual y global, y el borrado de anónimos inactivos (ver abajo).
+El front de estadísticas y rankings.
 
-Decidido y pendiente: ranking diario (hecho), semanal (lunes a domingo), mensual y global, con todos los jugadores
-incluidos (anónimos también); un anónimo que no juega durante 7 días se borra (intentos, puntajes y estadísticas).
+Hecho en el backend: ranking diario, semanal, mensual y global (todos los jugadores) y borrado de anónimos
+inactivos a los 7 días. Falta el front (panel de estadísticas del servidor, nombre público pedido una sola vez,
+pantalla de rankings).

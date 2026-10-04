@@ -211,3 +211,33 @@ def test_dev_does_not_trust_it(monkeypatch):
     monkeypatch.delenv("TRUST_CLOUDFLARE_IP_HEADER", raising=False)
 
     assert _reload_dev_settings().TRUST_CLOUDFLARE_IP_HEADER is False
+
+
+def _minimal_prod_env(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@host/db")
+    monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "key")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("R2_BUCKET_NAME", "bucket")
+    monkeypatch.setenv("R2_ENDPOINT_URL", "https://acct.r2.cloudflarestorage.com")
+
+
+def test_prod_deletes_anonymous_players_idle_for_a_week_unless_told_otherwise(monkeypatch):
+    _minimal_prod_env(monkeypatch)
+    monkeypatch.delenv("PURGE_ANONYMOUS_AFTER_DAYS", raising=False)
+
+    assert _reload_prod_settings().PURGE_ANONYMOUS_AFTER_DAYS == 7
+
+
+def test_the_purge_can_be_changed_or_switched_off_from_the_environment(monkeypatch):
+    _minimal_prod_env(monkeypatch)
+    monkeypatch.setenv("PURGE_ANONYMOUS_AFTER_DAYS", "0")
+
+    assert _reload_prod_settings().PURGE_ANONYMOUS_AFTER_DAYS == 0
+
+
+def test_dev_and_tests_never_delete_anything_by_themselves():
+    from config.settings import base
+
+    assert base.PURGE_ANONYMOUS_AFTER_DAYS == 0

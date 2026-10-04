@@ -27,6 +27,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "core.middleware.BlockAiAgentsMiddleware",
+    "core.middleware.DailyMaintenanceMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -194,3 +195,7 @@ HUMAN_PASS_TTL_SECONDS = 30 * 60
 # The API only reads small JSON bodies; refuse anything bigger instead of reading it. File uploads (the admin's audio
 # stems) don't count here.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 256 * 1024
+
+# Anonymous players (no account) who have not played for this many days are deleted, once a day. 0 = off.
+PURGE_ANONYMOUS_AFTER_DAYS = 0
+PURGE_IN_BACKGROUND = True
