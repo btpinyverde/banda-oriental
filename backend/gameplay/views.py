@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authentication import BearerTokenAuthentication
+from accounts.claim import device_id_from
 
 from .feedback import calculate_feedback
 from .models import DailySong, GuessAttempt, PlayerStats, ScoreEntry, Stem
@@ -19,10 +20,13 @@ from .moderation import contains_banned_word
 from .ownership import owner_fields, owner_filter
 from core.human import HasHumanPass
 from .scoring import calculate_score
+from . import leaderboards
 from .stats import owner_of, recompute_stats, serialize
 
 
 logger = logging.getLogger(__name__)
+
+LEADERBOARD_LIMIT = 50
 
 
 def get_device_id(request):
@@ -388,3 +392,24 @@ class StatsView(APIView):
         owner = owner_of(request, device_id)
         lookup = {"user": owner["user"]} if "user" in owner else {"user": None, "device_id": device_id}
         return Response(serialize(PlayerStats.objects.filter(**lookup).first()))
+
+
+class LeaderboardView(APIView):
+    """Rankings of the day, the week (Monday to Sunday), the month and all time. Public and read-only; the optional
+    session or X-Device-Id adds the caller's own position (`me`), even if it is outside the top."""
+
+    http_method_names = ["get", "head", "options"]
+    authentication_classes = [BearerTokenAuthentication]
+
+    def get(self, request):
+        period = request.query_params.get("period")
+        if period not in leaderboards.PERIODS:
+            return Response({"detail": "period debe ser day, week, month o all."}, status=400)
+        me_key = None
+        if request.user is not None and request.user.is_authenticated:
+            me_key = ("u", request.user.id)
+        else:
+            device_id = device_id_from(request)
+            if device_id:
+                me_key = ("d", device_id)
+        return Response(leaderboards.build(period, timezone.localdate(), limit=LEADERBOARD_LIMIT, me_key=me_key))
