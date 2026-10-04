@@ -86,3 +86,31 @@ def test_the_email_tells_how_long_the_link_lasts(mailoutbox):
 
     assert "15 minutos" in html_of(mailoutbox[0])
     assert "24 horas" in html_of(mailoutbox[1])
+
+
+HEROES = {
+    "send_confirmation": "confirmar",
+    "send_magic_link": "acceso",
+    "send_password_reset": "restablecer",
+    "send_already_registered": "cuenta",
+}
+
+
+@pytest.mark.parametrize("kind,args,marker,label", KINDS)
+class TestSpanishAndIllustration:
+    def test_every_way_of_saying_the_language_is_spanish_so_gmail_does_not_offer_to_translate(
+        self, kind, args, marker, label, mailoutbox
+    ):
+        message = send(kind, args, mailoutbox)
+        html = html_of(message)
+
+        assert message.extra_headers.get("Content-Language") == "es"
+        assert '<html lang="es"' in html and 'xml:lang="es"' in html
+        assert '<meta http-equiv="Content-Language" content="es">' in html
+
+    def test_each_email_opens_with_its_own_illustrated_header(self, kind, args, marker, label, mailoutbox, settings):
+        html = html_of(send(kind, args, mailoutbox))
+
+        header = f'src="{settings.FRONTEND_URL}/assets/email/cabecera-{HEROES[kind]}.png"'
+        assert header in html
+        assert re.search(r'<img[^>]+cabecera-[a-z]+\.png"[^>]+alt="[^"]+"', html)

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def _deliver(email: str, subject: str, body: str, html: str) -> None:
     try:
         message = EmailMultiAlternatives(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+        message.extra_headers["Content-Language"] = "es"
         message.attach_alternative(html, "text/html")
         message.send()
     except Exception:
@@ -41,12 +42,14 @@ def send_confirmation(email: str, raw_token: str) -> None:
         "Si no fuiste vos, no abras el enlace: ignorá este mensaje y no pasa nada. "
         "Quien lo pidió eligió la contraseña, así que no confirmes una cuenta que no creaste.\n",
         render(
+            hero="confirmar",
             preheader="Un último paso para crear tu cuenta.",
             label="Confirmá tu correo",
-            heading="Un último paso y tu cuenta está lista",
+            heading="¡Ya casi estás!",
             paragraphs=[
                 "¡Hola! Alguien pidió crear una cuenta en Banda Oriental con este correo. "
-                "Si fuiste vos, confirmalo con el botón y ya podés guardar tu historial en cualquier dispositivo."
+                "Si fuiste vos, confirmalo con el botón y tu historial queda guardado: tus rachas, tus aciertos "
+                "y todas las canciones que adivinaste, en cualquier dispositivo."
             ],
             button="Confirmar mi correo",
             link=link,
@@ -66,12 +69,13 @@ def send_already_registered(email: str) -> None:
         f"Podés entrar desde {link}.\n\n"
         "Si no fuiste vos, ignorá este mensaje y no pasa nada.\n",
         render(
+            hero="cuenta",
             preheader="Ya tenés una cuenta: entrá desde acá.",
             label="Tu cuenta",
-            heading="Ya tenés una cuenta en Banda Oriental",
+            heading="¡Ya sos parte de Banda Oriental!",
             paragraphs=[
-                "¡Hola! Alguien intentó crear una cuenta con este correo, pero ya existe una. "
-                "Podés entrar con tu contraseña o pidiendo un enlace por correo."
+                "¡Hola! Alguien intentó crear una cuenta con este correo, pero ya tenés una. "
+                "Entrá con tu contraseña o pedí un enlace por correo, y seguí con tu racha."
             ],
             button="Ir a iniciar sesión",
             link=link,
@@ -90,10 +94,14 @@ def send_magic_link(email: str, raw_token: str) -> None:
         f"{link}\n\n"
         "Si no lo pediste vos, ignorá este mensaje y no pasa nada.\n",
         render(
+            hero="acceso",
             preheader="Tu enlace para entrar, válido por 15 minutos.",
             label="Tu enlace de acceso",
-            heading="Entrá a Banda Oriental",
-            paragraphs=["¡Hola! Tocá el botón para entrar a tu cuenta. No hace falta contraseña."],
+            heading="¡Entrá y a jugar!",
+            paragraphs=[
+                "¡Hola! Tocá el botón y entrás directo a tu cuenta, sin contraseña. "
+                "Tu historial y tu racha te están esperando."
+            ],
             button="Entrar a Banda Oriental",
             link=link,
             note="El enlace sirve una sola vez y vence en 15 minutos. Si no lo pediste vos, ignorá este mensaje.",
@@ -111,11 +119,12 @@ def send_password_reset(email: str, raw_token: str) -> None:
         f"{link}\n\n"
         "Al cambiarla se cierran las demás sesiones. Si no lo pediste vos, ignorá este mensaje.\n",
         render(
+            hero="restablecer",
             preheader="Elegí una contraseña nueva, válido por 15 minutos.",
             label="Recuperar contraseña",
-            heading="Elegí una contraseña nueva",
+            heading="Elegí tu contraseña nueva",
             paragraphs=[
-                "¡Hola! Pediste cambiar tu contraseña. Tocá el botón para elegir una nueva. "
+                "¡Hola! Pediste cambiar tu contraseña. Tocá el botón y elegí una nueva. "
                 "Al cambiarla, se cierran tus sesiones en los demás dispositivos."
             ],
             button="Elegir contraseña nueva",
