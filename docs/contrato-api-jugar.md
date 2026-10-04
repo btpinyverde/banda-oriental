@@ -30,8 +30,7 @@ Los tipos exactos están en `frontend/app/lib/juego/tipos.ts`; el cliente real, 
    Sin eso el reproductor muestra "No se pudo reproducir el audio".
 5. **Opcionales** (hoy el frontend se las arregla sin ellas):
    - `number` (nº del juego, "#138") en `GET /api/daily/`. Sin él muestra la fecha corta ("3 oct").
-   - `guessed_text` en cada `feedback_history[]`. Sin él, la tabla recuerda lo adivinado en el navegador
-     (`localStorage`), y tras limpiar datos muestra "—" en esas filas.
+   - ~~`guessed_text` en cada `feedback_history[]`~~ (ya lo manda el backend, junto con `guessed_song`): en cada `feedback_history[]` llegan `guessed_text` y `guessed_song` (`id`, `title`, `artist`, `album`, `year`, `genre`, igual que `/api/songs/`, o `null` en intentos viejos). Así cualquier dispositivo de la cuenta puede dibujar la fila completa sin depender de lo guardado en el navegador.
    - Que el estado terminado incluya el historial de intentos, para mostrar la tabla al volver a entrar.
 
 ## Variables de entorno del frontend

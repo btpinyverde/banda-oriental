@@ -32,6 +32,18 @@ def get_device_id(request):
         raise ValidationError({"device_id": "The X-Device-Id header must be a UUID."})
 
 
+def song_payload(song):
+    """A catalog song with what the guess table shows, same shape as /api/songs/."""
+    return {
+        "id": song.id,
+        "title": song.title,
+        "artist": song.album.artist.name,
+        "album": song.album.name,
+        "year": song.album.year,
+        "genre": song.album.genre,
+    }
+
+
 class DailyView(APIView):
     # Optional session: without the header the game works by device, as before. A bad token is a 401.
     authentication_classes = [BearerTokenAuthentication]
@@ -50,7 +62,9 @@ class DailyView(APIView):
             return self._finished_response(daily_song, won=True, score=score)
 
         attempts = list(
-            GuessAttempt.objects.filter(owner, daily_song=daily_song).order_by("attempt_number")
+            GuessAttempt.objects.filter(owner, daily_song=daily_song)
+            .select_related("guessed_song__album__artist")
+            .order_by("attempt_number")
         )
         if any(attempt.is_correct for attempt in attempts):
             # A win doesn't create a ScoreEntry by itself (that's a
@@ -85,7 +99,13 @@ class DailyView(APIView):
                     for stem in stems
                 ],
                 "feedback_history": [
-                    {"attempt_number": a.attempt_number, "feedback": a.feedback} for a in attempts
+                    {
+                        "attempt_number": a.attempt_number,
+                        "feedback": a.feedback,
+                        "guessed_text": a.guessed_text,
+                        "guessed_song": song_payload(a.guessed_song) if a.guessed_song else None,
+                    }
+                    for a in attempts
                 ],
                 "finished": False,
             }
@@ -162,6 +182,7 @@ class GuessView(APIView):
                     daily_song=daily_song,
                     attempt_number=attempt_number,
                     guessed_text=guessed_song.title,
+                    guessed_song=guessed_song,
                     is_correct=is_correct,
                     feedback=feedback,
                 )

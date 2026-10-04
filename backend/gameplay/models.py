@@ -94,6 +94,11 @@ class GuessAttempt(models.Model):
     daily_song = models.ForeignKey(DailySong, on_delete=models.CASCADE, related_name="attempts")
     attempt_number = models.PositiveSmallIntegerField()
     guessed_text = models.CharField(max_length=255)
+    # The catalog song that was guessed, so any device can draw the whole row. Null for older attempts and if the
+    # song is later removed from the catalog (the game is kept either way).
+    guessed_song = models.ForeignKey(
+        "catalog.Song", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     is_correct = models.BooleanField()
     feedback = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)

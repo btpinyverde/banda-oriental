@@ -422,3 +422,46 @@ class TestSharedDevicesAndLoggingOut:
         stolen = score(client, device=DEVICE_A)  # no session
 
         assert stolen.status_code == 400
+
+
+class TestGuessedSongInTheDay:
+    def test_each_attempt_comes_back_with_the_song_that_was_guessed_so_any_device_can_draw_the_row(
+        self, client, published_today, other_song
+    ):
+        user = make_user()
+        auth = bearer(user)
+        guess(client, other_song, 1, device=DEVICE_A, auth=auth)
+
+        body = daily(client, device=DEVICE_B, auth=auth).json()
+
+        attempt = body["feedback_history"][0]
+        assert attempt["guessed_text"] == "Otra canción"
+        assert attempt["guessed_song"] == {
+            "id": other_song.id,
+            "title": "Otra canción",
+            "artist": "No Te Va Gustar",
+            "album": "Otra cosa",
+            "year": 2010,
+            "genre": "",
+        }
+
+    def test_older_attempts_without_a_stored_song_still_work(self, client, published_today):
+        GuessAttempt.objects.create(
+            device_id=DEVICE_A, daily_song=published_today, attempt_number=1, guessed_text="Vieja", is_correct=False,
+            feedback={"year": "exact", "genre": "same", "artist": "same", "album": "same"},
+        )
+
+        attempt = daily(client).json()["feedback_history"][0]
+
+        assert attempt["guessed_text"] == "Vieja"
+        assert attempt["guessed_song"] is None
+
+    def test_deleting_a_song_from_the_catalog_does_not_delete_the_games_that_guessed_it(
+        self, client, published_today, other_song
+    ):
+        guess(client, other_song, 1)
+
+        other_song.delete()
+
+        assert GuessAttempt.objects.count() == 1
+        assert daily(client).json()["feedback_history"][0]["guessed_song"] is None
