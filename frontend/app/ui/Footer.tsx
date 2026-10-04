@@ -37,10 +37,51 @@ const REDES = [
   { href: "#", etiqueta: "Spotify", icono: "social-spotify" },
 ];
 
+const LEGALES = [
+  { href: "/terminos", etiqueta: "Términos" },
+  { href: "/privacidad", etiqueta: "Privacidad" },
+  { href: "/contacto", etiqueta: "Contacto" },
+];
+
 /**
  * Pie de página. `footer__arte` lleva a Flan.
+ * La variante "compacto" es una sola fila (logo, lema, redes y enlaces legales) para páginas con mucho adorno,
+ * como la 404.
  */
-export function Footer() {
+export function Footer({ variante = "completo" }: { variante?: "completo" | "compacto" }) {
+  if (variante === "compacto") {
+    return (
+      <footer className="footer footer--compacto">
+        <Ondulada className="footer--compacto__ondulada" />
+        <div className="footer--compacto__fila">
+          <Link href="/" className="footer__logo">
+            <img src="/assets/brand-wordmark.svg" alt="Banda Oriental, inicio" width={84} height={45} />
+          </Link>
+          <p className="footer--compacto__lema">El juego de la música uruguaya.</p>
+          <ul className="footer__redes">
+            {REDES.map(({ href, etiqueta, icono }) => (
+              <li key={etiqueta}>
+                <a href={href} className="red" aria-label={etiqueta}>
+                  <span className="red__icono" aria-hidden="true">
+                    <img src={`/assets/${icono}.svg`} alt="" />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <ul className="footer--compacto__legales">
+            {LEGALES.map(({ href, etiqueta }) => (
+              <li key={etiqueta}>
+                <Link href={href}>{etiqueta}</Link>
+              </li>
+            ))}
+          </ul>
+          <img className="footer__estrella" src="/assets/brand-asterisk.svg" alt="" width={36} height={36} />
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="footer">
       <img className="footer__deco footer__deco--rosa" src="/assets/footer-blob-pink.svg" alt="" aria-hidden="true" />
