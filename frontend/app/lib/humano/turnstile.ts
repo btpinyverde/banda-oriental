@@ -38,6 +38,11 @@ export async function resolverDesafio(claveDelSitio: string): Promise<string> {
   return new Promise<string>((resolver, rechazar) => {
     const contenedor = document.createElement("div");
     contenedor.className = "comprobacion-humana";
+    const texto = document.createElement("p");
+    texto.className = "comprobacion-humana__texto";
+    texto.textContent = "Un segundito: comprobamos que sos una persona.";
+    const casilla = document.createElement("div");
+    contenedor.append(texto, casilla);
     document.body.appendChild(contenedor);
 
     let id = "";
@@ -45,10 +50,13 @@ export async function resolverDesafio(claveDelSitio: string): Promise<string> {
       if (id) window.turnstile?.remove(id);
       contenedor.remove();
     };
-    id = window.turnstile!.render(contenedor, {
+    id = window.turnstile!.render(casilla, {
       sitekey: claveDelSitio,
       appearance: "interaction-only",
       language: "es",
+      // Casi siempre pasa sola y no se ve nada; solo si Cloudflare necesita un clic, se muestra el cartel.
+      "before-interactive-callback": () => contenedor.classList.add("comprobacion-humana--visible"),
+      "after-interactive-callback": () => contenedor.classList.remove("comprobacion-humana--visible"),
       callback: (token: string) => {
         terminar();
         resolver(token);

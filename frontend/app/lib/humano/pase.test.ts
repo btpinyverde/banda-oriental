@@ -101,6 +101,31 @@ describe("comprobación humana activa", () => {
     expect(document.querySelector(".comprobacion-humana")).toBeNull();
   });
 
+  it("solo cuando Cloudflare va a pedir algo a la persona muestra un cartel centrado que explica qué pasa", async () => {
+    let opcionesWidget: Record<string, (valor?: string) => void> = {};
+    const render = vi.fn((_c: HTMLElement, opciones: Record<string, (valor?: string) => void>) => {
+      opcionesWidget = opciones;
+      return "widget-1";
+    });
+    (window as unknown as { turnstile: unknown }).turnstile = { render, remove: vi.fn() };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respuesta({ pass: "pase-1", expires_in: 1800 })));
+
+    const pase = obtenerPase();
+    await vi.waitFor(() => expect(render).toHaveBeenCalled());
+    const contenedor = document.querySelector(".comprobacion-humana")!;
+    expect(contenedor.classList.contains("comprobacion-humana--visible")).toBe(false);
+
+    opcionesWidget["before-interactive-callback"]();
+    expect(contenedor.classList.contains("comprobacion-humana--visible")).toBe(true);
+    expect(contenedor.textContent).toMatch(/persona/i);
+
+    opcionesWidget["after-interactive-callback"]();
+    expect(contenedor.classList.contains("comprobacion-humana--visible")).toBe(false);
+
+    opcionesWidget.callback("token");
+    await pase;
+  });
+
   it("si el desafío falla (programa automático, sin red) lo informa con un mensaje claro y un código", async () => {
     turnstileFalso(new Error("falló"));
     vi.stubGlobal("fetch", vi.fn());
