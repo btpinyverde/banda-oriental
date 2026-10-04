@@ -21,12 +21,15 @@ interface CancionDeLaApi {
 
 const base = () => (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
 const DIEZ_MINUTOS = 600;
+// Si la API tarda (el servidor gratuito se duerme) no se espera para siempre: ni armar la página ni armar el sitio deben
+// colgarse. Pasado este tiempo la página avisa y se renueva sola.
+const ESPERA_MAXIMA_MS = 20_000;
 
 /** Todas las canciones juntadas por disco; `null` si no se pudo consultar. */
 export async function obtenerDiscos(): Promise<DiscoDelCatalogo[] | null> {
   let canciones: CancionDeLaApi[];
   try {
-    const respuesta = await fetch(`${base()}/api/songs/`, { next: { revalidate: DIEZ_MINUTOS } });
+    const respuesta = await fetch(`${base()}/api/songs/`, { next: { revalidate: DIEZ_MINUTOS }, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
     if (!respuesta.ok) return null;
     canciones = (await respuesta.json()).songs as CancionDeLaApi[];
   } catch {

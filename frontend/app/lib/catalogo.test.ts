@@ -47,6 +47,15 @@ describe("obtenerDiscos", () => {
     expect(opciones.next.revalidate).toBe(600);
   });
 
+  it("no espera a la API para siempre: el pedido tiene un tiempo máximo, así armar la página nunca cuelga el despliegue", async () => {
+    responder({ songs: [] });
+
+    await obtenerDiscos();
+
+    const opciones = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(opciones.signal).toBeInstanceOf(AbortSignal);
+  });
+
   it("si la API falla o no hay red devuelve null, para que la página lo explique", async () => {
     responder({}, 500);
     expect(await obtenerDiscos()).toBeNull();
