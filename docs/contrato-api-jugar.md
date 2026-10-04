@@ -19,10 +19,16 @@ Los tipos exactos están en `frontend/app/lib/juego/tipos.ts`; el cliente real, 
    Sin el catálogo el buscador no tiene qué ofrecer, y `guess` necesita el `song_id`. **Es lo que bloquea publicar `/jugar`.**
    El frontend no debe recibir cuál es la canción del día por este endpoint.
 2. **CORS**: permitir el header `X-Device-Id` desde el dominio del sitio (y `Content-Type`).
-3. **Canción del día publicada**, con stems y mezclas acumulativas: el frontend reproduce la **última** pista
-   desbloqueada (`unlocked_stems` ordenadas por `unlock_order`), así que cada una debe contener a las anteriores.
-   Hay 4 pistas (batería, bajo, otros, voz) y 6 intentos: del intento 4 en adelante la pista no cambia.
-4. **Opcionales** (hoy el frontend se las arregla sin ellas):
+3. **Canción del día publicada**, con 4 pistas **sueltas** (un instrumento por archivo, no mezclas acumulativas): el
+   frontend reproduce **todas las desbloqueadas a la vez** y dibuja la onda de la suma. El orden de desbloqueo lo
+   define el backend por tipo, siempre el mismo: **batería (1), bajo (2), otros (3) y voz (4)**; el número
+   `unlock_order` que se cargue en el admin no cambia el juego. Hay 6 intentos: del intento 4 en adelante no se suman
+   más pistas. Los 4 archivos deben durar lo mismo y arrancar en el mismo instante (si no, no suenan alineados).
+   Las `url` son firmadas (vencen a la hora); el frontend las identifica por día y tipo para no volver a bajarlas.
+4. **CORS del bucket de audios (R2)**: el front baja los audios con `fetch` para mezclarlos y dibujar la onda, así
+   que el bucket tiene que permitir `GET` y `HEAD` desde el dominio del sitio (política CORS de `banda-oriental-stems`).
+   Sin eso el reproductor muestra "No se pudo reproducir el audio".
+5. **Opcionales** (hoy el frontend se las arregla sin ellas):
    - `number` (nº del juego, "#138") en `GET /api/daily/`. Sin él muestra la fecha corta ("3 oct").
    - `guessed_text` en cada `feedback_history[]`. Sin él, la tabla recuerda lo adivinado en el navegador
      (`localStorage`), y tras limpiar datos muestra "—" en esas filas.

@@ -6,7 +6,7 @@ import { codificarCuadricula, type DatosStory } from "../lib/compartir/story";
 import { guardarPartida } from "../lib/juego/almacen-historial";
 import { crearCliente } from "../lib/juego/cliente";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
-import { etiquetaDelDia, formatoCuentaAtras, segundosHastaMedianoche, stemActual } from "../lib/juego/logica";
+import { etiquetaDelDia, formatoCuentaAtras, pistasParaMezclar, segundosHastaMedianoche } from "../lib/juego/logica";
 import { useDiaActual } from "../lib/juego/useDiaActual";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
 import { AyudaColores } from "./AyudaColores";
@@ -35,6 +35,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [segundosParaProxima, setSegundosParaProxima] = useState(() => segundosHastaMedianoche(new Date()));
   const inicioIntento = useRef(0);
+  const audioRenovadoEn = useRef<{ intento: number; en: number } | null>(null);
   const [tardando, setTardando] = useState(false);
 
   /** Intentos de un estado en curso: lo que dice el backend más lo guardado en este navegador. */
@@ -132,6 +133,11 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   /** Las direcciones del audio están firmadas y vencen: si el audio falla, se piden de nuevo con el estado del día. */
   async function renovarAudio() {
     if (!estado || estado.finished) return;
+    // Como mucho una renovación por minuto en cada intento: si las direcciones nuevas también fallan, el problema no
+    // es que vencieron y seguir pidiendo en bucle no ayuda; queda el botón de reintentar.
+    const ultima = audioRenovadoEn.current;
+    if (ultima && ultima.intento === estado.attempt_number && Date.now() - ultima.en < 60_000) return;
+    audioRenovadoEn.current = { intento: estado.attempt_number, en: Date.now() };
     const actual = await volverASincronizar();
     if (actual && !actual.finished && actual.attempt_number === estado.attempt_number) {
       setVista({ tipo: "listo", estado: actual });
@@ -234,7 +240,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
     );
   }
 
-  const pista = stemActual(actual.unlocked_stems);
+  const pistas = pistasParaMezclar(actual.day, actual.unlocked_stems);
 
   return (
     <div className="jugar__tarjeta">
@@ -253,9 +259,11 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
         <AyudaColores />
       </div>
 
-      {/* Una clave por día e intento: hay 4 pistas y 6 intentos, así que la URL se repite y sin esto el
+      {/* Una clave por día e intento: hay 4 pistas y 6 intentos, así que las pistas se repiten y sin esto el
           reproductor seguiría "escuchado" en un intento nuevo. */}
-      {pista && <ReproductorPista key={`${actual.day}-${actual.attempt_number}`} src={pista.url} alCambiarListo={setListo} alFallar={renovarAudio} />}
+      {pistas.length > 0 && (
+        <ReproductorPista key={`${actual.day}-${actual.attempt_number}`} pistas={pistas} alCambiarListo={setListo} alFallar={renovarAudio} />
+      )}
       <FilaStems desbloqueadas={actual.unlocked_stems} />
 
       <TablaIntentos intentos={intentos} />

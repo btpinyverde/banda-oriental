@@ -33,7 +33,7 @@ const CATALOGO_DEMO: CancionCatalogo[] = [
 
 export const CANCION_DEL_DIA_DEMO = CATALOGO_DEMO[0];
 
-const ORDEN_STEMS: TipoStem[] = ["drums", "bass", "vocals", "other"];
+const ORDEN_STEMS: TipoStem[] = ["drums", "bass", "other", "vocals"];
 const PUNTAJE_BASE: Record<number, number> = { 1: 100, 2: 85, 3: 70, 4: 55, 5: 40, 6: 20 };
 
 const mismoTexto = (a: string, b: string) => normalizarTexto(a) === normalizarTexto(b);

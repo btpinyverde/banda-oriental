@@ -29,7 +29,7 @@ describe("FilaStems", () => {
   it("debajo de cada nombre dice qué número de pista es", () => {
     render(<FilaStems desbloqueadas={[stem("drums", 1)]} />);
 
-    for (const [nombre, pista] of [["Batería", "Pista 1"], ["Bajo", "Pista 2"], ["Voz", "Pista 3"], ["Otros", "Pista 4"]]) {
+    for (const [nombre, pista] of [["Batería", "Pista 1"], ["Bajo", "Pista 2"], ["Otros", "Pista 3"], ["Voz", "Pista 4"]]) {
       expect(screen.getByText(nombre).closest("li")).toHaveTextContent(pista);
     }
   });

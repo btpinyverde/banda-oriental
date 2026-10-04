@@ -5,7 +5,7 @@ Para correr **antes** de mergear el juego (PR #17) y las páginas (PR #18), con 
 ## 0. Requisitos (tuyos)
 
 - [ ] `NEXT_PUBLIC_API_BASE_URL=https://api.bandaoriental.xami.uy` en Vercel (ya cargada; Production y Preview).
-- [ ] Una **canción de prueba** cargada en el admin (`/admin/`) como canción del día **de hoy** (fecha de Montevideo), con estado *publicada* y sus **4 pistas** (`unlock_order` 1 a 4, mezclas acumulativas: la pista 2 incluye la 1, etc.).
+- [ ] Una **canción de prueba** cargada en el admin (`/admin/`) como canción del día **de hoy** (fecha de Montevideo), con estado *publicada* y sus **4 pistas sueltas** (batería, bajo, otros y voz; un instrumento por archivo, todos de la misma duración). El juego las suma a medida que se desbloquean, en ese orden; el `unlock_order` del admin no cambia nada.
 - [ ] Opcional: `NEXT_PUBLIC_CORREO_CONTACTO` en Vercel (si falta, Contacto dice "Estamos habilitando el correo de contacto").
 
 ## 1. La API, sin navegador
@@ -43,7 +43,8 @@ Catálogo del buscador:
 En una ventana privada (para empezar sin historial):
 
 - [ ] `/jugar` carga sin el mensaje "No pudimos cargar el juego" ni "Todavía no hay canción para hoy". Si el servidor estaba dormido, aparece "está despertando" y después carga (puede tardar hasta un minuto).
-- [ ] El audio **suena** al tocar play, y recién entonces se habilita enviar el intento.
+- [ ] El audio **suena** al tocar play, y recién entonces se habilita enviar el intento. La onda dibujada es la del audio (no una forma genérica).
+- [ ] En el intento 2 suenan **batería y bajo juntos**; en el 3 se suma "otros"; en el 4, la voz. La fila de pistas las muestra en ese orden.
 - [ ] Buscar una canción, elegirla y enviar: la fila se completa con los colores (verde = acierto, amarillo = cerca, rosa = error) y se desbloquea la pista siguiente.
 - [ ] Errar 5 veces y acertar la sexta (o acertar antes): aparece la pantalla final con la canción, el puntaje y la cuenta atrás.
 - [ ] Recargar la página a mitad de partida: **conserva los intentos** y no deja volver a empezar.

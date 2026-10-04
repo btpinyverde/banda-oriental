@@ -248,3 +248,39 @@ def test_daily_does_not_leak_another_devices_progress(client, published_today):
     body = response.json()
     assert body["attempt_number"] == 1
     assert body["feedback_history"] == []
+
+
+def _fail_attempts(count):
+    for number in range(1, count + 1):
+        GuessAttempt.objects.create(
+            device_id=DEVICE_ID,
+            daily_song=DailySong.objects.get(date=timezone.localdate()),
+            attempt_number=number,
+            guessed_text="Otra canción",
+            is_correct=False,
+            feedback={"year": "different", "genre": "different", "artist": "different", "album": "different"},
+        )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "failed_attempts, expected_types",
+    [
+        (0, ["drums"]),
+        (1, ["drums", "bass"]),
+        (2, ["drums", "bass", "other"]),
+        (3, ["drums", "bass", "other", "vocals"]),
+    ],
+)
+def test_daily_unlocks_stems_in_a_fixed_order_by_type_whatever_unlock_order_was_typed_in_the_admin(
+    client, published_today, failed_attempts, expected_types
+):
+    # published_today stores vocals as #3 and other as #4 (the order of STEM_TYPE_CHOICES). The game's order is
+    # drums, bass, other and the voice last, so the type decides, not the number typed in the admin.
+    _fail_attempts(failed_attempts)
+
+    response = client.get(reverse("gameplay:daily"), HTTP_X_DEVICE_ID=DEVICE_ID)
+
+    stems = response.json()["unlocked_stems"]
+    assert [s["stem_type"] for s in stems] == expected_types
+    assert [s["unlock_order"] for s in stems] == list(range(1, len(expected_types) + 1))

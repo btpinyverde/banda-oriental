@@ -9,7 +9,7 @@ import {
   nombreValido,
   normalizarTexto,
   segundosHastaMedianoche,
-  stemActual,
+  pistasParaMezclar,
 } from "./logica";
 import type { StemInfo } from "./tipos";
 
@@ -52,10 +52,10 @@ describe("flechaAnio", () => {
 });
 
 describe("etapasDeStems", () => {
-  it("muestra siempre las cuatro pistas en el mismo lugar: Batería, Bajo, Voz y Otros", () => {
+  it("muestra siempre las cuatro pistas en el mismo lugar: Batería, Bajo, Otros y Voz", () => {
     const etapas = etapasDeStems([stem("drums", 1)]);
 
-    expect(etapas.map((e) => e.etiqueta)).toEqual(["Batería", "Bajo", "Voz", "Otros"]);
+    expect(etapas.map((e) => e.etiqueta)).toEqual(["Batería", "Bajo", "Otros", "Voz"]);
   });
 
   it("marca como abiertas solo las que llegaron, sin mover de lugar a ninguna", () => {
@@ -64,19 +64,19 @@ describe("etapasDeStems", () => {
     expect(etapas.map((e) => [e.etiqueta, e.desbloqueada])).toEqual([
       ["Batería", true],
       ["Bajo", true],
-      ["Voz", false],
       ["Otros", false],
+      ["Voz", false],
     ]);
   });
 
-  it("el orden en que el backend desbloquea las pistas no cambia el orden en pantalla", () => {
-    const etapas = etapasDeStems([stem("other", 1), stem("vocals", 2)]);
+  it("el orden en que el backend desbloquea las pistas no cambia el orden en pantalla: la voz va última", () => {
+    const etapas = etapasDeStems([stem("vocals", 1), stem("other", 2)]);
 
     expect(etapas.map((e) => [e.etiqueta, e.desbloqueada])).toEqual([
       ["Batería", false],
       ["Bajo", false],
-      ["Voz", true],
       ["Otros", true],
+      ["Voz", true],
     ]);
   });
 
@@ -86,8 +86,8 @@ describe("etapasDeStems", () => {
     expect(etapas.map((e) => [e.etiqueta, e.pista])).toEqual([
       ["Batería", 1],
       ["Bajo", 2],
-      ["Voz", 3],
-      ["Otros", 4],
+      ["Otros", 3],
+      ["Voz", 4],
     ]);
   });
 
@@ -104,13 +104,21 @@ describe("etapasDeStems", () => {
   });
 });
 
-describe("stemActual", () => {
-  it("devuelve la última pista desbloqueada, que es la mezcla acumulada que se reproduce", () => {
-    expect(stemActual([stem("drums", 1), stem("other", 3), stem("bass", 2)])?.stem_type).toBe("other");
+describe("pistasParaMezclar", () => {
+  it("devuelve todas las pistas desbloqueadas, porque suenan juntas", () => {
+    const pistas = pistasParaMezclar("2026-10-03", [stem("drums", 1), stem("bass", 2)]);
+
+    expect(pistas.map((p) => p.url)).toEqual(["https://audio.example/drums.mp3", "https://audio.example/bass.mp3"]);
   });
 
-  it("devuelve undefined si no hay ninguna", () => {
-    expect(stemActual([])).toBeUndefined();
+  it("identifica cada pista por día y tipo, no por su dirección firmada (que cambia en cada pedido)", () => {
+    const [bateria] = pistasParaMezclar("2026-10-03", [stem("drums", 1)]);
+
+    expect(bateria.clave).toBe("2026-10-03:drums");
+  });
+
+  it("devuelve una lista vacía si no hay ninguna", () => {
+    expect(pistasParaMezclar("2026-10-03", [])).toEqual([]);
   });
 });
 

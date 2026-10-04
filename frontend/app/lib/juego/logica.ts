@@ -17,11 +17,11 @@ export function flechaAnio(valor: Feedback["year"]): string {
 }
 
 // Lugar fijo de cada pista en pantalla, como en el diseño: no depende del orden en que el backend las desbloquea.
-const ORDEN_EN_PANTALLA: TipoStem[] = ["drums", "bass", "vocals", "other"];
+const ORDEN_EN_PANTALLA: TipoStem[] = ["drums", "bass", "other", "vocals"];
 const ETIQUETAS: Record<TipoStem, string> = { drums: "Batería", bass: "Bajo", other: "Otros", vocals: "Voz" };
 
 // Orden en que el backend suele desbloquear las pistas; se usa mientras una pista todavía no llegó.
-const PISTA_HABITUAL: Record<TipoStem, number> = { drums: 1, bass: 2, vocals: 3, other: 4 };
+const PISTA_HABITUAL: Record<TipoStem, number> = { drums: 1, bass: 2, other: 3, vocals: 4 };
 
 export interface EtapaStem {
   tipo: TipoStem;
@@ -42,9 +42,12 @@ export function etapasDeStems(desbloqueadas: StemInfo[]): EtapaStem[] {
   }));
 }
 
-/** La pista que se reproduce: la última desbloqueada, porque el backend sube mezclas acumulativas. */
-export function stemActual(desbloqueadas: StemInfo[]): StemInfo | undefined {
-  return [...desbloqueadas].sort((a, b) => b.unlock_order - a.unlock_order)[0];
+/**
+ * Las pistas que suenan: todas las desbloqueadas, juntas (cada una es un instrumento suelto). Se identifican por
+ * día y tipo y no por la dirección, que está firmada y cambia en cada pedido.
+ */
+export function pistasParaMezclar(dia: string, desbloqueadas: StemInfo[]): { clave: string; url: string }[] {
+  return desbloqueadas.map((stem) => ({ clave: `${dia}:${stem.stem_type}`, url: stem.url }));
 }
 
 const ZONA = "America/Montevideo";
