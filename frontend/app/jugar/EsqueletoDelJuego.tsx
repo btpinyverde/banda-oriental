@@ -1,3 +1,5 @@
+import "./esqueleto.css";
+
 /**
  * Lo que se ve mientras llega el estado del día: la forma del juego dibujada en gris con un brillo que pasa
  * (cabecera, título, reproductor, las cuatro pistas, la tabla de intentos y el buscador). Sin esto la zona del juego
