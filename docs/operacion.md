@@ -19,7 +19,7 @@ Una página para quien opere el juego (hoy, Brandon). Complementa `docs/segurida
 
 **Render (API)**: `DATABASE_URL`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, claves de R2, `FRONTEND_URL`
 (`https://bandaoriental.xami.uy`), `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL`, `TURNSTILE_SECRET_KEY` (opcional),
-`PURGE_ANONYMOUS_AFTER_DAYS` (7 por defecto; `0` apaga el borrado de anónimos).
+`REPLY_TO_EMAIL` (casilla real a la que llegan las respuestas a los correos de la cuenta; ver `docs/entregabilidad-del-correo.md`), `PURGE_ANONYMOUS_AFTER_DAYS` (7 por defecto; `0` apaga el borrado de anónimos).
 
 **Vercel (sitio)**: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CUENTAS_ACTIVAS=1` (cuentas visibles),
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (clave pública de Turnstile).

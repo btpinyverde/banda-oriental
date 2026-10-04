@@ -169,6 +169,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Base URL of the frontend, used to build the links in emails.
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Banda Oriental <no-reply@xami.uy>")
+# Where replies to the account emails go. The sender address (hola@bandaoriental...) cannot receive mail, so set this to a
+# mailbox somebody reads; it also helps the emails reach the inbox. Empty = no Reply-To header.
+REPLY_TO_EMAIL = os.environ.get("REPLY_TO_EMAIL", "")
 # There is no email provider yet. The dummy backend sends and logs nothing, so confirmation links never end up
 # in production logs. Development overrides it with the console backend.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.dummy.EmailBackend")

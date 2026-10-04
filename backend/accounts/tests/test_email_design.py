@@ -137,3 +137,31 @@ class TestGmailDoesNotMisreadTheLanguage:
         message = send(kind, args, mailoutbox)
 
         assert "http" in message.body
+
+
+class TestReplyTo:
+    """The sender address cannot receive mail (its domain points at the website), so replies need somewhere real to go:
+    a mailbox the owner reads. Outlook also weighs a sender that cannot be answered against the message."""
+
+    def test_when_a_reply_address_is_set_every_account_email_carries_it(self, mailoutbox, settings):
+        settings.REPLY_TO_EMAIL = "hola@xami.uy"
+
+        emails.send_magic_link("persona@example.com", TOKEN)
+        emails.send_confirmation("persona@example.com", TOKEN)
+        emails.send_password_reset("persona@example.com", TOKEN)
+        emails.send_already_registered("persona@example.com")
+
+        assert len(mailoutbox) == 4
+        assert all(message.reply_to == ["hola@xami.uy"] for message in mailoutbox)
+
+    def test_without_one_nothing_changes(self, mailoutbox, settings):
+        settings.REPLY_TO_EMAIL = ""
+
+        emails.send_magic_link("persona@example.com", TOKEN)
+
+        assert mailoutbox[0].reply_to == []
+
+    def test_it_is_off_by_default(self, settings):
+        from config.settings import base
+
+        assert base.REPLY_TO_EMAIL == ""

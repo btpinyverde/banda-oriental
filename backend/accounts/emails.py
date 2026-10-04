@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 def _deliver(email: str, subject: str, body: str, html: str) -> None:
     try:
-        message = EmailMultiAlternatives(subject, body, settings.DEFAULT_FROM_EMAIL, [email])
+        reply_to = [settings.REPLY_TO_EMAIL] if settings.REPLY_TO_EMAIL else None
+        message = EmailMultiAlternatives(subject, body, settings.DEFAULT_FROM_EMAIL, [email], reply_to=reply_to)
         message.extra_headers["Content-Language"] = "es"
         message.attach_alternative(html, "text/html")
         message.send()
