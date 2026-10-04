@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { crearClienteHttp } from "./cliente-http";
 import { ApiError } from "./tipos";
 import { guardarSesion, leerSesion } from "../cuenta/sesion";
+import { olvidarPase } from "../humano/pase";
 
 const ID = "11111111-2222-4333-8444-555555555555";
 
@@ -204,5 +205,88 @@ describe("con una sesión de cuenta", () => {
 
     await expect(crearClienteHttp().estadoDelDia(ID)).rejects.toMatchObject({ status: 401 });
     expect(mock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("con la comprobación humana activa", () => {
+  const pase = (valor: string) => respuesta({ pass: valor, expires_in: 1800 });
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "clave-del-sitio");
+    olvidarPase();
+    const render = vi.fn((_c: HTMLElement, o: { callback: (t: string) => void }) => {
+      queueMicrotask(() => o.callback("token"));
+      return "w";
+    });
+    (window as unknown as { turnstile: unknown }).turnstile = { render, remove: vi.fn() };
+  });
+  afterEach(() => {
+    delete (window as unknown as { turnstile?: unknown }).turnstile;
+    olvidarPase();
+  });
+
+  it("manda el pase al adivinar y al mandar el puntaje, pero no al leer el estado ni la lista", async () => {
+    const mock = simular(
+      pase("pase-1"),
+      respuesta({ is_correct: false }),
+      respuesta({ score: 100 }, 201),
+      respuesta({ finished: false }),
+      respuesta({ songs: [] }),
+    );
+    const cliente = crearClienteHttp();
+
+    await cliente.enviarIntento(ID, 1, 7);
+    await cliente.enviarPuntaje(ID, "ana", 30);
+    await cliente.estadoDelDia(ID);
+    await cliente.listarCanciones();
+
+    const llamadas = mock.mock.calls.filter(([url]) => !String(url).endsWith("/api/human/"));
+    expect(llamadas[0][1].headers["X-Human-Pass"]).toBe("pase-1");
+    expect(llamadas[1][1].headers["X-Human-Pass"]).toBe("pase-1");
+    expect(llamadas[2][1].headers?.["X-Human-Pass"]).toBeUndefined();
+    expect(llamadas[3][1].headers?.["X-Human-Pass"]).toBeUndefined();
+  });
+
+  it("si la API dice que el pase no sirve (cambió la red, venció) consigue otro y repite una vez", async () => {
+    const mock = simular(
+      pase("pase-viejo"),
+      respuesta({ detail: "Necesitamos comprobar que sos una persona.", code: "human_check_required" }, 403),
+      pase("pase-nuevo"),
+      respuesta({ is_correct: true, finished: true }),
+    );
+
+    const resultado = await crearClienteHttp().enviarIntento(ID, 1, 7);
+
+    expect(resultado).toMatchObject({ is_correct: true });
+    const intentos = mock.mock.calls.filter(([url]) => String(url).endsWith("/api/daily/guess/"));
+    expect(intentos.map(([, o]) => o.headers["X-Human-Pass"])).toEqual(["pase-viejo", "pase-nuevo"]);
+  });
+
+  it("no se queda repitiendo: si el segundo intento también es rechazado devuelve ese error", async () => {
+    const rechazo = respuesta({ detail: "Necesitamos comprobar que sos una persona.", code: "human_check_required" }, 403);
+    simular(pase("p1"), rechazo, pase("p2"), rechazo);
+
+    await expect(crearClienteHttp().enviarIntento(ID, 1, 7)).rejects.toMatchObject({ status: 403, codigo: "human_check_required" });
+  });
+
+  it("un 403 por otra cosa no se confunde con la comprobación", async () => {
+    const mock = simular(pase("p1"), respuesta({ detail: "Prohibido." }, 403));
+
+    await expect(crearClienteHttp().enviarIntento(ID, 1, 7)).rejects.toMatchObject({ status: 403 });
+    expect(mock.mock.calls.filter(([url]) => String(url).endsWith("/api/human/"))).toHaveLength(1);
+  });
+});
+
+describe("con la comprobación humana apagada", () => {
+  it("no manda ningún pase ni pide nada a /api/human/", async () => {
+    window.localStorage.clear();
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
+    const mock = simular(respuesta({ is_correct: false }));
+
+    await crearClienteHttp().enviarIntento(ID, 1, 7);
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(mock.mock.calls[0][1].headers["X-Human-Pass"]).toBeUndefined();
   });
 });

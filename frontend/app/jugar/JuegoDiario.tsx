@@ -7,6 +7,7 @@ import { guardarPartida } from "../lib/juego/almacen-historial";
 import { crearCliente } from "../lib/juego/cliente";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
 import { etiquetaDelDia, formatoCuentaAtras, pistasParaMezclar, segundosHastaMedianoche } from "../lib/juego/logica";
+import { obtenerPase } from "../lib/humano/pase";
 import { useSesion } from "../lib/cuenta/useSesion";
 import { useDiaActual } from "../lib/juego/useDiaActual";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
@@ -73,6 +74,12 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   useEffect(() => {
     void cargar();
   }, [cargar]);
+
+  // La comprobación humana (si está encendida) se resuelve al abrir el juego y no al primer intento, así no demora.
+  // Si falla acá no pasa nada: se vuelve a intentar cuando haga falta y ahí sí se avisa.
+  useEffect(() => {
+    void obtenerPase().catch(() => {});
+  }, []);
 
   // Al iniciar o cerrar sesión la partida pasa a ser la de la cuenta (o la del dispositivo): se vuelve a pedir. La
   // primera vez solo se anota con qué sesión se abrió la página, porque ese pedido ya lo hizo la carga de arriba.

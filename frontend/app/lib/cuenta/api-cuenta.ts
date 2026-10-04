@@ -1,4 +1,5 @@
 import { idDeDispositivo } from "../juego/dispositivo";
+import { pedirConPase } from "../humano/pedir-con-pase";
 import { comoJson, pedir, sinCuerpo } from "../juego/http";
 
 export interface DatosDeCuenta {
@@ -25,8 +26,8 @@ export interface DiaDeCuenta {
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-const enviar = (ruta: string, cuerpo: unknown, extra: Record<string, string> = {}) =>
-  pedir(ruta, { method: "POST", headers: { ...JSON_HEADERS, ...extra }, body: JSON.stringify(cuerpo) });
+const enviar = (ruta: string, cuerpo: unknown, extra: Record<string, string> = {}, conComprobacion = false) =>
+  (conComprobacion ? pedirConPase : pedir)(ruta, { method: "POST", headers: { ...JSON_HEADERS, ...extra }, body: JSON.stringify(cuerpo) });
 
 const conToken = (token: string) => ({ Authorization: `Bearer ${token}` });
 
@@ -36,21 +37,25 @@ const conToken = (token: string) => ({ Authorization: `Bearer ${token}` });
  * docs/contrato-api-cuentas.md.
  */
 export function crearApiCuenta() {
-  const abrirSesion = async (ruta: string, cuerpo: unknown): Promise<string> => {
-    const datos = await comoJson<{ token: string }>(await enviar(ruta, cuerpo, { "X-Device-Id": idDeDispositivo() }));
+  // Entrar con contraseña pide la comprobación humana; los enlaces del correo no (ya llevan un secreto de un solo uso).
+  const abrirSesion = async (ruta: string, cuerpo: unknown, conComprobacion = false): Promise<string> => {
+    const datos = await comoJson<{ token: string }>(
+      await enviar(ruta, cuerpo, { "X-Device-Id": idDeDispositivo() }, conComprobacion),
+    );
     return datos.token;
   };
 
   return {
     // Estos tres responden siempre lo mismo (exista o no la cuenta): no devuelven nada.
     registrar: async (email: string, password: string): Promise<void> =>
-      sinCuerpo(await enviar("/api/auth/register/", { email, password })),
-    pedirEnlace: async (email: string): Promise<void> => sinCuerpo(await enviar("/api/auth/magic/request/", { email })),
+      sinCuerpo(await enviar("/api/auth/register/", { email, password }, {}, true)),
+    pedirEnlace: async (email: string): Promise<void> =>
+      sinCuerpo(await enviar("/api/auth/magic/request/", { email }, {}, true)),
     pedirRestablecer: async (email: string): Promise<void> =>
-      sinCuerpo(await enviar("/api/auth/password-reset/request/", { email })),
+      sinCuerpo(await enviar("/api/auth/password-reset/request/", { email }, {}, true)),
 
     // Estos abren una sesión y devuelven su token.
-    entrar: (email: string, password: string) => abrirSesion("/api/auth/login/", { email, password }),
+    entrar: (email: string, password: string) => abrirSesion("/api/auth/login/", { email, password }, true),
     confirmar: (token: string) => abrirSesion("/api/auth/confirm/", { token }),
     verificarEnlace: (token: string) => abrirSesion("/api/auth/magic/verify/", { token }),
     confirmarRestablecer: (token: string, password: string) =>
