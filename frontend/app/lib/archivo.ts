@@ -42,7 +42,8 @@ export async function obtenerDias(): Promise<DiaDelArchivo[] | null> {
   const respuesta = await pedirAlArchivo("/api/archive/");
   if (!respuesta?.ok) return null;
   try {
-    return (await respuesta.json()).days as DiaDelArchivo[];
+    const dias = (await respuesta.json()).days;
+    return Array.isArray(dias) ? (dias as DiaDelArchivo[]) : null;
   } catch {
     return null;
   }
@@ -56,7 +57,8 @@ export async function obtenerDia(fecha: string): Promise<DetalleDelDia | "no-enc
   if (respuesta.status === 404) return "no-encontrado";
   if (!respuesta.ok) return null;
   try {
-    return (await respuesta.json()) as DetalleDelDia;
+    const dia = await respuesta.json();
+    return typeof dia?.song_title === "string" && typeof dia?.artist === "string" ? (dia as DetalleDelDia) : null;
   } catch {
     return null;
   }

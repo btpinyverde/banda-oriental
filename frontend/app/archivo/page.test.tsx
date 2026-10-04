@@ -31,5 +31,7 @@ describe("/archivo", () => {
     expect(String(metadata.description).length).toBeGreaterThan(40);
     expect(metadata.robots).toBeUndefined();
     expect(metadata.alternates?.canonical).toBe("/archivo");
+    expect(metadata.openGraph).toMatchObject({ siteName: "Banda Oriental", locale: "es_UY", url: "/archivo" });
+    expect(metadata.twitter).toMatchObject({ title: "Archivo de canciones" });
   });
 });

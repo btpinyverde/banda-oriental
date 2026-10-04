@@ -55,6 +55,22 @@ describe("tiempo máximo", () => {
   });
 });
 
+describe("si la API cambia de forma", () => {
+  it("una respuesta que no trae la lista de días es un fallo (null), no un error de la página", async () => {
+    simular(respuesta({}));
+    expect(await obtenerDias()).toBeNull();
+
+    simular(respuesta({ days: "no es una lista" }));
+    expect(await obtenerDias()).toBeNull();
+  });
+
+  it("un día sin canción o artista es un fallo (null)", async () => {
+    simular(respuesta({ date: "2026-10-02" }));
+
+    expect(await obtenerDia("2026-10-02")).toBeNull();
+  });
+});
+
 describe("obtenerDia", () => {
   const dia = { date: "2026-10-02", song_title: "Luna negra", artist: "Jorge Drexler", album: "Vaivén", artist_instagram_handle: "drexler" };
 
