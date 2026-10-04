@@ -26,6 +26,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    "core.middleware.BlockAiAgentsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -112,11 +113,24 @@ REST_FRAMEWORK = {
     # makes DRF pick BrowsableAPIRenderer, which needs a template we don't
     # configure and crashes with a 500. This API is JSON-only, always.
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    # Every request counts against its visitor's address; views with a `throttle_scope` get a stricter rate too.
+    # The counts live in the cache (one process's memory today: with more workers the real limit is per worker).
+    "DEFAULT_THROTTLE_CLASSES": ["core.throttling.IpThrottle", "core.throttling.ScopedIpThrottle"],
+    "DEFAULT_THROTTLE_RATES": {
+        "global": "240/min",
+        "auth": "30/hour",  # login and the endpoints that use an emailed link
+        "send-email": "12/hour",  # register and the requests for an emailed link
+        "guess": "60/min",
+        "score": "10/hour",
+        "songs": "30/min",
+        "human": "30/hour",
+    },
+    "EXCEPTION_HANDLER": "core.throttling.exception_handler",
 }
 
 # The frontend identifies each player with a custom X-Device-Id header. django-cors-headers only allows a fixed
 # list of headers by default, so without this the browser's preflight fails and every game call is blocked.
-CORS_ALLOW_HEADERS = (*default_headers, "x-device-id")
+CORS_ALLOW_HEADERS = (*default_headers, "x-device-id", "x-human-pass")
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -168,3 +182,15 @@ EMAIL_DAILY_CAP = int(os.environ.get("EMAIL_DAILY_CAP", "90"))
 EMAIL_NEW_ADDRESS_DAILY_CAP = int(os.environ.get("EMAIL_NEW_ADDRESS_DAILY_CAP", "50"))
 # Send emails after answering the request, so every branch answers equally fast. On in production (prod.py).
 EMAIL_SEND_IN_BACKGROUND = False
+
+# Behind Render the connection address is the proxy's; Cloudflare (its edge) sets the real one in CF-Connecting-IP.
+# Off by default: elsewhere that header is one more thing a client can forge. See core/clientip.py.
+TRUST_CLOUDFLARE_IP_HEADER = os.environ.get("TRUST_CLOUDFLARE_IP_HEADER", "") == "1"
+
+# Cloudflare Turnstile: with a secret, the game and the account forms ask for a human-check pass (core/human.py).
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "")
+HUMAN_PASS_TTL_SECONDS = 30 * 60
+
+# The API only reads small JSON bodies; refuse anything bigger instead of reading it. File uploads (the admin's audio
+# stems) don't count here.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 256 * 1024

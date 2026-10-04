@@ -192,3 +192,22 @@ def test_prod_warns_loudly_when_email_is_switched_off(monkeypatch, caplog):
         _reload_prod_settings()
 
     assert "RESEND_API_KEY" in caplog.text
+
+
+def test_prod_trusts_the_cloudflare_ip_header_by_default(monkeypatch):
+    _prod_env(monkeypatch)
+    monkeypatch.delenv("TRUST_CLOUDFLARE_IP_HEADER", raising=False)
+
+    assert _reload_prod_settings().TRUST_CLOUDFLARE_IP_HEADER is True
+
+
+def test_prod_can_turn_that_off(monkeypatch):
+    _prod_env(monkeypatch, TRUST_CLOUDFLARE_IP_HEADER="0")
+
+    assert _reload_prod_settings().TRUST_CLOUDFLARE_IP_HEADER is False
+
+
+def test_dev_does_not_trust_it(monkeypatch):
+    monkeypatch.delenv("TRUST_CLOUDFLARE_IP_HEADER", raising=False)
+
+    assert _reload_dev_settings().TRUST_CLOUDFLARE_IP_HEADER is False
