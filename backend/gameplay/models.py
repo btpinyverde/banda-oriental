@@ -54,6 +54,9 @@ class Stem(models.Model):
         (VOCALS, "Voz"),
         (OTHER, "Otros"),
     ]
+    # The game unlocks stems in this fixed order (and the voice last, so it is the hardest hint). It is decided
+    # by the type, not by `unlock_order`, so a wrong number typed in the admin can't change the game.
+    UNLOCK_RANK = {DRUMS: 1, BASS: 2, OTHER: 3, VOCALS: 4}
 
     daily_song = models.ForeignKey(DailySong, on_delete=models.CASCADE, related_name="stems")
     stem_type = models.CharField(max_length=10, choices=STEM_TYPE_CHOICES)

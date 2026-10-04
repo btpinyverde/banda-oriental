@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { picosDeOnda } from "../lib/juego/onda";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Mezcla, type Pista } from "../lib/juego/mezcla";
+import { ondaProvisoria } from "../lib/juego/onda";
 
 type Estado = "inactivo" | "cargando" | "sonando" | "pausado" | "error";
 
 const ESPERA_MAXIMA_MS = 15000;
+const REVISAR_CADA_MS = 50;
 const BARRAS = 64;
+// Cuánto tiene que avanzar el reloj del audio para dar por hecho que está sonando de verdad.
+const AVANCE_MINIMO_S = 0.05;
 
 function formatoTiempo(segundos: number): string {
   if (!Number.isFinite(segundos)) return "0:00";
@@ -14,102 +18,161 @@ function formatoTiempo(segundos: number): string {
   return `${minutos}:${String(Math.floor(segundos % 60)).padStart(2, "0")}`;
 }
 
+function crearContexto(): AudioContext | null {
+  const Constructor =
+    typeof window === "undefined"
+      ? undefined
+      : (window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+  return Constructor ? new Constructor() : null;
+}
+
 interface Props {
-  src: string;
+  /** Todas las pistas desbloqueadas: suenan juntas. */
+  pistas: Pista[];
   /**
-   * Avisa si ya se puede responder. Solo pasa a `true` cuando el audio sonó de verdad (evento `playing`):
-   * tocar play o cargar los metadatos no alcanza. Un error o una espera de carga vuelven a bloquear.
+   * Avisa si ya se puede responder. Solo pasa a `true` cuando el audio sonó de verdad (el reloj del audio avanzó):
+   * tocar play o terminar de cargar no alcanza. Un error o una espera de carga vuelven a bloquear.
    */
   alCambiarListo: (listo: boolean) => void;
   /**
-   * Avisa que el audio no se pudo reproducir (error, el navegador lo rechazó o no empezó en 15 segundos). Sirve
-   * para pedir direcciones nuevas: las del audio están firmadas y vencen.
+   * Avisa que las pistas no se pudieron bajar o reproducir (error, el navegador lo rechazó o no empezó en 15
+   * segundos). Sirve para pedir direcciones nuevas: las del audio están firmadas y vencen.
    */
   alFallar?: () => void;
 }
 
-/** Cada pista (día e intento) tiene su propio reproductor: al cambiar `src` se reinicia todo. */
+/** Cada conjunto de pistas (día e intento) tiene su propio reproductor: al cambiar las direcciones se reinicia todo. */
 export function ReproductorPista(props: Props) {
-  return <Reproduccion key={props.src} {...props} />;
+  return <Reproduccion key={props.pistas.map((pista) => pista.url).join("|")} {...props} />;
 }
 
-function Reproduccion({ src, alCambiarListo, alFallar }: Props) {
-  const audio = useRef<HTMLAudioElement>(null);
+function Reproduccion({ pistas, alCambiarListo, alFallar }: Props) {
+  const mezcla = useRef<Mezcla | null>(null);
+  const contexto = useRef<AudioContext | null>(null);
+  const carga = useRef<Promise<void> | null>(null);
   const escuchado = useRef(false);
   const montado = useRef(true);
   const avisar = useRef(alCambiarListo);
   avisar.current = alCambiarListo;
   const fallar = useRef(alFallar);
   fallar.current = alFallar;
+  const pistasActuales = useRef(pistas);
+  pistasActuales.current = pistas;
 
   const [estado, setEstado] = useState<Estado>("inactivo");
+  const [sinSoporte, setSinSoporte] = useState(false);
   const [posicion, setPosicion] = useState(0);
   const [duracion, setDuracion] = useState(0);
   const [picos, setPicos] = useState<number[] | null>(null);
+  const provisoria = useMemo(() => ondaProvisoria(BARRAS), []);
 
-  // La onda sale del audio real. Si el navegador no puede decodificarlo (otro dominio sin CORS, por
-  // ejemplo), queda la onda de adorno: el reproductor funciona igual.
-  useEffect(() => {
-    if (typeof AudioContext === "undefined" || typeof fetch === "undefined") return;
-    let cancelado = false;
-    const contexto = new AudioContext();
-    fetch(src)
-      .then((respuesta) => respuesta.arrayBuffer())
-      .then((datos) => contexto.decodeAudioData(datos))
-      .then((audioDecodificado) => {
-        if (!cancelado) setPicos(picosDeOnda(audioDecodificado.getChannelData(0), BARRAS));
-      })
-      .catch(() => {});
-    return () => {
-      cancelado = true;
-      void contexto.close?.();
-    };
-  }, [src]);
+  function fallo() {
+    if (!montado.current) return;
+    mezcla.current?.detener();
+    escuchado.current = false;
+    setEstado("error");
+    avisar.current(false);
+    fallar.current?.();
+  }
 
+  function cargar(): Promise<void> {
+    const actual = mezcla.current;
+    if (!actual) return Promise.reject(new Error("Sin audio"));
+    const lectura = actual.cargar(pistasActuales.current).then(() => {
+      if (!montado.current) return;
+      setDuracion(actual.duracion);
+      setPicos(actual.picos(BARRAS));
+    });
+    carga.current = lectura;
+    return lectura;
+  }
+
+  // Al montar: se prepara el audio y se leen todas las pistas, para que el play responda al instante y la onda
+  // sea la del audio real.
   useEffect(() => {
     montado.current = true;
     avisar.current(false);
+    const nuevo = crearContexto();
+    if (!nuevo) {
+      setSinSoporte(true);
+      setEstado("error");
+      return;
+    }
+    contexto.current = nuevo;
+    mezcla.current = new Mezcla(nuevo);
+    cargar().catch(fallo);
     return () => {
       montado.current = false;
+      mezcla.current?.detener();
+      void contexto.current?.close?.();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Espera máxima mientras se carga o se arranca.
   useEffect(() => {
     if (estado !== "cargando") return;
-    const temporizador = window.setTimeout(() => {
-      escuchado.current = false;
-      audio.current?.pause();
-      setEstado("error");
-      avisar.current(false);
-      fallar.current?.();
-    }, ESPERA_MAXIMA_MS);
+    const temporizador = window.setTimeout(fallo, ESPERA_MAXIMA_MS);
     return () => window.clearTimeout(temporizador);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado]);
+
+  // Mientras suena: sigue el reloj del audio para la posición, para saber que de verdad arrancó y para detectar el final.
+  useEffect(() => {
+    if (estado !== "cargando" && estado !== "sonando") return;
+    const intervalo = window.setInterval(() => {
+      const actual = mezcla.current;
+      if (!actual?.sonando) return;
+      if (actual.terminada()) {
+        actual.detener();
+        setPosicion(0);
+        setEstado("inactivo");
+        avisar.current(escuchado.current);
+        return;
+      }
+      const segundo = actual.posicion();
+      setPosicion(segundo);
+      if (!escuchado.current && segundo >= AVANCE_MINIMO_S) {
+        escuchado.current = true;
+        setEstado("sonando");
+        avisar.current(true);
+      }
+    }, REVISAR_CADA_MS);
+    return () => window.clearInterval(intervalo);
   }, [estado]);
 
   async function alternar() {
-    const elemento = audio.current;
-    if (!elemento || estado === "cargando") return;
+    const actual = mezcla.current;
+    if (!actual || estado === "cargando") return;
     if (estado === "sonando") {
-      elemento.pause();
+      actual.pausar();
+      setEstado("pausado");
+      avisar.current(escuchado.current);
       return;
     }
     setEstado("cargando");
     avisar.current(false);
     try {
-      if (estado === "error") elemento.load();
-      await elemento.play();
-    } catch {
+      if (estado === "error") await cargar();
+      else await carga.current;
       if (!montado.current) return;
-      escuchado.current = false;
-      setEstado("error");
-      avisar.current(false);
-      fallar.current?.();
+      // En iPhone el audio de Web Audio se calla con el botón de silencio; así se pide que suene igual.
+      const sesion = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+      if (sesion) sesion.type = "playback";
+      await contexto.current?.resume();
+      if (!montado.current) return;
+      actual.iniciar(actual.posicion());
+    } catch {
+      fallo();
     }
   }
 
   const progreso = duracion ? Math.min(100, (posicion / duracion) * 100) : 0;
-  const mensaje =
-    estado === "error"
+  const leyendo = !picos && estado !== "error";
+  const alturas = picos ?? provisoria;
+  const mensaje = sinSoporte
+    ? "Tu navegador no puede reproducir el audio."
+    : estado === "error"
       ? "No se pudo reproducir el audio. Tocá para reintentar."
       : estado === "cargando"
         ? "Cargando audio…"
@@ -119,44 +182,11 @@ function Reproduccion({ src, alCambiarListo, alFallar }: Props) {
 
   return (
     <section className="reproductor" aria-label="Pista de audio">
-      <audio
-        ref={audio}
-        src={src}
-        preload="metadata"
-        onLoadedMetadata={(e) => setDuracion(e.currentTarget.duration)}
-        onPlaying={() => {
-          escuchado.current = true;
-          setEstado("sonando");
-          avisar.current(true);
-        }}
-        onWaiting={() => {
-          escuchado.current = false;
-          setEstado("cargando");
-          avisar.current(false);
-        }}
-        onPause={() => {
-          setEstado((actual) => (actual === "error" ? "error" : "pausado"));
-          avisar.current(escuchado.current);
-        }}
-        onEnded={() => {
-          setEstado("inactivo");
-          setPosicion(0);
-          avisar.current(escuchado.current);
-        }}
-        onError={() => {
-          escuchado.current = false;
-          setEstado("error");
-          avisar.current(false);
-          fallar.current?.();
-        }}
-        onTimeUpdate={(e) => setPosicion(e.currentTarget.currentTime)}
-      />
-
       <button
         type="button"
         className="reproductor__boton"
         onClick={alternar}
-        disabled={estado === "cargando"}
+        disabled={estado === "cargando" || sinSoporte}
         aria-label={estado === "sonando" ? "Pausar audio" : estado === "error" ? "Reintentar audio" : "Reproducir audio"}
       >
         {estado === "sonando" ? (
@@ -175,26 +205,14 @@ function Reproduccion({ src, alCambiarListo, alFallar }: Props) {
         )}
       </button>
 
-      <div className="reproductor__onda" aria-hidden="true">
-        {picos ? (
-          picos.map((pico, i) => (
-            <span
-              key={i}
-              className={`onda__barra${(i / BARRAS) * 100 < progreso ? " onda__barra--hecha" : ""}`}
-              style={{ height: `${pico * 100}%` }}
-            />
-          ))
-        ) : (
-          <>
-            <img className="reproductor__onda-base" src="/assets/hero-waveform.svg" alt="" />
-            <img
-              className="reproductor__onda-avance"
-              src="/assets/hero-waveform.svg"
-              alt=""
-              style={{ clipPath: `inset(0 ${100 - progreso}% 0 0)` }}
-            />
-          </>
-        )}
+      <div className={`reproductor__onda${leyendo ? " reproductor__onda--cargando" : ""}`} aria-hidden="true">
+        {alturas.map((altura, i) => (
+          <span
+            key={i}
+            className={`onda__barra${picos ? "" : " onda__barra--provisoria"}${(i / BARRAS) * 100 < progreso ? " onda__barra--hecha" : ""}`}
+            style={{ height: `${altura * 100}%`, animationDelay: leyendo ? `${(i % 16) * 60}ms` : undefined }}
+          />
+        ))}
       </div>
 
       <span className="reproductor__tiempo">

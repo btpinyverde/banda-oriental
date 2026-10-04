@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .feedback import calculate_feedback
-from .models import DailySong, GuessAttempt, ScoreEntry
+from .models import DailySong, GuessAttempt, ScoreEntry, Stem
 from .moderation import contains_banned_word
 from .scoring import calculate_score
 
@@ -64,7 +64,11 @@ class DailyView(APIView):
             return self._finished_response(daily_song, won=False, score=None)
 
         attempt_number = len(attempts) + 1
-        stems = daily_song.stems.filter(unlock_order__lte=attempt_number).order_by("unlock_order")
+        rank = Stem.UNLOCK_RANK
+        stems = sorted(
+            (stem for stem in daily_song.stems.all() if rank[stem.stem_type] <= attempt_number),
+            key=lambda stem: rank[stem.stem_type],
+        )
 
         return Response(
             {
@@ -72,7 +76,7 @@ class DailyView(APIView):
                 "attempt_number": attempt_number,
                 "attempts_remaining": 6 - len(attempts),
                 "unlocked_stems": [
-                    {"stem_type": stem.stem_type, "unlock_order": stem.unlock_order, "url": stem.audio_file.url}
+                    {"stem_type": stem.stem_type, "unlock_order": rank[stem.stem_type], "url": stem.audio_file.url}
                     for stem in stems
                 ],
                 "feedback_history": [

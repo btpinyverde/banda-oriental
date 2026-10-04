@@ -4,26 +4,38 @@ import { JuegoDiario } from "./JuegoDiario";
 import { CANCION_DEL_DIA_DEMO, crearClienteDemo } from "../lib/juego/cliente-demo";
 import { leerHistorial } from "../lib/juego/almacen-historial";
 import { ApiError, type ClienteJuego } from "../lib/juego/tipos";
+import { archivoFalso, contextoActual, instalarAudioFalso } from "../lib/juego/audio-falso";
+import { vaciarCache } from "../lib/juego/mezcla";
+import { diaDeMontevideo } from "../lib/juego/logica";
+
+const AUDIO = archivoFalso(...Array(300).fill(0.5));
+const AUDIOS_DEMO = Object.fromEntries([1, 2, 3, 4].map((n) => [`/demo/etapa-${n}.mp3`, AUDIO]));
 
 beforeEach(() => {
   window.localStorage.clear();
-  vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
-  vi.spyOn(window.HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
-  vi.spyOn(window.HTMLMediaElement.prototype, "load").mockImplementation(() => {});
+  vaciarCache();
+  instalarAudioFalso(AUDIOS_DEMO);
 });
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 const campo = () => screen.getByRole("combobox");
-const audio = () => document.querySelector("audio") as HTMLAudioElement;
+
+/** Toca play y deja que el audio avance: así la app lo da por escuchado. */
+async function escuchar() {
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Reproducir audio" })));
+  await waitFor(() => expect(contextoActual().fuentes.length).toBeGreaterThan(0));
+  contextoActual().currentTime += 0.5;
+  await screen.findByRole("button", { name: "Pausar audio" });
+}
 
 /** Escucha la pista (el audio "suena") y envía la canción que se busca. */
 async function responder(titulo: string) {
-  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Reproducir audio" })));
-  act(() => void fireEvent.playing(audio()));
+  await escuchar();
   fireEvent.change(campo(), { target: { value: titulo } });
   fireEvent.click(screen.getByRole("option", { name: new RegExp(titulo) }));
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Enviar intento" })));
@@ -35,24 +47,66 @@ async function cargado(cliente: ClienteJuego = crearClienteDemo()) {
 }
 
 describe("JuegoDiario: pistas vencidas", () => {
-  it("si el audio falla, pide el estado de nuevo y usa las direcciones nuevas (las firmadas vencen a la hora)", async () => {
+  const enCurso = (...urls: string[]) => ({
+    finished: false as const,
+    day: diaDeMontevideo(new Date()),
+    attempt_number: 1,
+    attempts_remaining: 6,
+    unlocked_stems: urls.map((url, i) => ({ stem_type: (["drums", "bass"] as const)[i], unlock_order: i + 1, url })),
+    feedback_history: [],
+  });
+
+  it("si no se pueden bajar las pistas, pide el estado de nuevo y usa las direcciones nuevas (las firmadas vencen a la hora)", async () => {
+    const pedir = instalarAudioFalso({ "/nueva.wav": AUDIO });
     const demo = crearClienteDemo();
-    const enCurso = (url: string) => ({
-      finished: false as const,
-      day: "2026-10-03",
-      attempt_number: 1,
-      attempts_remaining: 6,
-      unlocked_stems: [{ stem_type: "drums" as const, unlock_order: 1, url }],
-      feedback_history: [],
-    });
-    const estadoDelDia = vi.fn().mockResolvedValueOnce(enCurso("/vieja.mp3")).mockResolvedValue(enCurso("/nueva.mp3"));
+    const estadoDelDia = vi.fn().mockResolvedValueOnce(enCurso("/vieja.wav")).mockResolvedValue(enCurso("/nueva.wav"));
+
     await cargado({ ...demo, estadoDelDia });
-    expect(audio().getAttribute("src")).toBe("/vieja.mp3");
 
-    act(() => void fireEvent.error(audio()));
-
-    await waitFor(() => expect(audio().getAttribute("src")).toBe("/nueva.mp3"));
+    await waitFor(() => expect(pedir.mock.calls.map(([url]) => url)).toContain("/nueva.wav"));
     expect(estadoDelDia).toHaveBeenCalledTimes(2);
+  });
+
+  it("si las direcciones nuevas también fallan no entra en un bucle de pedidos", async () => {
+    instalarAudioFalso({});
+    const demo = crearClienteDemo();
+    let pedidos = 0;
+    // Las direcciones firmadas son distintas en cada pedido: sin protección cada una dispararía otra renovación.
+    const estadoDelDia = vi.fn(async () => enCurso(`/rota-${++pedidos}.wav`));
+
+    await cargado({ ...demo, estadoDelDia });
+    await new Promise((resolver) => setTimeout(resolver, 400));
+
+    expect(estadoDelDia.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(screen.getByRole("button", { name: "Reintentar audio" })).toBeInTheDocument();
+  });
+
+  it("pasado un minuto puede renovar otra vez (alguien que dejó la página abierta más de una hora)", async () => {
+    instalarAudioFalso({});
+    const demo = crearClienteDemo();
+    let pedidos = 0;
+    const estadoDelDia = vi.fn(async () => enCurso(`/rota-${++pedidos}.wav`));
+    await cargado({ ...demo, estadoDelDia });
+    await waitFor(() => expect(estadoDelDia).toHaveBeenCalledTimes(2));
+    const reintentar = await screen.findByRole("button", { name: "Reintentar audio" });
+
+    const ahora = Date.now();
+    vi.spyOn(Date, "now").mockReturnValue(ahora + 61_000);
+    instalarAudioFalso({ "/rota-3.wav": AUDIO });
+    await act(async () => fireEvent.click(reintentar));
+
+    await waitFor(() => expect(estadoDelDia).toHaveBeenCalledTimes(3));
+  });
+
+  it("reproduce todas las pistas desbloqueadas a la vez", async () => {
+    instalarAudioFalso({ "/a.wav": AUDIO, "/b.wav": AUDIO });
+    const demo = crearClienteDemo();
+    const estadoDelDia = vi.fn().mockResolvedValue(enCurso("/a.wav", "/b.wav"));
+    await cargado({ ...demo, estadoDelDia });
+
+    await escuchar();
+
+    expect(contextoActual().fuentes).toHaveLength(2);
   });
 });
 
@@ -314,7 +368,7 @@ describe("JuegoDiario: cambio de día", () => {
       day,
       attempt_number: 1,
       attempts_remaining: 6,
-      unlocked_stems: [{ stem_type: "drums" as const, unlock_order: 1, url: `/demo/${day}.mp3` }],
+      unlocked_stems: [{ stem_type: "drums" as const, unlock_order: 1, url: "/demo/etapa-1.mp3" }],
       feedback_history: [],
     });
     const estadoDelDia = vi.fn().mockResolvedValueOnce(enCurso("2026-10-03")).mockResolvedValue(enCurso("2026-10-04"));

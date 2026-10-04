@@ -149,17 +149,6 @@
   height: 36px;
 }
 
-/* Onda de adorno: se usa solo si no se pudo leer el audio. */
-.reproductor__onda > img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.reproductor__onda-base { opacity: 0.35; }
-
 .onda__barra {
   flex: 1;
   min-width: 0; /* las 64 barras se achican en vez de salirse del reproductor en pantallas angostas */
@@ -168,6 +157,25 @@
 }
 
 .onda__barra--hecha { background: var(--violeta); }
+
+/* Onda provisoria: ocupa el lugar mientras se lee el audio (o si no se pudo leer). Más clara que la real, y
+   mientras se lee las barras "respiran" una tras otra, como un ecualizador tranquilo. */
+.onda__barra--provisoria { background: #ddd6f6; }
+.onda__barra--provisoria.onda__barra--hecha { background: var(--violeta); }
+
+.reproductor__onda--cargando .onda__barra {
+  transform-origin: center;
+  animation: onda-respira 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes onda-respira {
+  from { transform: scaleY(0.5); opacity: 0.55; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reproductor__onda--cargando .onda__barra { animation: none; }
+}
 
 .reproductor__tiempo {
   font-size: 12px;
