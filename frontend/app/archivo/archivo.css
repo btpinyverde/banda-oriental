@@ -17,7 +17,8 @@
 .archivo-publico__artista { font-size: 14px; color: var(--tinta-suave); }
 .archivo-publico__aviso { display: grid; justify-items: center; gap: 16px; padding: 44px 20px; border-radius: 24px; background: var(--violeta-claro); text-align: center; font-weight: 600; }
 .archivo-publico__aviso p { margin: 0; }
-.archivo-publico--dia .archivo-publico__fecha { margin: 0 0 6px; text-transform: capitalize; }
+.archivo-publico--dia .archivo-publico__fecha { margin: 0 0 6px; }
+.archivo-publico--dia .archivo-publico__fecha::first-letter { text-transform: uppercase; }
 .archivo-publico__datos { display: grid; gap: 12px; margin: 20px 0; }
 .archivo-publico__datos dt { font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
 .archivo-publico__datos dd { margin: 2px 0 0; font-size: 20px; font-weight: 800; }
