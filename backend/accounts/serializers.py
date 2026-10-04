@@ -30,3 +30,8 @@ class RegisterSerializer(serializers.Serializer):
 
 class TokenSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=200)
+
+
+class LoginSerializer(serializers.Serializer):
+    email = EmailField(max_length=MAX_EMAIL_LENGTH)
+    password = serializers.CharField(trim_whitespace=False, max_length=128)

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import IntegrityError, transaction
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -8,7 +9,7 @@ from rest_framework.views import APIView
 from .authentication import BearerTokenAuthentication
 from .emails import send_already_registered, send_confirmation
 from .models import AuthToken, EmailChallenge
-from .serializers import RegisterSerializer, TokenSerializer
+from .serializers import LoginSerializer, RegisterSerializer, TokenSerializer
 
 User = get_user_model()
 
@@ -67,6 +68,41 @@ class ConfirmView(PublicView):
             user.is_active = True
             user.save(update_fields=["is_active"])
         return Response({"token": AuthToken.issue(user)})
+
+
+# Checked when the email has no account, so "unknown email" takes as long as "wrong password".
+_DUMMY_HASH = make_password("no-account")
+
+
+class LoginView(PublicView):
+    def post(self, request):
+        data = LoginSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        email, password = data.validated_data["email"], data.validated_data["password"]
+
+        user = find_user(email)
+        if user is None:
+            check_password(password, _DUMMY_HASH)  # same cost as a real check; the result is irrelevant
+            password_ok = False
+        else:
+            password_ok = user.check_password(password)
+        if not password_ok:
+            return Response({"detail": "Correo o contraseña incorrectos."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_active:
+            return Response(
+                {"detail": "Confirmá tu correo antes de entrar.", "code": "email_not_confirmed"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response({"token": AuthToken.issue(user)})
+
+
+class LogoutView(APIView):
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.auth.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MeView(APIView):
