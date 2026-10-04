@@ -15,9 +15,8 @@ import { Navbar } from "./ui/Navbar";
  * - Resuelta para desktop (~1384px o más) y para celular (hasta 860px, en una columna centrada de 560px).
  *   De 861px a 1383px (tablets horizontales, notebooks chicas) no hay estilos propios: se ve el desktop
  *   comprimido, sin revisar.
- * - Varios enlaces apuntan a rutas que aún no existen y dan 404: /jugar, /batalla, /archivo, /ranking,
- *   /acerca, /login, /artistas, /epocas, /generos, /como-funciona, /contacto, /sugerencias, /terminos,
- *   /privacidad. Los de redes sociales del footer apuntan a "#" hasta tener los perfiles.
+ * - Casi todos los enlaces ya llevan a una página real. Solo /batalla sigue siendo un "llega pronto". Los de redes
+ *   sociales del footer apuntan a "#" hasta tener los perfiles.
  * - "Explorá el archivo" usa datos de ejemplo (ver ui/archivo-ejemplo.ts), no el catálogo real.
  * - La tarjeta del juego de la hero es una maqueta decorativa, no el juego.
  * - En celular, "Crear cuenta gratis" (ui/LlamadoMovil) enlaza a /login, que no existe: el diseño del

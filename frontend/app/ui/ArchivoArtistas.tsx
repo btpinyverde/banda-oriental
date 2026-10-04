@@ -55,8 +55,8 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
           </h2>
           <p className="archivo__bajada">{textoCatalogo(totalCanciones)}</p>
         </div>
-        <Link href="/archivo" className="boton boton--contorno">
-          Ver todo el archivo
+        <Link href="/artistas" className="boton boton--contorno">
+          Ver todos los artistas
           <svg width="18" height="18" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M7 24h33M28 11l13 13-13 13" />
           </svg>

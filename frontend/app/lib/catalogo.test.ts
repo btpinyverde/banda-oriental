@@ -17,38 +17,30 @@ describe("obtenerDiscos", () => {
     vi.unstubAllEnvs();
   });
 
-  const cancion = (id: number, artist: string, album: string, year: number | null, genre = "") => ({ id, title: `T${id}`, artist, album, year, genre });
   const responder = (cuerpo: unknown, estado = 200) =>
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: estado < 300, status: estado, json: () => Promise.resolve(cuerpo) }));
 
-  it("arma los discos juntando las canciones de cada uno, y cuenta cuántas tiene", async () => {
+  it("trae los discos ya agrupados por el servidor (mucho más liviano que la lista de todas las canciones)", async () => {
     responder({
-      songs: [
-        cancion(1, "Jorge Drexler", "Vaivén", 1996, "pop"),
-        cancion(2, "Jorge Drexler", "Vaivén", 1996, "pop"),
-        cancion(3, "Jorge Drexler", "Eco", 2004),
-        cancion(4, "Rubén Rada", "Montevideo", 1990),
+      albums: [
+        { artist: "Jorge Drexler", album: "Vaivén", year: 1996, genre: "pop", songs: 12 },
+        { artist: "Rubén Rada", album: "Montevideo", year: null, genre: "", songs: 9 },
       ],
     });
 
     const discos = await obtenerDiscos();
 
-    expect(discos).toHaveLength(3);
-    expect(discos).toContainEqual({ artista: "Jorge Drexler", disco: "Vaivén", anio: 1996, genero: "pop", canciones: 2 });
-  });
-
-  it("pide la lista de canciones del catálogo y la deja en caché diez minutos", async () => {
-    responder({ songs: [] });
-
-    await obtenerDiscos();
-
+    expect(discos).toEqual([
+      { artista: "Jorge Drexler", disco: "Vaivén", anio: 1996, genero: "pop", canciones: 12 },
+      { artista: "Rubén Rada", disco: "Montevideo", anio: null, genero: "", canciones: 9 },
+    ]);
     const [url, opciones] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(url).toBe("https://api.example/api/songs/");
+    expect(url).toBe("https://api.example/api/albums/");
     expect(opciones.next.revalidate).toBe(600);
   });
 
   it("no espera a la API para siempre: el pedido tiene un tiempo máximo, así armar la página nunca cuelga el despliegue", async () => {
-    responder({ songs: [] });
+    responder({ albums: [] });
 
     await obtenerDiscos();
 
@@ -56,11 +48,17 @@ describe("obtenerDiscos", () => {
     expect(opciones.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("si la API falla o no hay red devuelve null, para que la página lo explique", async () => {
+  it("si la API falla, no hay red o responde algo con otra forma, devuelve null para que la página lo explique", async () => {
     responder({}, 500);
     expect(await obtenerDiscos()).toBeNull();
 
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("sin red")));
+    expect(await obtenerDiscos()).toBeNull();
+
+    responder({});
+    expect(await obtenerDiscos()).toBeNull();
+
+    responder({ albums: "no es una lista" });
     expect(await obtenerDiscos()).toBeNull();
   });
 });

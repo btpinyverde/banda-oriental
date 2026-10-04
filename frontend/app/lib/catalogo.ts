@@ -1,7 +1,7 @@
 /**
- * El catálogo para explorarlo (artistas, épocas y géneros). Sale de la misma lista de canciones que usa el buscador
- * del juego (`GET /api/songs/`), que no dice cuál es la canción del día. Se lee en el servidor, se junta por disco y
- * queda en caché diez minutos. Si la API no responde se devuelve `null` y la página lo explica.
+ * El catálogo para explorarlo (artistas, épocas y géneros). Viene del servidor ya juntado por disco y no dice cuál es
+ * la canción del día. Se lee en el servidor y queda en caché diez minutos. Si la API no responde se devuelve `null` y
+ * la página lo explica.
  */
 
 export interface DiscoDelCatalogo {
@@ -12,11 +12,12 @@ export interface DiscoDelCatalogo {
   canciones: number;
 }
 
-interface CancionDeLaApi {
+interface DiscoDeLaApi {
   artist: string;
   album: string;
   year: number | null;
   genre: string;
+  songs: number;
 }
 
 const base = () => (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
@@ -25,25 +26,21 @@ const DIEZ_MINUTOS = 600;
 // colgarse. Pasado este tiempo la página avisa y se renueva sola.
 const ESPERA_MAXIMA_MS = 20_000;
 
-/** Todas las canciones juntadas por disco; `null` si no se pudo consultar. */
+/**
+ * Los discos del catálogo, ya juntados por el servidor (`GET /api/albums/`: unos pocos cientos de KB aunque el catálogo
+ * crezca, a diferencia de la lista de todas las canciones, que podía pasar el límite de la caché de Next); `null` si
+ * no se pudo consultar o la respuesta no tiene la forma esperada.
+ */
 export async function obtenerDiscos(): Promise<DiscoDelCatalogo[] | null> {
-  let canciones: CancionDeLaApi[];
   try {
-    const respuesta = await fetch(`${base()}/api/songs/`, { next: { revalidate: DIEZ_MINUTOS }, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
+    const respuesta = await fetch(`${base()}/api/albums/`, { next: { revalidate: DIEZ_MINUTOS }, signal: AbortSignal.timeout(ESPERA_MAXIMA_MS) });
     if (!respuesta.ok) return null;
-    canciones = (await respuesta.json()).songs as CancionDeLaApi[];
+    const discos = (await respuesta.json()).albums;
+    if (!Array.isArray(discos)) return null;
+    return (discos as DiscoDeLaApi[]).map((d) => ({ artista: d.artist, disco: d.album, anio: d.year, genero: d.genre ?? "", canciones: d.songs }));
   } catch {
     return null;
   }
-
-  const discos = new Map<string, DiscoDelCatalogo>();
-  for (const cancion of canciones) {
-    const clave = `${cancion.artist}\u0000${cancion.album}\u0000${cancion.year ?? ""}`;
-    const existente = discos.get(clave);
-    if (existente) existente.canciones += 1;
-    else discos.set(clave, { artista: cancion.artist, disco: cancion.album, anio: cancion.year, genero: cancion.genre ?? "", canciones: 1 });
-  }
-  return [...discos.values()];
 }
 
 const comparar = (a: string, b: string) => a.localeCompare(b, "es", { sensitivity: "base" });
@@ -65,7 +62,9 @@ function agrupar(discos: DiscoDelCatalogo[], claveDe: (disco: DiscoDelCatalogo) 
   const grupos = new Map<string, DiscoDelCatalogo[]>();
   for (const disco of discos) {
     const clave = claveDe(disco);
-    grupos.set(clave, [...(grupos.get(clave) ?? []), disco]);
+    const grupo = grupos.get(clave);
+    if (grupo) grupo.push(disco);
+    else grupos.set(clave, [disco]);
   }
   return grupos;
 }

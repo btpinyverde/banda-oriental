@@ -73,24 +73,28 @@ describe("Explorador", () => {
   describe("muchos grupos", () => {
     const muchos = Array.from({ length: 95 }, (_, i) => grupo(`Artista ${String(i).padStart(2, "0")}`, [disco("x", "d")]));
 
-    it("muestra los primeros 40 y deja pedir más de a 40, sin abrumar la página", () => {
+    it("muestra todos los grupos ya en el HTML (los buscadores no tocan botones de 'mostrar más')", () => {
       render(<Explorador grupos={muchos} />);
-      expect(screen.getAllByRole("group")).toHaveLength(40);
 
-      fireEvent.click(screen.getByRole("button", { name: "Mostrar más" }));
-      expect(screen.getAllByRole("group")).toHaveLength(80);
-
-      fireEvent.click(screen.getByRole("button", { name: "Mostrar más" }));
       expect(screen.getAllByRole("group")).toHaveLength(95);
       expect(screen.queryByRole("button", { name: "Mostrar más" })).toBeNull();
     });
 
-    it("al buscar se busca en todos, no solo en los que están a la vista", () => {
+    it("el buscador filtra entre todos", () => {
       render(<Explorador buscable grupos={muchos} />);
 
       fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Artista 90" } });
 
+      expect(screen.getAllByRole("group")).toHaveLength(1);
       expect(screen.getByText(/Artista 90/)).toBeInTheDocument();
+    });
+
+    it("al buscar anuncia cuántos resultados hay, para quien usa lector de pantalla", () => {
+      render(<Explorador buscable grupos={muchos} />);
+
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Artista 9" } });
+
+      expect(screen.getByRole("status")).toHaveTextContent("5 resultados");
     });
   });
 
