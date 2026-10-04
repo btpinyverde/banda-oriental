@@ -31,6 +31,9 @@ def claim_device_games(user, device_id: str | None) -> None:
             or ScoreEntry.objects.filter(user=user, daily_song_id=day).exists()
         )
         if already_played:
+            # One game and one score per person per day: the account's stands. The anonymous score for that same
+            # day would show the person twice in the rankings, so it goes (the attempts stay until they expire).
+            ScoreEntry.objects.filter(daily_song_id=day, **unowned).delete()
             continue
         try:
             with transaction.atomic():

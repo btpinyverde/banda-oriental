@@ -279,3 +279,31 @@ class TestCreatingAnAccountKeepsEverything:
         claim_device_games(user(), DEVICE)
 
         assert PlayerStats.objects.filter(user__isnull=True).count() == 0
+
+
+class TestTheSavedStreakDoesNotGoStale:
+    def test_someone_who_stopped_playing_sees_the_streak_drop_when_days_pass_without_them(self, client, today, songs):
+        from gameplay.stats import recompute_stats
+
+        three_days_ago = timezone.localdate() - timedelta(days=3)
+        old = DailySong.objects.create(date=three_days_ago, song=songs[1], state=DailySong.PUBLISHED)
+        for gap in (2, 1):
+            DailySong.objects.create(
+                date=timezone.localdate() - timedelta(days=gap), song=songs[1], state=DailySong.PUBLISHED
+            )
+        GuessAttempt.objects.create(
+            device_id=DEVICE, daily_song=old, attempt_number=1, guessed_text="x", is_correct=True, feedback={}
+        )
+        recompute_stats(device_id=DEVICE, today=three_days_ago)  # what the server saved back then: streak 1
+        PlayerStats.objects.filter(device_id=DEVICE).update(updated_at=timezone.now() - timedelta(days=3))
+        assert PlayerStats.objects.get(device_id=DEVICE).current_streak == 1
+
+        body = read_stats(client).json()
+
+        assert body["current_streak"] == 0
+        assert body["max_streak"] == 1
+
+    def test_reading_never_creates_a_row_for_someone_who_never_played(self, client, today):
+        read_stats(client)
+
+        assert not PlayerStats.objects.exists()

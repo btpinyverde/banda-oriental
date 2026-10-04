@@ -7,7 +7,7 @@ player of its own. Names are looked up only for the rows that are shown.
 import calendar
 from datetime import date, timedelta
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 
 from .models import PlayerStats, ScoreEntry
 
@@ -52,10 +52,19 @@ def _names(players: list[dict]) -> dict:
         names[("u", row.user_id)] = row.public_name
     for row in PlayerStats.objects.filter(device_id__in=device_ids, user__isnull=True, public_name__isnull=False):
         names[("d", row.device_id)] = row.public_name
-    for kind, value in {p["key"] for p in players} - set(names):
-        lookup = {"user_id": value} if kind == "u" else {"device_id": value, "user__isnull": True}
-        latest = ScoreEntry.objects.filter(**lookup).order_by("-created_at").values_list("display_name", flat=True).first()
-        names[(kind, value)] = latest or ""
+    missing = {p["key"] for p in players} - set(names)
+    if missing:
+        missing_users = [value for kind, value in missing if kind == "u"]
+        missing_devices = [value for kind, value in missing if kind == "d"]
+        latest = ScoreEntry.objects.filter(
+            Q(user_id__in=missing_users) | Q(device_id__in=missing_devices, user__isnull=True)
+        ).order_by("created_at")
+        for user_id, device_id, display_name in latest.values_list("user_id", "device_id", "display_name"):
+            key = ("u", user_id) if user_id is not None else ("d", device_id)
+            if key in missing:
+                names[key] = display_name  # oldest first, so the latest score's name is the one that stays
+        for key in missing:
+            names.setdefault(key, "")
     return names
 
 

@@ -157,8 +157,8 @@ export function Ranking() {
             </div>
           ) : (
             <ol className="ranking__lista" aria-label={`Ranking ${actual.nombre}`}>
-              {ranking.entries.map((fila) => (
-                <Fila key={`${fila.rank}-${fila.display_name}`} fila={fila} esMia={!!ranking.me && ranking.me.rank === fila.rank && ranking.me.display_name === fila.display_name} />
+              {ranking.entries.map((fila, indice) => (
+                <Fila key={`${indice}-${fila.rank}-${fila.display_name}`} fila={fila} esMia={!!ranking.me && ranking.me.rank === fila.rank && ranking.me.display_name === fila.display_name} />
               ))}
             </ol>
           )}

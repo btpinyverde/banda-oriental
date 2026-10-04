@@ -171,3 +171,35 @@ class TestItRunsByItselfOncePerDay:
             client.get("/api/health/")
 
         purge.assert_not_called()
+
+
+class TestARacePlayerWhoComesBackIsNotDeleted:
+    def test_a_device_that_played_after_the_idle_list_was_made_is_taken_off_it(self, daily):
+        from datetime import timedelta
+        from gameplay.maintenance import still_idle
+
+        played(daily, OLD, days_ago=20, name="Ana", number=1)
+        GuessAttempt.objects.create(
+            device_id=OLD, daily_song=daily, attempt_number=2, guessed_text="y", is_correct=False, feedback={}
+        )  # came back just now
+        cutoff = timezone.now() - timedelta(days=7)
+
+        assert still_idle([OLD, RECENT], cutoff) == [RECENT]
+
+
+class TestTheBackgroundThreadCleansUp:
+    def test_it_closes_its_own_database_connection(self):
+        from core import middleware
+
+        with patch("core.middleware.connection") as connection, patch("gameplay.maintenance.purge_inactive_anonymous"):
+            middleware._run_purge(7, close_connection=True)
+
+        connection.close.assert_called_once()
+
+    def test_inline_it_leaves_the_connection_alone(self):
+        from core import middleware
+
+        with patch("core.middleware.connection") as connection, patch("gameplay.maintenance.purge_inactive_anonymous"):
+            middleware._run_purge(7, close_connection=False)
+
+        connection.close.assert_not_called()

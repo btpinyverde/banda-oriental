@@ -84,6 +84,10 @@ ignoran. Cada vez se recalcula desde los intentos, no se suma a un contador.
   que empezó sin cuenta sigue.
 - Racha: se cuenta sobre los días que tuvieron canción publicada (un día sin canción no corta ni suma); un día
   publicado que no se jugó o se perdió la corta; el día de hoy todavía abierto no la corta.
+- Al crear la cuenta, el puntaje anónimo de un día que la cuenta ya había jugado se descarta (cada día cuenta una vez
+  por persona); los demás días pasan a la cuenta.
+- Una racha guardada en un día anterior se recalcula al leerla, porque baja con solo pasar los días sin jugar.
+- `recompute_stats` conserva el nombre que ya usaba cada jugador de antes, salvo que otro lo tenga.
 - `GET /api/stats/` (sesión opcional + `X-Device-Id`): `public_name`, `played`, `won`, `win_percentage`,
   `current_streak`, `max_streak`, `total_score`, `average_attempts`, `distribution` (ganadas en 1…6 intentos),
   `last_played_day`. Solo lectura (otros métodos dan 405). Sin partidas: todo en cero y `public_name: null`.
@@ -93,6 +97,9 @@ ignoran. Cada vez se recalcula desde los intentos, no se suma a un contador.
   siempre el nombre guardado.
 - **Tiempo del puntaje**: `total_time_seconds` nunca puede ser menor que lo que el servidor vio entre el primer
   intento y el ganador.
+  Límite conocido: quien gana al primer intento tiene piso 0, y el servidor no mide cuánto escuchó antes de
+  responder, así que el bono de velocidad (hasta +50 puntos) es declarado por el cliente. Alcanza para un juego
+  casual; si algún día hay premios, hay que medir el inicio en el servidor.
 - `python manage.py recompute_stats` reconstruye las estadísticas de todos; corre en cada despliegue.
 
 ## Rankings

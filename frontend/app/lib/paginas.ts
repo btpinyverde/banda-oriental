@@ -275,14 +275,14 @@ const paginas: Pagina[] = [
       {
         titulo: "Lo que queda en tu navegador",
         parrafos: [
-          "Tu historial y tu racha se muestran a partir de lo que guarda nuestro servidor y además quedan copiados en tu navegador, en el almacenamiento local, para que el juego responda rápido. Si borrás los datos del navegador se pierde el identificador anónimo, y entonces ya no podemos vincular lo que jugaste sin cuenta a ese dispositivo.",
+          "Tus estadísticas y tu racha las calcula y guarda nuestro servidor, y tu historial se muestra a partir de lo que guarda; además quedan copiados en tu navegador, en el almacenamiento local, para que el juego responda rápido. Si borrás los datos del navegador se pierde el identificador anónimo, y entonces ya no podemos vincular lo que jugaste sin cuenta a ese dispositivo.",
           "Si iniciás sesión, también se guarda ahí una clave de sesión que identifica tu cuenta en este dispositivo. Al cerrar sesión se borra.",
         ],
       },
       {
         titulo: "Si jugás sin cuenta",
         parrafos: [
-          "Tus partidas y estadísticas quedan en nuestro servidor, asociadas al identificador anónimo de tu navegador. Si pasan siete días sin que juegues, las borramos junto con tu nombre del ranking, porque ya no hay forma de saber de quién son. Si creás una cuenta antes, todo eso pasa a tu cuenta y no se borra.",
+          "Tus partidas y estadísticas quedan en nuestro servidor, asociadas al identificador anónimo de tu navegador. Si pasan siete días sin que juegues, las borramos junto con tu nombre del ranking, porque ya no hay forma de saber de quién son. Si creás una cuenta antes, tus partidas pasan a tu cuenta y no se borran; la única excepción es un día que tu cuenta ya había jugado, porque cada día cuenta una sola vez.",
         ],
       },
       {

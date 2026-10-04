@@ -179,3 +179,49 @@ class TestRules:
         body = board(client, "all").json()
 
         assert body["entries"] == [] and body["me"] is None
+
+
+class TestNobodyAppearsTwiceAfterCreatingAnAccount:
+    def test_a_score_left_on_the_device_for_a_day_the_account_already_played_does_not_make_a_second_row(self, client, song):
+        from accounts.claim import claim_device_games
+        from gameplay.models import GuessAttempt
+
+        account = User.objects.create_user("a@example.com", "a@example.com", "una-clave-larga-1")
+        # The account already played today (from another device)...
+        GuessAttempt.objects.create(
+            user=account, device_id=D2, daily_song=day(song, TODAY), attempt_number=1, guessed_text="x",
+            is_correct=True, feedback={},
+        )
+        score(song, TODAY, 125, "Ana", D2, user=account)
+        # ...and the same person played today anonymously on this device, choosing the same name.
+        GuessAttempt.objects.create(
+            device_id=D1, daily_song=day(song, TODAY), attempt_number=1, guessed_text="x", is_correct=True, feedback={}
+        )
+        score(song, TODAY, 125, "Ana", D1)
+        PlayerStats.objects.create(device_id=D1, public_name="Ana")
+
+        claim_device_games(account, D1)
+
+        entries = board(client, "day").json()["entries"]
+        assert [(e["display_name"], e["score"]) for e in entries] == [("Ana", 125)]
+
+    def test_the_other_days_the_account_did_not_play_still_move_over_and_count(self, client, song):
+        from accounts.claim import claim_device_games
+
+        account = User.objects.create_user("a@example.com", "a@example.com", "una-clave-larga-1")
+        score(song, TODAY, 500, "Ana", D1)
+        score(song, TODAY - timedelta(days=1), 400, "Ana", D1)
+        PlayerStats.objects.create(device_id=D1, public_name="Ana")
+
+        claim_device_games(account, D1)
+
+        assert [(e["display_name"], e["score"]) for e in board(client, "all").json()["entries"]] == [("Ana", 900)]
+
+
+class TestNamesAreLookedUpInBulk:
+    def test_the_number_of_queries_does_not_grow_with_the_number_of_old_players(self, client, song, django_assert_max_num_queries):
+        for index in range(12):
+            score(song, TODAY, 100 + index, f"Viejo {index}", f"{index:08d}-0000-4000-8000-000000000000")
+
+        with django_assert_max_num_queries(10):
+            board(client, "day")

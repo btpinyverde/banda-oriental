@@ -182,7 +182,7 @@ describe("textos legales: lo que el servidor guarda de verdad", () => {
 
   it("la privacidad avisa que sin cuenta, tras siete días sin jugar, el historial se borra", () => {
     expect(privacidad()).toMatch(/siete días/i);
-    expect(privacidad()).not.toMatch(/no se borran/i);
+    expect(privacidad()).not.toMatch(/no están asociadas a nadie y no se borran/i);
   });
 
   it("la privacidad dice que el nombre del ranking es público y se conserva al crear la cuenta", () => {

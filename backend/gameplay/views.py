@@ -391,7 +391,13 @@ class StatsView(APIView):
         device_id = get_device_id(request)
         owner = owner_of(request, device_id)
         lookup = {"user": owner["user"]} if "user" in owner else {"user": None, "device_id": device_id}
-        return Response(serialize(PlayerStats.objects.filter(**lookup).first()))
+        row = PlayerStats.objects.filter(**lookup).first()
+        # The stats change when a game ends, but a streak also drops just by days going by without playing. A row
+        # saved on an earlier day is recomputed when read (once a day at most); someone who never played has no row
+        # and reading never creates one.
+        if row is not None and timezone.localtime(row.updated_at).date() < timezone.localdate():
+            row = recompute_stats(**owner)
+        return Response(serialize(row))
 
 
 class LeaderboardView(APIView):

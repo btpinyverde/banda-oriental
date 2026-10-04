@@ -4,6 +4,7 @@ import threading
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import connection
 from django.http import JsonResponse
 from django.utils import timezone
 
@@ -35,7 +36,7 @@ class BlockAiAgentsMiddleware:
         return self.get_response(request)
 
 
-def _run_purge(days: int) -> None:
+def _run_purge(days: int, close_connection: bool = False) -> None:
     try:
         from gameplay import maintenance
 
@@ -43,6 +44,9 @@ def _run_purge(days: int) -> None:
         logger.info("Borrado de anónimos inactivos: %s", counts)
     except Exception:
         logger.exception("No se pudo borrar a los anónimos inactivos")
+    finally:
+        if close_connection:
+            connection.close()  # a thread gets its own connection to the database and must give it back
 
 
 class DailyMaintenanceMiddleware:
@@ -57,7 +61,7 @@ class DailyMaintenanceMiddleware:
         days = getattr(settings, "PURGE_ANONYMOUS_AFTER_DAYS", 0)
         if days > 0 and cache.add(f"maintenance:purge:{timezone.localdate()}", 1, 86400):
             if getattr(settings, "PURGE_IN_BACKGROUND", True):
-                threading.Thread(target=_run_purge, args=(days,), daemon=True).start()
+                threading.Thread(target=_run_purge, args=(days, True), daemon=True).start()
             else:
                 _run_purge(days)
         return response

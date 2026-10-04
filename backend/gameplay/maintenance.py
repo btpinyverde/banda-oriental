@@ -9,6 +9,14 @@ from django.utils import timezone
 from .models import GuessAttempt, PlayerStats, ScoreEntry
 
 
+def still_idle(devices: list, cutoff) -> list:
+    """The devices from `devices` that really have no attempt or score newer than `cutoff`. Asked again inside the
+    transaction that deletes, so someone who came back after the list was made is not deleted."""
+    back = set(GuessAttempt.objects.filter(user__isnull=True, device_id__in=devices, created_at__gte=cutoff).values_list("device_id", flat=True))
+    back |= set(ScoreEntry.objects.filter(user__isnull=True, device_id__in=devices, created_at__gte=cutoff).values_list("device_id", flat=True))
+    return [device for device in devices if device not in back]
+
+
 def purge_inactive_anonymous(*, days: int, now=None, dry_run: bool = False) -> dict:
     """Deletes the anonymous players (devices without an account) that have not played for `days` days: their
     attempts, scores and stats. An account's games are never touched, and neither is anything a device gave to an
@@ -30,13 +38,24 @@ def purge_inactive_anonymous(*, days: int, now=None, dry_run: bool = False) -> d
     if not idle:
         return nothing
 
-    attempts = GuessAttempt.objects.filter(user__isnull=True, device_id__in=idle)
-    scores = ScoreEntry.objects.filter(user__isnull=True, device_id__in=idle)
-    stats = PlayerStats.objects.filter(user__isnull=True, device_id__in=idle)
-    counts = {"devices": len(idle), "attempts": attempts.count(), "scores": scores.count(), "stats": stats.count()}
-    if not dry_run:
-        with transaction.atomic():
-            attempts.delete()
-            scores.delete()
-            stats.delete()
+    def doomed(devices):
+        return (
+            GuessAttempt.objects.filter(user__isnull=True, device_id__in=devices),
+            ScoreEntry.objects.filter(user__isnull=True, device_id__in=devices),
+            PlayerStats.objects.filter(user__isnull=True, device_id__in=devices),
+        )
+
+    if dry_run:
+        attempts, scores, stats = doomed(idle)
+        return {"devices": len(idle), "attempts": attempts.count(), "scores": scores.count(), "stats": stats.count()}
+
+    with transaction.atomic():
+        idle = still_idle(idle, cutoff)
+        if not idle:
+            return nothing
+        attempts, scores, stats = doomed(idle)
+        counts = {"devices": len(idle), "attempts": attempts.count(), "scores": scores.count(), "stats": stats.count()}
+        attempts.delete()
+        scores.delete()
+        stats.delete()
     return counts
