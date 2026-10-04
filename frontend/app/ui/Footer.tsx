@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { batallaActiva } from "../lib/funciones";
 import { Ondulada } from "./Ondulada";
 
-const COLUMNAS = [
+const columnas = () => [
   {
     titulo: "Jugar",
     enlaces: [
       { href: "/jugar", etiqueta: "Modo diario" },
-      { href: "/batalla", etiqueta: "Modo batalla" },
+      ...(batallaActiva() ? [{ href: "/batalla", etiqueta: "Modo batalla" }] : []),
       { href: "/ranking", etiqueta: "Ranking" },
     ],
   },
@@ -128,7 +129,7 @@ export function Footer({ variante = "completo" }: { variante?: "completo" | "min
             </ul>
           </div>
 
-          {COLUMNAS.map(({ titulo, enlaces }) => (
+          {columnas().map(({ titulo, enlaces }) => (
             <nav key={titulo} className="footer__columna" aria-label={titulo}>
               <h2 className="footer__titulo">{titulo}</h2>
               <ul>

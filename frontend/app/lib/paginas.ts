@@ -1,3 +1,4 @@
+import { batallaActiva } from "./funciones";
 /**
  * Contenido de las páginas informativas del sitio (cómo funciona, acerca de, legales...) y de las que todavía
  * están por hacerse. Todo vive acá, en datos, y lo sirve una sola ruta (app/[pagina]/page.tsx): para cambiar un
@@ -49,8 +50,10 @@ const paginas: Pagina[] = [
     slug: "como-funciona",
     titulo: "Cómo funciona",
     eyebrow: "CÓMO SE JUEGA",
-    descripcion: "Las reglas de Banda Oriental: una canción uruguaya por día, seis intentos, pistas que se desbloquean y los colores de cada intento.",
-    bajada: "Todos los días hay una canción uruguaya nueva. La escuchás de a una pista por vez y tenés seis intentos para adivinar cuál es.",
+    descripcion:
+      "Las reglas de Banda Oriental: una canción uruguaya por día, seis intentos, pistas que se desbloquean y los colores de cada intento.",
+    bajada:
+      "Todos los días hay una canción uruguaya nueva. La escuchás de a una pista por vez y tenés seis intentos para adivinar cuál es.",
     secciones: [
       {
         titulo: "Las pistas",
@@ -67,7 +70,9 @@ const paginas: Pagina[] = [
       },
       {
         titulo: "Los colores",
-        parrafos: ["Cada intento se compara con la canción del día en cuatro datos: año, género, artista y disco."],
+        parrafos: [
+          "Cada intento se compara con la canción del día en cuatro datos: año, género, artista y disco.",
+        ],
         lista: [
           "Verde: el dato coincide.",
           "Amarillo (solo en el año): no es el año exacto. Una flecha te dice hacia dónde ir: ↑ si la canción es más nueva, ↓ si es más vieja.",
@@ -101,8 +106,10 @@ const paginas: Pagina[] = [
     actual: "/acerca",
     titulo: "Acerca de",
     eyebrow: "ACERCA DE BANDA ORIENTAL",
-    descripcion: "Banda Oriental es un juego diario de música uruguaya: una canción por día, seis intentos y pistas que se desbloquean.",
-    bajada: "Un juego diario para escuchar, adivinar y descubrir música uruguaya.",
+    descripcion:
+      "Banda Oriental es un juego diario de música uruguaya: una canción por día, seis intentos y pistas que se desbloquean.",
+    bajada:
+      "Un juego diario para escuchar, adivinar y descubrir música uruguaya.",
     secciones: [
       {
         titulo: "Qué es",
@@ -134,7 +141,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Un proyecto en construcción",
         parrafos: [
-          "Banda Oriental es un proyecto independiente y está creciendo. Hay cosas que todavía faltan, como el modo batalla, y las vamos sumando de a poco.",
+          "Banda Oriental es un proyecto independiente y está creciendo. Hay cosas que todavía faltan y las vamos sumando de a poco.",
         ],
       },
     ],
@@ -144,10 +151,15 @@ const paginas: Pagina[] = [
     slug: "contacto",
     titulo: "Contacto",
     eyebrow: "CONTACTO",
-    descripcion: "Cómo comunicarte con el equipo de Banda Oriental: dudas, problemas, sugerencias y consultas de artistas y titulares.",
+    descripcion:
+      "Cómo comunicarte con el equipo de Banda Oriental: dudas, problemas, sugerencias y consultas de artistas y titulares.",
     bajada: "¿Una duda, un problema o una idea? Nos gusta leerte.",
     secciones: [
-      { titulo: "Escribinos", parrafos: ["Podés comunicarte con nosotros por correo electrónico."], correo: true },
+      {
+        titulo: "Escribinos",
+        parrafos: ["Podés comunicarte con nosotros por correo electrónico."],
+        correo: true,
+      },
       {
         titulo: "Si algo no funciona",
         parrafos: ["Para poder ayudarte rápido, contanos:"],
@@ -170,8 +182,10 @@ const paginas: Pagina[] = [
     slug: "sugerencias",
     titulo: "Sugerencias",
     eyebrow: "SUGERENCIAS",
-    descripcion: "Contanos qué canciones o artistas faltan, qué datos corregir y qué ideas tenés para mejorar Banda Oriental.",
-    bajada: "Ayudanos a que Banda Oriental tenga más música uruguaya y funcione mejor.",
+    descripcion:
+      "Contanos qué canciones o artistas faltan, qué datos corregir y qué ideas tenés para mejorar Banda Oriental.",
+    bajada:
+      "Ayudanos a que Banda Oriental tenga más música uruguaya y funcione mejor.",
     secciones: [
       {
         titulo: "Qué nos podés sugerir",
@@ -183,7 +197,9 @@ const paginas: Pagina[] = [
       },
       {
         titulo: "Cómo enviarla",
-        parrafos: ["Escribinos con el asunto “Sugerencia” y contanos todo lo que sepas: cuanto más detalle, mejor."],
+        parrafos: [
+          "Escribinos con el asunto “Sugerencia” y contanos todo lo que sepas: cuanto más detalle, mejor.",
+        ],
         correo: true,
       },
       {
@@ -199,14 +215,17 @@ const paginas: Pagina[] = [
     slug: "terminos",
     titulo: "Términos y condiciones",
     eyebrow: "LEGALES",
-    descripcion: "Términos y condiciones de uso de Banda Oriental, el juego diario de música uruguaya.",
+    descripcion:
+      "Términos y condiciones de uso de Banda Oriental, el juego diario de música uruguaya.",
     bajada: "Las reglas básicas para usar Banda Oriental.",
     preliminar: true,
     actualizada: FECHA_LEGALES,
     secciones: [
       {
         titulo: "1. Aceptación",
-        parrafos: ["Al usar Banda Oriental aceptás estos términos. Si no estás de acuerdo con alguno, te pedimos que no uses el servicio."],
+        parrafos: [
+          "Al usar Banda Oriental aceptás estos términos. Si no estás de acuerdo con alguno, te pedimos que no uses el servicio.",
+        ],
       },
       {
         titulo: "2. El servicio",
@@ -244,11 +263,15 @@ const paginas: Pagina[] = [
       },
       {
         titulo: "7. Cambios en estos términos",
-        parrafos: ["Podemos actualizar estos términos. La fecha de la última actualización figura al comienzo de esta página."],
+        parrafos: [
+          "Podemos actualizar estos términos. La fecha de la última actualización figura al comienzo de esta página.",
+        ],
       },
       {
         titulo: "8. Ley aplicable",
-        parrafos: ["Estos términos se rigen por las leyes de la República Oriental del Uruguay."],
+        parrafos: [
+          "Estos términos se rigen por las leyes de la República Oriental del Uruguay.",
+        ],
       },
     ],
   },
@@ -257,8 +280,10 @@ const paginas: Pagina[] = [
     slug: "privacidad",
     titulo: "Política de privacidad",
     eyebrow: "LEGALES",
-    descripcion: "Qué datos usa Banda Oriental, para qué y cómo podés ejercer tus derechos sobre ellos.",
-    bajada: "Para jugar no te pedimos nombre, correo ni contraseña. Si creás una cuenta, esto es lo que guardamos.",
+    descripcion:
+      "Qué datos usa Banda Oriental, para qué y cómo podés ejercer tus derechos sobre ellos.",
+    bajada:
+      "Para jugar no te pedimos nombre, correo ni contraseña. Si creás una cuenta, esto es lo que guardamos.",
     preliminar: true,
     actualizada: FECHA_LEGALES,
     secciones: [
@@ -316,7 +341,7 @@ const paginas: Pagina[] = [
       {
         titulo: "Novedades por correo (opcional)",
         parrafos: [
-          "Al crear la cuenta podés marcar una casilla aparte, opcional y apagada hasta que la marques: \"Quiero recibir novedades de Banda Oriental por correo\". Si la marcás, podemos escribirte con novedades del juego; no la usamos para nada más ni cedemos tu correo para publicidad de otras empresas.",
+          'Al crear la cuenta podés marcar una casilla aparte, opcional y apagada hasta que la marques: "Quiero recibir novedades de Banda Oriental por correo". Si la marcás, podemos escribirte con novedades del juego; no la usamos para nada más ni cedemos tu correo para publicidad de otras empresas.',
           "Guardamos tu elección con la fecha en que la hiciste. La podés cambiar cuando quieras desde Mi cuenta. Si no la marcás, solo recibís los correos de la cuenta.",
         ],
       },
@@ -346,33 +371,52 @@ const paginas: Pagina[] = [
       },
     ],
   },
-  {
-    tipo: "proximamente",
-    slug: "batalla",
-    actual: "/batalla",
-    titulo: "Modo batalla",
-    descripcion: "El modo batalla de Banda Oriental, para competir con amigos, llega pronto.",
-    bajada: "Desafiá a tus amigos con la misma canción y mirá quién la saca primero.",
-    texto: "Estamos terminando de armar el modo batalla. Mientras tanto, podés jugar la canción del día.",
-  },
+  // El modo batalla no está resuelto: mientras el interruptor esté apagado, la página no existe (ver lib/funciones.ts).
+  ...(batallaActiva()
+    ? [
+        {
+          tipo: "proximamente" as const,
+          slug: "batalla",
+          actual: "/batalla",
+          titulo: "Modo batalla",
+          descripcion:
+            "El modo batalla de Banda Oriental, para competir con amigos, llega pronto.",
+          bajada:
+            "Desafiá a tus amigos con la misma canción y mirá quién la saca primero.",
+          texto:
+            "Estamos terminando de armar el modo batalla. Mientras tanto, podés jugar la canción del día.",
+        },
+      ]
+    : []),
 ];
 
 /** Lo que muestran /login, /cuenta y /cuenta/entrar mientras las cuentas están apagadas (ver cuentas/activas.ts). */
-export const PAGINA_CUENTAS_PROXIMAMENTE: Extract<Pagina, { tipo: "proximamente" }> = {
+export const PAGINA_CUENTAS_PROXIMAMENTE: Extract<
+  Pagina,
+  { tipo: "proximamente" }
+> = {
   tipo: "proximamente",
   slug: "login",
   actual: "/login",
   titulo: "Iniciar sesión",
-  descripcion: "Las cuentas de Banda Oriental, para guardar tu historial en cualquier dispositivo, llegan pronto.",
-  bajada: "Pronto vas a poder crear una cuenta para guardar tu historial en cualquier dispositivo.",
-  texto: "Estamos terminando las cuentas, con contraseña o con un enlace por correo, a elección. Mientras tanto, lo que jugás se guarda en este navegador.",
+  descripcion:
+    "Las cuentas de Banda Oriental, para guardar tu historial en cualquier dispositivo, llegan pronto.",
+  bajada:
+    "Pronto vas a poder crear una cuenta para guardar tu historial en cualquier dispositivo.",
+  texto:
+    "Estamos terminando las cuentas, con contraseña o con un enlace por correo, a elección. Mientras tanto, lo que jugás se guarda en este navegador.",
   alternativa: { href: "/historial", etiqueta: "Ver mi historial" },
 };
 
-export const PAGINAS: Record<string, Pagina> = Object.fromEntries(paginas.map((pagina) => [pagina.slug, pagina]));
+export const PAGINAS: Record<string, Pagina> = Object.fromEntries(
+  paginas.map((pagina) => [pagina.slug, pagina]),
+);
 export const SLUGS: string[] = paginas.map((pagina) => pagina.slug);
 
-export const paginaPorSlug = (slug: string): Pagina | undefined => PAGINAS[slug];
+export const paginaPorSlug = (slug: string): Pagina | undefined =>
+  PAGINAS[slug];
 
 /** Las páginas con contenido real, que se pueden indexar (las que todavía no existen quedan afuera). */
-export const PAGINAS_DE_TEXTO = paginas.filter((pagina): pagina is PaginaDeTexto => pagina.tipo === "texto");
+export const PAGINAS_DE_TEXTO = paginas.filter(
+  (pagina): pagina is PaginaDeTexto => pagina.tipo === "texto",
+);

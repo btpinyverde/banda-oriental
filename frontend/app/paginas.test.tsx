@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as archivoDatos from "./lib/archivo";
 import Pagina, { generateMetadata, generateStaticParams } from "./[pagina]/page";
-import { PAGINAS, SLUGS, paginaPorSlug } from "./lib/paginas";
+import { PAGINAS, PAGINA_CUENTAS_PROXIMAMENTE, SLUGS, paginaPorSlug } from "./lib/paginas";
 import { SITIO_URL } from "./lib/seo";
 import sitemap from "./sitemap";
 import { PaginaDeContenido } from "./ui/PaginaDeContenido";
@@ -10,7 +10,7 @@ import { PaginaDeContenido } from "./ui/PaginaDeContenido";
 afterEach(cleanup);
 
 const DE_TEXTO = ["como-funciona", "acerca", "contacto", "sugerencias", "terminos", "privacidad"];
-const PROXIMAMENTE = ["batalla"];
+const PROXIMAMENTE: string[] = []; // el modo batalla (la única "próximamente") está apagado: ver sin-batalla-paginas.test.tsx
 
 describe("registro de páginas", () => {
   it("cubre todos los enlaces del sitio que antes daban 404", () => {
@@ -106,7 +106,7 @@ describe("PaginaDeContenido", () => {
   });
 
   it("una página que todavía no existe dice que llega pronto y ofrece volver o jugar", () => {
-    render(<PaginaDeContenido pagina={paginaPorSlug("batalla")!} />);
+    render(<PaginaDeContenido pagina={PAGINA_CUENTAS_PROXIMAMENTE} />);
 
     const principal = within(screen.getByRole("main"));
     expect(principal.getByText("PRÓXIMAMENTE")).toBeInTheDocument();
@@ -156,13 +156,11 @@ describe("ruta [pagina]", () => {
     await expect(Pagina({ params: Promise.resolve({ pagina: "no-existe" }) })).rejects.toThrow();
   });
 
-  it("las páginas de texto se pueden indexar y las que todavía no existen, no", async () => {
+  it("las páginas de texto se pueden indexar", async () => {
     const texto = await generateMetadata({ params: Promise.resolve({ pagina: "como-funciona" }) });
-    const pronto = await generateMetadata({ params: Promise.resolve({ pagina: "batalla" }) });
 
     expect(texto.title).toBe("Cómo funciona");
     expect(texto.robots).toBeUndefined();
-    expect(pronto.robots).toEqual({ index: false, follow: false });
   });
 });
 
