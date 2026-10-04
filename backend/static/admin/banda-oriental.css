@@ -1,0 +1,129 @@
+/* Banda Oriental: el admin de Django con los colores y la marca del juego (violeta, crema y amarillo). Cambia las
+   variables de color de Django y deja que el resto del admin se vea como siempre. Funcional; el diseño se afina después. */
+
+html[data-theme="light"],
+:root {
+    --primary: #6c4ff0;
+    --secondary: #5a3fd6;
+    --accent: #fde668;
+    --primary-fg: #fff;
+
+    --body-fg: #14110f;
+    --body-bg: #fbf8f1;
+    --body-quiet-color: #4a4540;
+    --body-medium-color: #2b2724;
+    --body-loud-color: #000;
+
+    --header-color: #fff;
+    --header-branding-color: #fde668;
+    --header-bg: #6c4ff0;
+    --header-link-color: #fff;
+
+    --breadcrumbs-fg: #e3dffb;
+    --breadcrumbs-link-fg: #fff;
+    --breadcrumbs-bg: #5a3fd6;
+
+    --link-fg: #5a3fd6;
+    --link-hover-color: #3d2aa3;
+    --link-selected-fg: #5a3fd6;
+
+    --hairline-color: #ece7da;
+    --border-color: #d9d2c3;
+
+    --darkened-bg: #f4efe2;
+    --selected-bg: #efedfc;
+    --selected-row: #fff3b8;
+
+    --button-fg: #fff;
+    --button-bg: #6c4ff0;
+    --button-hover-bg: #5a3fd6;
+    --default-button-bg: #5a3fd6;
+    --default-button-hover-bg: #3d2aa3;
+    --object-tools-bg: #6c4ff0;
+    --object-tools-hover-bg: #5a3fd6;
+}
+
+html[data-theme="dark"] {
+    --primary: #8f78ff;
+    --secondary: #6c4ff0;
+    --accent: #fde668;
+    --primary-fg: #fff;
+
+    --body-fg: #fbf8f1;
+    --body-bg: #14110f;
+    --body-quiet-color: #c9c3bb;
+    --body-medium-color: #e6e0d6;
+    --body-loud-color: #fff;
+
+    --header-color: #fff;
+    --header-branding-color: #fde668;
+    --header-bg: #26213a;
+    --header-link-color: #fff;
+
+    --breadcrumbs-fg: #c9c3bb;
+    --breadcrumbs-link-fg: #fff;
+    --breadcrumbs-bg: #1d1930;
+
+    --link-fg: #b3a3ff;
+    --link-hover-color: #fde668;
+    --link-selected-fg: #b3a3ff;
+
+    --hairline-color: #2e2a26;
+    --border-color: #3a352f;
+
+    --darkened-bg: #1d1a17;
+    --selected-bg: #26213a;
+    --selected-row: #3a3320;
+
+    --button-fg: #fff;
+    --button-bg: #6c4ff0;
+    --button-hover-bg: #8f78ff;
+    --default-button-bg: #6c4ff0;
+    --default-button-hover-bg: #8f78ff;
+    --object-tools-bg: #6c4ff0;
+    --object-tools-hover-bg: #8f78ff;
+}
+
+@media (prefers-color-scheme: dark) {
+    html[data-theme="auto"] {
+        --primary: #8f78ff;
+        --secondary: #6c4ff0;
+        --body-fg: #fbf8f1;
+        --body-bg: #14110f;
+        --body-quiet-color: #c9c3bb;
+        --body-medium-color: #e6e0d6;
+        --body-loud-color: #fff;
+        --header-bg: #26213a;
+        --breadcrumbs-bg: #1d1930;
+        --link-fg: #b3a3ff;
+        --link-hover-color: #fde668;
+        --hairline-color: #2e2a26;
+        --border-color: #3a352f;
+        --darkened-bg: #1d1a17;
+        --selected-bg: #26213a;
+        --selected-row: #3a3320;
+        --button-bg: #6c4ff0;
+        --button-hover-bg: #8f78ff;
+        --object-tools-bg: #6c4ff0;
+    }
+}
+
+/* Cabecera con el logo */
+#header { padding: 10px 24px; }
+#site-name a.marca { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+#site-name a.marca img { display: block; height: 34px; width: auto; }
+#site-name a.marca span { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: var(--header-branding-color); }
+
+/* Botones y tarjetas más redondeados, como el juego */
+.button, input[type=submit], input[type=button], .submit-row input, a.button { border-radius: 999px; font-weight: 700; }
+.module { border-radius: 14px; overflow: hidden; }
+.module h2, .module caption, .inline-group h2 { background: var(--secondary); }
+#content-main .module caption a { color: var(--header-link-color); }
+
+/* Página de acceso */
+body.login #header { justify-content: center; }
+body.login #container { border-radius: 24px; border: 2px solid #14110f; overflow: hidden; box-shadow: 0 10px 30px rgba(60, 40, 120, 0.15); }
+body.login .bienvenida { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+body.login .bienvenida__texto { margin: 0 0 18px; color: var(--body-quiet-color); line-height: 1.5; }
+body.login .volver { margin: 16px 0 0; text-align: center; }
+body.login .submit-row input { width: 100%; padding: 12px; }

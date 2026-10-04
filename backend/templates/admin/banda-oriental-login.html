@@ -1,0 +1,11 @@
+{% extends "admin/login.html" %}
+
+{% block content_title %}
+<h1 class="bienvenida">Administración de Banda Oriental</h1>
+<p class="bienvenida__texto">Solo para quienes cuidan el juego: las canciones del día, los jugadores y los puntajes.</p>
+{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+<p class="volver"><a href="{{ FRONTEND_URL }}">← Volver al juego</a></p>
+{% endblock %}

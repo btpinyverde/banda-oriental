@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>No encontramos esa página · Banda Oriental</title>
+  {% load static %}
+  <link rel="icon" type="image/png" href="{% static 'admin/logo-banda-oriental.png' %}">
+  <style>
+    :root { --crema: #fbf8f1; --tinta: #14110f; --suave: #4a4540; --violeta: #6c4ff0; }
+    @media (prefers-color-scheme: dark) { :root { --crema: #14110f; --tinta: #fbf8f1; --suave: #c9c3bb; } }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--crema); color: var(--tinta); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; text-align: center; }
+    img { width: 160px; height: auto; }
+    h1 { margin: 12px 0 8px; font-size: 28px; }
+    p { margin: 0 0 24px; color: var(--suave); }
+    a { display: inline-block; padding: 14px 28px; border-radius: 999px; background: var(--violeta); color: #fff; font-weight: 700; text-decoration: none; }
+    a:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <main>
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="{% static 'admin/logo-banda-oriental-claro.png' %}">
+      <img src="{% static 'admin/logo-banda-oriental.png' %}" alt="Banda Oriental">
+    </picture>
+    <h1>No encontramos esa página</h1>
+    <p>La dirección no existe o ya no está. Si buscabas el juego, está en otro lugar.</p>
+    <a href="{{ FRONTEND_URL }}">Ir a jugar</a>
+  </main>
+</body>
+</html>
