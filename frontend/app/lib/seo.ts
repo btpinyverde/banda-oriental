@@ -1,3 +1,4 @@
+import { batallaActiva } from "./funciones";
 /** Datos de SEO del sitio: un solo lugar para el título, la descripción, la URL y los datos estructurados. */
 
 const URL_PRODUCCION = "https://bandaoriental.xami.uy";
@@ -23,7 +24,8 @@ export function construirVerificacion(codigo: string | undefined): { google: str
 export const NOMBRE = "Banda Oriental";
 export const TITULO = "Banda Oriental: adiviná la canción uruguaya del día";
 export const DESCRIPCION =
-  "Juego diario de música uruguaya: escuchá un fragmento, descubrí las pistas y adiviná la canción en seis intentos. Jugá solo o en batalla con amigos.";
+  "Juego diario de música uruguaya: escuchá un fragmento, descubrí las pistas y adiviná la canción en seis intentos." +
+  (batallaActiva() ? " Jugá solo o en batalla con amigos." : "");
 export const IDIOMA = "es-UY";
 export const COLOR_FONDO = "#fbf8f1";
 

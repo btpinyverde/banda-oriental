@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { batallaActiva } from "../lib/funciones";
 import { BotonCuenta } from "./BotonCuenta";
 import { MenuMovil } from "./MenuMovil";
 
-const ENLACES = [
+const enlaces = () => [
   { href: "/jugar", etiqueta: "Jugar" },
-  { href: "/batalla", etiqueta: "Batalla" },
+  ...(batallaActiva() ? [{ href: "/batalla", etiqueta: "Batalla" }] : []),
   { href: "/archivo", etiqueta: "Archivo" },
   { href: "/ranking", etiqueta: "Ranking" },
   { href: "/acerca", etiqueta: "Acerca de" },
@@ -12,6 +13,7 @@ const ENLACES = [
 
 /** `actual` es la ruta de la página donde está: se marca en los enlaces y, en /jugar, se oculta el botón de jugar. */
 export function Navbar({ actual }: { actual?: string }) {
+  const ENLACES = enlaces();
   return (
     <header className="navbar">
       <Link href="/" className="navbar__logo">

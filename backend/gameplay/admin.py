@@ -8,6 +8,17 @@ class StemInline(admin.TabularInline):
     extra = 4
     min_num = 4
     max_num = 4
+    # The versions the players download are made from the upload (gameplay/audio.py), never typed in by hand.
+    fields = ("stem_type", "unlock_order", "audio_file", "versiones")
+    readonly_fields = ("versiones",)
+
+    @admin.display(description="Versiones para jugar")
+    def versiones(self, obj):
+        if obj is None or not obj.pk:
+            return "Se generan al guardar"
+        if obj.audio_high and obj.audio_low:
+            return "Listas (alta y liviana)"
+        return "Faltan: se sirve el original. Corré `manage.py encode_stems`"
 
     def get_formset(self, request, obj=None, **kwargs):
         # InlineModelAdmin.get_formset() never reads validate_min/
@@ -25,6 +36,9 @@ class StemInline(admin.TabularInline):
 @admin.register(DailySong)
 class DailySongAdmin(admin.ModelAdmin):
     list_display = ("date", "song", "state")
+    list_select_related = ("song__album__artist",)
+    # Thousands of songs, many sharing a title: a search box (catalog.admin.SongAdmin) instead of a drop-down.
+    autocomplete_fields = ("song",)
     list_filter = ("state",)
     date_hierarchy = "date"
     inlines = [StemInline]

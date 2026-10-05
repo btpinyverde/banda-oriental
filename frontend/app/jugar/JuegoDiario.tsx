@@ -14,11 +14,14 @@ import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
 import { leerHistorial } from "../lib/juego/almacen-historial";
 import { marcarTutorialVisto, tutorialVisto } from "../lib/tutorial/visto";
+import { EsqueletoDelJuego } from "./EsqueletoDelJuego";
 import { AyudaColores } from "./AyudaColores";
 import { TutorialInteractivo } from "./TutorialInteractivo";
 import { BuscadorCanciones } from "./BuscadorCanciones";
 import { FilaStems } from "./FilaStems";
 import { PantallaFinal } from "./PantallaFinal";
+import { useCalidadDeAudio } from "../lib/juego/useCalidadDeAudio";
+import { AhorrarDatos } from "./AhorrarDatos";
 import { ReproductorPista } from "./ReproductorPista";
 import { TablaIntentos, type IntentoMostrado } from "./TablaIntentos";
 
@@ -138,6 +141,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   }, [hoy, diaCargado, cargar]);
 
   const numeroActual = estado && !estado.finished ? estado.attempt_number : 0;
+  const { calidad, ahorrar, cambiarAhorro, alMedir } = useCalidadDeAudio(estado?.day ?? "", numeroActual);
 
   // Al terminar el día (ganando o perdiendo, o al volver a abrir un día ya terminado) la partida queda guardada
   // en este dispositivo. Se repite sin problema: el historial tiene una sola partida por día y la va completando.
@@ -219,14 +223,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   }
 
   if (vista.tipo === "cargando") {
-    return (
-      <div className="jugar__mensaje">
-        <p role="status">Cargando la canción de hoy…</p>
-        {tardando && (
-          <p className="jugar__espera">El servidor estaba dormido y está despertando. Puede tardar hasta un minuto.</p>
-        )}
-      </div>
-    );
+    return <EsqueletoDelJuego tardando={tardando} />;
   }
 
   if (vista.tipo === "error") {
@@ -281,7 +278,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
     );
   }
 
-  const pistas = pistasParaMezclar(actual.day, actual.unlocked_stems);
+  const pistas = pistasParaMezclar(actual.day, actual.unlocked_stems, calidad);
 
   return (
     <div className="jugar__tarjeta">
@@ -306,9 +303,10 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
       {/* Una clave por día e intento: hay 4 pistas y 6 intentos, así que las pistas se repiten y sin esto el
           reproductor seguiría "escuchado" en un intento nuevo. */}
       {pistas.length > 0 && (
-        <ReproductorPista key={`${actual.day}-${actual.attempt_number}`} pistas={pistas} alCambiarListo={setListo} alFallar={renovarAudio} />
+        <ReproductorPista key={`${actual.day}-${actual.attempt_number}`} pistas={pistas} alCambiarListo={setListo} alFallar={renovarAudio} alMedir={alMedir} />
       )}
       <FilaStems desbloqueadas={actual.unlocked_stems} />
+      <AhorrarDatos activo={ahorrar} alCambiar={cambiarAhorro} />
 
       <TablaIntentos intentos={intentos} />
       <p className="jugar__intento">Intento {actual.attempt_number} de 6</p>

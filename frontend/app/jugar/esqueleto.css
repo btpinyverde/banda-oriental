@@ -1,0 +1,37 @@
+/* ---------- Pantalla de carga: la forma del juego en gris con un brillo que pasa (funcional; se afina después) ---------- */
+.esqueleto { position: relative; }
+.esqueleto__bloque {
+  display: block; border-radius: 12px;
+  background: linear-gradient(100deg, #ebe8e3 30%, #f6f3ee 50%, #ebe8e3 70%) 0 0 / 220% 100%;
+  animation: esqueleto-brillo 1.5s linear infinite;
+}
+.esqueleto__aviso {
+  display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 8px 16px; border-radius: 999px;
+  background: var(--violeta-claro); font-size: 14px; font-weight: 700;
+}
+.esqueleto__dibujo { display: grid; gap: 16px; }
+.esqueleto__chip { width: 110px; height: 30px; border-radius: 999px; }
+.esqueleto__chip--ancho { width: 190px; }
+.esqueleto__titulo { width: min(320px, 70%); height: 38px; }
+.esqueleto__reproductor { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 18px; background: var(--violeta-claro); }
+.esqueleto__boton { width: 48px; height: 48px; border-radius: 50%; flex: none; }
+.esqueleto__onda { display: flex; align-items: center; gap: 3px; height: 48px; flex: 1; }
+.esqueleto__barra { width: 4px; border-radius: 2px; background: #d6d0f7; animation: esqueleto-pulso 1.5s ease-in-out infinite; }
+.esqueleto__pistas { display: flex; justify-content: space-between; gap: 10px; }
+.esqueleto__pista { display: grid; justify-items: center; gap: 8px; flex: 1; }
+.esqueleto__circulo { width: 46px; height: 46px; border-radius: 50%; }
+.esqueleto__rotulo { width: 56px; height: 12px; border-radius: 6px; }
+.esqueleto__tabla { display: grid; gap: 8px; }
+.esqueleto__fila { height: 44px; }
+.esqueleto__buscador { height: 52px; border-radius: 999px; }
+.esqueleto__ecualizador { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
+.esqueleto__ecualizador i { width: 4px; border-radius: 2px; background: var(--violeta); animation: esqueleto-barra 0.9s ease-in-out infinite; }
+.esqueleto__ecualizador i:nth-child(2) { animation-delay: 0.15s; }
+.esqueleto__ecualizador i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes esqueleto-brillo { to { background-position: -220% 0; } }
+@keyframes esqueleto-pulso { 50% { opacity: 0.55; } }
+@keyframes esqueleto-barra { 0%, 100% { height: 5px; } 50% { height: 18px; } }
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto__bloque, .esqueleto__barra, .esqueleto__ecualizador i { animation: none; }
+  .esqueleto__ecualizador i { height: 12px; }
+}

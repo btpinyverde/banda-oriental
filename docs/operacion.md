@@ -22,6 +22,7 @@ Una página para quien opere el juego (hoy, Brandon). Complementa `docs/segurida
 `REPLY_TO_EMAIL` (casilla real a la que llegan las respuestas a los correos de la cuenta; ver `docs/entregabilidad-del-correo.md`), `PURGE_ANONYMOUS_AFTER_DAYS` (7 por defecto; `0` apaga el borrado de anónimos).
 
 **Vercel (sitio)**: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CUENTAS_ACTIVAS=1` (cuentas visibles),
+`NEXT_PUBLIC_BATALLA_ACTIVA=1` (muestra el modo batalla; apagado por defecto: sin la variable no aparece nada de él),
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (clave pública de Turnstile).
 
 Las claves secretas (`RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, R2, `DATABASE_URL`) las carga siempre el dueño a mano;

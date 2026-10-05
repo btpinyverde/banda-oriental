@@ -101,6 +101,9 @@ STORAGES["stems"] = {
     },
 }
 
+# ffmpeg converts the uploaded stems (gameplay/audio.py). Empty = the system one, or the one bundled with imageio-ffmpeg.
+FFMPEG_BINARY = os.environ.get("FFMPEG_BINARY", "")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # No login for *players* in this project (see spec): DRF's default
