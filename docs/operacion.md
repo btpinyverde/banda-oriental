@@ -89,3 +89,9 @@ la del disco completo más antiguo y con más datos) y las de discos de música 
 o programado. Las canciones ocultas salen del buscador del juego, del archivo y de los conteos, pero siguen en la base y los
 importadores las siguen reconociendo (no vuelven como nuevas). Correlo **después** de `sync_deezer`, cuando ya esté todo cargado.
 
+### Todo con un solo script
+
+`scripts/catalogo.sh <paso>` hace lo de arriba (y lo de ranking) sin armar el entorno a mano. Hace falta solo `DATABASE_URL`.
+Pasos: `reporte`, `cargar`, `deezer-prueba`, `deezer`, `limpiar`, `limpiar-aplicar`, `deshacer-limpieza`, `ranking`,
+`ranking-crear`, `ranking-borrar`. Muestra a qué base va a escribir, y los pasos que cambian datos piden confirmación.
+
