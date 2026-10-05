@@ -81,7 +81,7 @@ describe("filas", () => {
   it("la canción distingue a las que se llaman igual por su artista y disco, y dice si fue la del día (solo días vencidos)", () => {
     render(
       <FilaDeCancion
-        cancion={{ id: 5, title: "Luna negra", duration_seconds: 225, artist: { id: 7, name: "Jorge Drexler" }, album: { id: 12, name: "Vaivén", year: 1996, genre: "Folk" }, played_on: "2026-10-02" }}
+        cancion={{ id: 5, title: "Luna negra", duration_seconds: 225, artist: { id: 7, name: "Jorge Drexler" }, album: { id: 12, name: "Vaivén", year: 1996, genre: "Folk", cover_art_url: "" }, played_on: "2026-10-02" }}
       />,
     );
 
@@ -93,7 +93,7 @@ describe("filas", () => {
   });
 
   it("la canción que nunca fue la del día no dice nada de eso", () => {
-    render(<FilaDeCancion cancion={{ id: 5, title: "Luna", duration_seconds: null, artist: { id: 7, name: "A" }, album: { id: 12, name: "D", year: null, genre: "" }, played_on: null }} />);
+    render(<FilaDeCancion cancion={{ id: 5, title: "Luna", duration_seconds: null, artist: { id: 7, name: "A" }, album: { id: 12, name: "D", year: null, genre: "", cover_art_url: "" }, played_on: null }} />);
 
     expect(screen.queryByText(/canción del día/)).toBeNull();
   });

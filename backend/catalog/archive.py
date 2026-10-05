@@ -78,7 +78,7 @@ def _song_row(song, played_on=None):
         "title": song.title,
         "duration_seconds": song.duration_seconds,
         "artist": _artist_ref(album.artist),
-        "album": {"id": album.id, "name": album.name, "year": album.year, "genre": album.genre},
+        "album": {"id": album.id, "name": album.name, "year": album.year, "genre": album.genre, "cover_art_url": album.cover_art_url},
         "played_on": played_on,
     }
 
@@ -282,8 +282,19 @@ class AlbumDetailView(ArchiveView):
 
 
 class SongListView(ArchiveView):
+    # newest / oldest: by the year of the record, the ones with no year last in both.
+    SORTS = {
+        "title": ["title", "id"],
+        "artist": ["album__artist__name", "title", "id"],
+        "newest": [F("album__year").desc(nulls_last=True), "title", "id"],
+        "oldest": [F("album__year").asc(nulls_last=True), "title", "id"],
+    }
+
     def get(self, request):
         text = _text(request)
+        sort = request.query_params.get("sort", "title")
+        if sort not in self.SORTS:
+            raise ParseError("sort tiene que ser title, artist, newest u oldest.")
         songs = songs_queryset()
         for param, field in (("artist", "album__artist_id"), ("album", "album_id"), ("year", "album__year")):
             value = _int(request, param)
@@ -300,7 +311,7 @@ class SongListView(ArchiveView):
                 filter_by_text(songs, text, ["title", "album__name", "album__artist__name"]), text, "title"
             )
         else:
-            songs = songs.order_by("title", "id")
+            songs = songs.order_by(*self.SORTS[sort])
         page = _page(request, songs, lambda song: song)
         days = _past_days([song.id for song in page["results"]])
         page["results"] = [_song_row(song, (days.get(song.id) or [None])[-1]) for song in page["results"]]

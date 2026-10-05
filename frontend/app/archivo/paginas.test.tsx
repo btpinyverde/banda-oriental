@@ -10,6 +10,12 @@ import FichaArtista from "./artista/[ficha]/page";
 import FichaDisco from "./disco/[ficha]/page";
 import FichaCancion, { generateMetadata as metadataCancion } from "./cancion/[ficha]/page";
 
+// La barra de filtros navega con el router de Next, que en las pruebas no está montado; `notFound` y lo demás siguen siendo los reales.
+vi.mock("next/navigation", async (importarOriginal) => ({
+  ...(await importarOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -18,59 +24,121 @@ afterEach(() => {
 const pagina = <T,>(results: T[], extra: Partial<Pagina<T>> = {}): Pagina<T> => ({ count: results.length, page: 1, pages: 1, results, ...extra });
 const ARTISTA: ArtistaFila = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "" };
 const DISCO: DiscoFila = { id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "Folk", release_type: "album", songs: 2, cover_art_url: "https://img/c.jpg" };
-const CANCION: CancionFila = { id: 5, title: "Luna negra", duration_seconds: 225, artist: { id: 7, name: "Jorge Drexler" }, album: { id: 12, name: "Vaivén", year: 1996, genre: "Folk" }, played_on: null };
+const CANCION: CancionFila = { id: 5, title: "Luna negra", duration_seconds: 225, artist: { id: 7, name: "Jorge Drexler" }, album: { id: 12, name: "Vaivén", year: 1996, genre: "Folk", cover_art_url: "https://img/c.jpg" }, played_on: null };
 const FILTROS = { decades: [{ decade: 1990, albums: 3 }, { decade: 2000, albums: 5 }], genres: [{ genre: "Folk", albums: 2 }, { genre: "Rock", albums: 4 }], years: { min: 1990, max: 2009 } };
 const buscaParams = (p: Record<string, string>) => Promise.resolve(p);
 const ficha = (valor: string) => Promise.resolve({ ficha: valor });
 
-describe("/archivo (portada del archivo)", () => {
-  const preparar = () => {
+describe("/archivo (el explorador de canciones)", () => {
+  const preparar = (total = 124) => {
+    const canciones = vi.spyOn(datos, "listarCanciones").mockImplementation(async (f) =>
+      f.porPagina === 1 ? pagina([CANCION], { count: 17900 }) : pagina([CANCION, { ...CANCION, id: 6, title: "Otra" }], { count: total, pages: 7 }),
+    );
     vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
-    vi.spyOn(datos, "listarArtistas").mockResolvedValue(pagina([ARTISTA], { count: 420 }));
-    vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 1207 }));
-    vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION], { count: 15678 }));
+    return canciones;
   };
+  const buscar = (p: Record<string, string> = {}) => PaginaArchivo({ searchParams: buscaParams(p) });
 
-  it("tiene el buscador y las tres puertas con cuántos hay de cada cosa", async () => {
+  it("abre con el título grande, la bajada con el total real y el collage", async () => {
     preparar();
 
-    render(await PaginaArchivo());
+    render(await buscar());
 
-    expect(screen.getByRole("heading", { level: 1, name: "Archivo" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /Toda la música uruguaya en un solo lugar/ })).toBeInTheDocument();
+    expect(screen.getByText(/Más de 17\.900 canciones de todas las épocas/)).toBeInTheDocument();
+    expect(screen.getByText("Archivo de canciones")).toBeInTheDocument();
+  });
+
+  it("tiene la barra de búsqueda, los chips de género y el conteo de lo encontrado", async () => {
+    preparar(124);
+
+    render(await buscar());
+
     expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Artistas/ })).toHaveAttribute("href", "/archivo/artistas");
-    expect(screen.getByRole("link", { name: /Artistas/ })).toHaveTextContent("420");
-    expect(screen.getByRole("link", { name: /Discos/ })).toHaveAttribute("href", "/archivo/discos");
-    expect(screen.getByRole("link", { name: /Canciones/ })).toHaveTextContent("15.678");
+    expect(screen.getByRole("link", { name: "Todas" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("link", { name: "Rock" })).toHaveAttribute("href", "/archivo?genero=Rock");
+    expect(screen.getByText("124 canciones encontradas")).toBeInTheDocument();
   });
 
-  it("ofrece explorar por época y por género", async () => {
+  it("muestra las canciones como tarjetas con su tapa, de a 18, y pide a la API lo que el visitante eligió", async () => {
+    const canciones = preparar();
+
+    render(await buscar({ q: "luna", decada: "1990", genero: "Rock", orden: "newest", pagina: "2" }));
+
+    expect(canciones).toHaveBeenCalledWith({ q: "luna", decada: 1990, genero: "Rock", orden: "newest", pagina: 2, porPagina: 18 });
+    const lista = screen.getByRole("list", { name: "Canciones" });
+    expect(within(lista).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(lista).getByRole("link", { name: "Luna negra" })).toHaveAttribute("href", "/archivo/cancion/5-luna-negra");
+    expect(within(lista).getAllByRole("img", { name: /Tapa de Vaivén/ })).toHaveLength(2);
+  });
+
+  it("la paginación lleva números y conserva los filtros", async () => {
     preparar();
 
-    render(await PaginaArchivo());
+    render(await buscar({ genero: "Rock", q: "luna" }));
 
-    expect(screen.getByRole("link", { name: /Años 90/ })).toHaveAttribute("href", "/archivo/discos?decada=1990");
-    expect(screen.getByRole("link", { name: /Folk/ })).toHaveAttribute("href", "/archivo/discos?genero=Folk");
+    const paginas = screen.getByRole("navigation", { name: "Páginas" });
+    expect(within(paginas).getByRole("link", { name: "Página 2" }).getAttribute("href")).toContain("pagina=2");
+    expect(within(paginas).getByRole("link", { name: "Página 2" }).getAttribute("href")).toContain("genero=Rock");
   });
 
-  it("los juegos pasados no son el archivo, pero hay un camino a ellos", async () => {
+  it("se puede cambiar entre tarjetas y lista, y la vista elegida queda marcada", async () => {
     preparar();
+    const { unmount } = render(await buscar());
+    expect(screen.getByRole("link", { name: "Ver como tarjetas" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("link", { name: "Ver como lista" })).toHaveAttribute("href", "/archivo?vista=lista");
+    unmount();
 
-    render(await PaginaArchivo());
-
-    expect(screen.getByRole("link", { name: /juegos anteriores/i })).toHaveAttribute("href", "/anteriores");
+    render(await buscar({ vista: "lista", genero: "Rock" }));
+    expect(screen.getByRole("link", { name: "Ver como lista" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("link", { name: "Ver como tarjetas" })).toHaveAttribute("href", "/archivo?genero=Rock");
+    expect(document.querySelector(".archivo-lista")).not.toBeNull();
   });
 
-  it("si la API no responde, el buscador sigue y se avisa en lugar de mostrar ceros", async () => {
-    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(null);
-    vi.spyOn(datos, "listarArtistas").mockResolvedValue(null);
-    vi.spyOn(datos, "listarDiscos").mockResolvedValue(null);
+  it.each([
+    ["pagina", "abc"],
+    ["pagina", "-2"],
+    ["decada", "abc"],
+    ["orden", "borrar"],
+  ])("un %s inválido (%s) se ignora: es la lista normal, no un error", async (clave, valor) => {
+    const canciones = preparar();
+
+    render(await buscar({ [clave]: valor }));
+
+    const pedido = canciones.mock.calls.find(([f]) => f.porPagina === 18)![0];
+    expect([pedido.pagina, pedido.decada, pedido.orden]).toEqual([1, undefined, undefined]);
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+  });
+
+  it("sin resultados lo dice y ofrece ver todo", async () => {
+    vi.spyOn(datos, "listarCanciones").mockImplementation(async (f) => (f.porPagina === 1 ? pagina([CANCION], { count: 17900 }) : pagina([])));
+    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
+
+    render(await buscar({ q: "zzzz" }));
+
+    expect(screen.getByText(/No encontramos canciones con ese criterio/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ver todas las canciones/ })).toHaveAttribute("href", "/archivo");
+  });
+
+  it("si la API no responde la página sale igual, con el aviso, sin ceros inventados", async () => {
     vi.spyOn(datos, "listarCanciones").mockResolvedValue(null);
+    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(null);
 
-    render(await PaginaArchivo());
+    render(await buscar());
 
-    expect(screen.getByRole("searchbox")).toBeInTheDocument();
-    expect(screen.queryByText(/^0 /)).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(/No pudimos cargar/);
+    expect(screen.queryByText(/^0 canciones/)).toBeNull();
+  });
+
+  it("deja explorar por artistas y por discos, y ver los juegos anteriores", async () => {
+    preparar();
+
+    render(await buscar());
+
+    expect(screen.getByRole("link", { name: "Artistas" })).toHaveAttribute("href", "/archivo/artistas");
+    expect(screen.getByRole("link", { name: "Discos" })).toHaveAttribute("href", "/archivo/discos");
+    expect(screen.getByRole("link", { name: /juegos anteriores/i })).toHaveAttribute("href", "/anteriores");
   });
 
   it("tiene título y descripción propios", () => {
@@ -154,7 +222,7 @@ describe("/archivo/discos", () => {
 
 describe("/archivo/canciones", () => {
   it("busca canciones y distingue las que se llaman igual por su artista y disco", async () => {
-    const listar = vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION, { ...CANCION, id: 6, artist: { id: 8, name: "Los Traidores" }, album: { id: 13, name: "Noches", year: 1988, genre: "Rock" } }]));
+    const listar = vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION, { ...CANCION, id: 6, artist: { id: 8, name: "Los Traidores" }, album: { id: 13, name: "Noches", year: 1988, genre: "Rock", cover_art_url: "" } }]));
 
     render(await PaginaCanciones({ searchParams: buscaParams({ q: "luna negra", artista: "7" }) }));
 
@@ -223,7 +291,7 @@ describe("fichas", () => {
 
   it("la canción lista las otras que se llaman igual (de otros artistas o discos), sin repetirse a sí misma", async () => {
     vi.spyOn(datos, "fichaDeCancion").mockResolvedValue({ ...CANCION, played_on: [] });
-    vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION, { ...CANCION, id: 6, artist: { id: 8, name: "Los Traidores" }, album: { id: 13, name: "Noches", year: 1988, genre: "Rock" } }]));
+    vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION, { ...CANCION, id: 6, artist: { id: 8, name: "Los Traidores" }, album: { id: 13, name: "Noches", year: 1988, genre: "Rock", cover_art_url: "" } }]));
 
     render(await FichaCancion({ params: ficha("5-luna-negra") }));
 

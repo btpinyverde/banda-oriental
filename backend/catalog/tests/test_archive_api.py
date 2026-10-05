@@ -224,6 +224,42 @@ class TestSongs:
     def test_the_list_never_includes_titles_made_only_of_symbols(self, client, data):
         assert "- ..." not in titles(get(client, "/songs/", page_size=50))
 
+    def test_it_can_be_ordered_by_year_artist_or_title(self, client, data):
+        order = lambda sort: [(s["title"], s["album"]["year"]) for s in get(client, "/songs/", sort=sort, page_size=50).json()["results"]]  # noqa: E731
+
+        assert [y for _, y in order("newest")] == sorted((y for _, y in order("newest")), reverse=True)
+        assert order("newest")[0] == ("Luna negra", 2004)
+        assert [y for _, y in order("oldest")] == sorted(y for _, y in order("oldest"))
+        assert order("oldest")[0][1] == 1966
+        artists = [s["artist"]["name"] for s in get(client, "/songs/", sort="artist", page_size=50).json()["results"]]
+        assert artists == sorted(artists)
+        titles = [t for t, _ in order("title")]
+        assert titles == sorted(titles)
+        assert get(client, "/songs/", sort="inventado").status_code == 400
+
+    def test_a_song_with_no_year_goes_last_in_both_year_orders(self, client, data):
+        sin_anio = Album.objects.create(mbid="al-s", name="Sin año", artist=data["drexler"])
+        Song.objects.create(mbid="s-sin", title="Sin año", album=sin_anio)
+
+        for sort in ("newest", "oldest"):
+            rows = get(client, "/songs/", sort=sort, page_size=50).json()["results"]
+            assert rows[-1]["album"]["year"] is None
+
+    def test_a_search_still_puts_the_exact_title_first_whatever_the_order(self, client, data):
+        Song.objects.create(mbid="s-x", title="Luna negra de ayer", album=data["vaiven"])
+
+        rows = get(client, "/songs/", q="luna negra", sort="oldest").json()["results"]
+
+        assert rows[0]["title"] == "Luna negra"
+
+    def test_each_song_carries_the_cover_of_its_record_or_an_empty_one(self, client, data):
+        Album.objects.filter(pk=data["vaiven"].pk).update(cover_art_url="https://img/vaiven.jpg")
+
+        rows = {(s["title"], s["album"]["name"]): s for s in get(client, "/songs/", page_size=50).json()["results"]}
+
+        assert rows[("Luna negra", "Vaivén")]["album"]["cover_art_url"] == "https://img/vaiven.jpg"
+        assert rows[("Luna negra", "Noches")]["album"]["cover_art_url"] == ""
+
     def test_each_song_has_its_artist_and_record_so_equal_titles_can_be_told_apart(self, client, data):
         body = get(client, "/songs/", q="luna negra").json()
 
