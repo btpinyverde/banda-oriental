@@ -16,6 +16,12 @@ class IpThrottle(SimpleRateThrottle):
 
     scope = "global"
 
+    def allow_request(self, request, view):
+        # Views that carry their own, higher limit (the Battle's polling: a bar's phones share one address) opt out.
+        if getattr(view, "skip_global_throttle", False):
+            return True
+        return super().allow_request(request, view)
+
     def get_cache_key(self, request, view):
         return self.cache_format % {"scope": self.scope, "ident": client_ip(request)}
 
