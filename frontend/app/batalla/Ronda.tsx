@@ -23,6 +23,9 @@ const faltan = (iso: string, ahoraMs: number) => Math.max(0, Math.ceil((Date.par
 export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) {
   const ronda = sala.round;
   const organiza = sala.role === "host";
+  const modoAnfitrion = sala.audio_mode === "host";
+  // La música suena en este dispositivo si es el del anfitrión (modo anfitrión) o el de un jugador (cada uno con el suyo).
+  const suena = organiza ? modoAnfitrion : !modoAnfitrion;
   const [, setLatido] = useState(0);
   const [enviadaEn, setEnviadaEn] = useState<number | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -45,23 +48,23 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
   // Va cargando el audio de la ronda (la que viene o la actual) para que suene apenas abra.
   useEffect(() => {
     const el = audio.current;
-    if (!el || organiza || !url || el.dataset.url === url) return;
+    if (!el || !suena || !url || el.dataset.url === url) return;
     el.dataset.url = url;
     el.src = url;
     el.load();
-  }, [audio, organiza, url]);
+  }, [audio, suena, url]);
 
   // Suena apenas abre la ronda y se corta cuando cierra.
   useEffect(() => {
     const el = audio.current;
-    if (!el || organiza || !url) return;
+    if (!el || !suena || !url) return;
     if (empezo && !termino) {
       setNecesitaToque(false);
       Promise.resolve(el.play()).catch(() => setNecesitaToque(true));
     } else if (termino) {
       el.pause();
     }
-  }, [audio, organiza, url, indice, empezo, termino]);
+  }, [audio, suena, url, indice, empezo, termino]);
 
   // Cuando se cumple el tiempo, no espera a la consulta de turno: pide el estado ya (una vez por ronda).
   useEffect(() => {
@@ -108,19 +111,23 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
       {empezo && !termino && (
         <>
           <p className="batalla__tiempo">{faltan(ronda.ends_at, ahoraMs)} s</p>
+          {suena && necesitaToque && (
+            <button type="button" className="boton boton--violeta" onClick={() => audio.current && Promise.resolve(audio.current.play()).then(() => setNecesitaToque(false)).catch(() => {})}>
+              Tocá para escuchar
+            </button>
+          )}
           {organiza ? (
-            <p className="batalla__bajada">
-              Respondieron {respondieron} de {sala.players.length}
-            </p>
+            <>
+              {modoAnfitrion && <p className="batalla__bajada">Está sonando la canción en tu pantalla.</p>}
+              <p className="batalla__bajada">
+                Respondieron {respondieron} de {sala.players.length}
+              </p>
+            </>
           ) : yaRespondio ? (
             <p className="batalla__bajada">Respuesta enviada. Esperá a que termine la ronda.</p>
           ) : (
             <>
-              {necesitaToque && (
-                <button type="button" className="boton boton--violeta" onClick={() => audio.current && Promise.resolve(audio.current.play()).then(() => setNecesitaToque(false)).catch(() => {})}>
-                  Tocá para escuchar
-                </button>
-              )}
+              {modoAnfitrion && <p className="batalla__bajada">Escuchá la canción en la pantalla del anfitrión.</p>}
               <BuscadorCanciones canciones={canciones} puedeEnviar={!enviando} enviando={enviando} alEnviar={enviar} />
               {error && (
                 <p className="batalla__error" role="alert">

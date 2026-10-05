@@ -25,3 +25,9 @@
 .batalla__tabla th, .batalla__tabla td { padding: 8px 6px; border-bottom: 1px solid #ebe7f4; }
 .batalla__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
 .batalla .boton { align-self: flex-start; }
+.batalla__opciones { display: grid; gap: 8px; margin: 0; padding: 12px 14px; border: 2px solid #ebe7f4; border-radius: 14px; }
+.batalla__opciones legend { padding: 0 6px; font-size: 14px; font-weight: 700; }
+.batalla__opciones label { display: flex; gap: 8px; align-items: center; font-size: 16px; cursor: pointer; }
+.batalla__mini { margin-left: 8px; padding: 2px 10px; border: 0; border-radius: 999px; background: var(--violeta); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.batalla__mini--no { background: #ffd9e0; color: var(--tinta); }
+.batalla__jugadores--espera li { background: var(--amarillo); }

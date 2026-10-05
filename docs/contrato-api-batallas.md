@@ -17,6 +17,15 @@ Principios: sin sockets; el servidor es la fuente de verdad del estado y del tie
 | `POST /api/battles/<code>/answer/` | jugadores | `{song_id}`. Solo con una ronda abierta. `200 {received:true}`; **no dice si acertó**. La primera respuesta de la ronda es la que vale. El organizador y los ajenos reciben 404. |
 | `GET /api/battles/mine/` | quien consulta | Las batallas en las que participó o que creó: `{battles:[{code,title,status,created_at,players_count,role,my_position}]}`, más recientes primero, máximo 50. |
 
+## Etapa 2: modos de audio y de entrada
+
+Al crear: `audio_mode` (`each` por defecto, o `host`: la música suena solo en el dispositivo de quien organiza) y `join_mode` (`open` por defecto, o `approval`).
+- `join` devuelve `{player:{name, status}}`; en `approval` el estado es `pending` hasta que quien organiza lo acepte. Los jugadores `pending`/`rejected` no juegan, no
+  rankean, no cuentan para el mínimo y solo ven `my_status`. Al empezar, los que siguen esperando pasan a `rejected`.
+- `POST /api/battles/<code>/review/` `{player_id, accept}` (organizador, solo en el lobby): acepta o rechaza; rechazar a un aceptado lo saca. 404 para cualquier otra persona.
+- El estado trae `audio_mode`, `join_mode` y, para jugadores, `my_status`. El organizador, en el lobby, ve `players:[{id,name}]` y `pending:[{id,name}]`.
+- `round.preview_url` llega solo a quien debe reproducir: a los jugadores en `each`, al organizador en `host`.
+
 ## Estado (`GET /api/battles/<code>/`)
 
 - **Quien no participó:** si la sala está en el lobby, `{joinable:true, code, title, round_count, round_seconds, players_count}`; en cualquier otro caso, **404** (igual que una sala inexistente). Los resultados de una batalla solo los ven quienes participaron o la crearon.

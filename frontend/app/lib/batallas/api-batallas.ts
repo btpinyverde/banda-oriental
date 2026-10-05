@@ -4,6 +4,8 @@ import { pedirConPase } from "../humano/pedir-con-pase";
 import { leerSesion } from "../cuenta/sesion";
 
 export interface JugadorSala {
+  /** Solo para quien organiza: sirve para aceptar, rechazar o sacar. */
+  id?: number;
   name: string;
   /** Solo para quien organiza: si ya respondió en la ronda en curso. */
   answered?: boolean;
@@ -42,6 +44,14 @@ export interface EstadoSala {
   round: { index: number; starts_at: string; ends_at: string; preview_url?: string | null; answered?: boolean } | null;
   /** Cuántos jugadores hacen falta para empezar (lo decide el servidor: 1 mientras se prueba el modo, 2 al abrirlo a todos). */
   min_players?: number;
+  /** Dónde suena la música: en cada dispositivo o solo en el de quien organiza (el anfitrión). */
+  audio_mode?: "each" | "host";
+  /** Quién puede entrar: cualquiera con el enlace o solo quienes acepte quien organiza. */
+  join_mode?: "open" | "approval";
+  /** Solo para jugadores: si ya está aceptado, si espera o si no lo aceptaron. */
+  my_status?: "accepted" | "pending" | "rejected";
+  /** Solo para quien organiza, en el lobby: quiénes esperan que los acepte. */
+  pending?: { id: number; name: string }[];
   players: JugadorSala[];
   reveal?: { song: CancionResuelta; my_answer: { correct: boolean; points: number; guessed: string | null } | null };
   ranking?: FilaRanking[];
@@ -56,6 +66,7 @@ export interface SinCambios {
 export interface SalaUnible {
   joinable: true;
   server_time: string;
+  join_mode?: "open" | "approval";
   code: string;
   title: string;
   round_count: number;
@@ -122,18 +133,26 @@ export function crearApiBatallas() {
     });
 
   return {
-    crear: async (opciones: { rondas?: number; segundos?: number; titulo?: string } = {}): Promise<SalaCreada> => {
+    crear: async (
+      opciones: { rondas?: number; segundos?: number; titulo?: string; audioMode?: "each" | "host"; joinMode?: "open" | "approval" } = {},
+    ): Promise<SalaCreada> => {
       const cuerpo = {
         ...(opciones.rondas !== undefined && { round_count: opciones.rondas }),
         ...(opciones.segundos !== undefined && { round_seconds: opciones.segundos }),
         ...(opciones.titulo?.trim() && { title: opciones.titulo.trim() }),
+        ...(opciones.audioMode && { audio_mode: opciones.audioMode }),
+        ...(opciones.joinMode && { join_mode: opciones.joinMode }),
       };
       return comoJson(await enviar("/api/battles/", cuerpo, undefined, true));
     },
 
-    unirse: async (code: string, nombre: string, hostToken?: string): Promise<{ player: { name: string } }> =>
+    unirse: async (code: string, nombre: string, hostToken?: string): Promise<{ player: { name: string; status?: string } }> =>
       // Sin comprobación humana: un bar entero entra desde la misma dirección y el pase se entrega con tope por dirección.
     comoJson(await enviar(ruta(code, "join/"), { display_name: nombre }, hostToken)),
+
+    /** Quien organiza acepta o rechaza a alguien en el lobby (rechazar a quien ya entró lo saca). */
+    revisar: async (code: string, playerId: number, aceptar: boolean, hostToken?: string): Promise<{ ok: boolean }> =>
+      comoJson(await enviar(ruta(code, "review/"), { player_id: playerId, accept: aceptar }, hostToken)),
 
     empezar: async (code: string, hostToken?: string): Promise<{ status: string }> =>
       comoJson(await enviar(ruta(code, "start/"), {}, hostToken, true)),

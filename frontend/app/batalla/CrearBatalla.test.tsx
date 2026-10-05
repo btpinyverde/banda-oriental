@@ -25,7 +25,7 @@ describe("CrearBatalla", () => {
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/batalla/ABC234"));
-    expect(crear).toHaveBeenCalledWith({ rondas: 10, segundos: 20, titulo: "" });
+    expect(crear).toHaveBeenCalledWith({ rondas: 10, segundos: 20, titulo: "", audioMode: "each", joinMode: "open" });
     expect(leerHostToken("ABC234")).toBe("secreto");
   });
 
@@ -38,7 +38,18 @@ describe("CrearBatalla", () => {
     fireEvent.change(campo(/segundos/i), { target: { value: "15" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
-    await waitFor(() => expect(crear).toHaveBeenCalledWith({ rondas: 5, segundos: 15, titulo: "Cumple de Ana" }));
+    await waitFor(() => expect(crear).toHaveBeenCalledWith({ rondas: 5, segundos: 15, titulo: "Cumple de Ana", audioMode: "each", joinMode: "open" }));
+  });
+
+  it("deja elegir que la música suene solo en la pantalla del anfitrión y aceptar a cada persona", async () => {
+    const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+    render(<CrearBatalla api={apiCon(crear)} />);
+
+    fireEvent.click(screen.getByLabelText(/solo en mi pantalla/i));
+    fireEvent.click(screen.getByLabelText(/aceptar a cada persona/i));
+    fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+
+    await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ audioMode: "host", joinMode: "approval" })));
   });
 
   it.each([

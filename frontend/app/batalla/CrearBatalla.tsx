@@ -14,6 +14,8 @@ export function CrearBatalla({ api }: { api?: ApiBatallas }) {
   const [titulo, setTitulo] = useState("");
   const [rondas, setRondas] = useState(String(RONDAS.porDefecto));
   const [segundos, setSegundos] = useState(String(SEGUNDOS.porDefecto));
+  const [audioMode, setAudioMode] = useState<"each" | "host">("each");
+  const [joinMode, setJoinMode] = useState<"open" | "approval">("open");
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
 
@@ -30,7 +32,7 @@ export function CrearBatalla({ api }: { api?: ApiBatallas }) {
     setError(null);
     setCreando(true);
     try {
-      const sala = await cliente.crear({ rondas: cantidad, segundos: duracion, titulo });
+      const sala = await cliente.crear({ rondas: cantidad, segundos: duracion, titulo, audioMode, joinMode });
       guardarHostToken(sala.code, sala.host_token);
       router.push(`/batalla/${sala.code}`);
     } catch (e) {
@@ -58,6 +60,28 @@ export function CrearBatalla({ api }: { api?: ApiBatallas }) {
           Segundos por ronda
           <input inputMode="numeric" value={segundos} onChange={(e) => setSegundos(e.target.value)} />
         </label>
+        <fieldset className="batalla__opciones">
+          <legend>¿Dónde suena la música?</legend>
+          <label>
+            <input type="radio" name="audio" checked={audioMode === "each"} onChange={() => setAudioMode("each")} />
+            En cada dispositivo
+          </label>
+          <label>
+            <input type="radio" name="audio" checked={audioMode === "host"} onChange={() => setAudioMode("host")} />
+            Solo en mi pantalla (yo pongo la música)
+          </label>
+        </fieldset>
+        <fieldset className="batalla__opciones">
+          <legend>¿Quién puede entrar?</legend>
+          <label>
+            <input type="radio" name="entrada" checked={joinMode === "open"} onChange={() => setJoinMode("open")} />
+            Cualquiera con el enlace
+          </label>
+          <label>
+            <input type="radio" name="entrada" checked={joinMode === "approval"} onChange={() => setJoinMode("approval")} />
+            Aceptar a cada persona
+          </label>
+        </fieldset>
         {error && (
           <p className="batalla__error" role="alert">
             {error}
