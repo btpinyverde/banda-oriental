@@ -3,7 +3,8 @@ import time
 from collections import Counter
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.db import connection, transaction
+from django.db.utils import InterfaceError, OperationalError
 from django.utils import timezone
 
 from catalog.deezer import DeezerError, get_album, get_artist_releases, search_artists
@@ -11,6 +12,9 @@ from catalog.matching import base_title, is_wanted_release, normalize_text, pick
 from catalog.models import Album, Artist, Song
 
 FULL_RELEASE_TYPES = {"album", "ep"}
+# A run over wifi can last hours and the cloud database sometimes closes the connection ("server closed the connection
+# unexpectedly"): the artist is retried on a new connection this many times before giving up on it for this run.
+DB_ATTEMPTS = 3
 
 
 class Command(BaseCommand):
@@ -51,23 +55,37 @@ class Command(BaseCommand):
 
         for position, artist in enumerate(artists, 1):
             self.log(f"[{position}/{len(artists)}] {artist.name}")
-            try:
-                if self.dry_run:
-                    # Todo dentro de una transacción que se descarta: se ve qué haría sin guardar nada.
-                    with transaction.atomic():
-                        self._sync_artist(artist)
-                        transaction.set_rollback(True)
-                else:
-                    # Sin transacción envolvente: cada disco se guarda al terminarlo (ver _sync_artist),
-                    # así el avance se ve en la base y no se pierde nada si se corta la corrida.
-                    self._sync_artist(artist)
-            except DeezerError as exc:
-                self.stats["artistas con error"] += 1
-                self.log(f"  ERROR, se reintenta en la próxima corrida: {exc}")
+            for attempt in range(1, DB_ATTEMPTS + 1):
+                try:
+                    self._process(artist)
+                    break
+                except DeezerError as exc:
+                    self.stats["artistas con error"] += 1
+                    self.log(f"  ERROR, se reintenta en la próxima corrida: {exc}")
+                    break
+                except (OperationalError, InterfaceError) as exc:
+                    connection.close()  # Django opens a new connection on the next query
+                    if attempt == DB_ATTEMPTS:
+                        self.stats["artistas con error"] += 1
+                        self.log(f"  ERROR: se perdió la conexión con la base {DB_ATTEMPTS} veces ({type(exc).__name__}). Se sigue con el próximo; este se toma en la próxima corrida.")
+                        break
+                    self.log(f"  Se perdió la conexión con la base ({type(exc).__name__}): reconecto y reintento ({attempt}/{DB_ATTEMPTS - 1}).")
+                    time.sleep(5 * attempt)
 
         if options["reporte"]:
             self._write_report(options["reporte"])
         self._print_summary()
+
+    def _process(self, artist):
+        if self.dry_run:
+            # Todo dentro de una transacción que se descarta: se ve qué haría sin guardar nada.
+            with transaction.atomic():
+                self._sync_artist(artist)
+                transaction.set_rollback(True)
+        else:
+            # Sin transacción envolvente: cada disco se guarda al terminarlo (ver _sync_artist),
+            # así el avance se ve en la base y no se pierde nada si se corta la corrida.
+            self._sync_artist(artist)
 
     # --- por artista -----------------------------------------------------------------------------------
 

@@ -40,6 +40,9 @@ DATABASES = {
 # truly unreachable database from blocking the worker until gunicorn kills
 # it (which would surface as a 502, not the health endpoint's own 503).
 DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 10
+# TCP keepalives: a long run from a computer (the importers) over wifi or behind a router that drops quiet connections
+# otherwise loses the connection to the cloud database ("server closed the connection unexpectedly").
+DATABASES["default"]["OPTIONS"].update(keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=5)
 
 allowed_hosts = os.environ.get("ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts.split(",") if h.strip()]
