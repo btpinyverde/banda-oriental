@@ -250,3 +250,74 @@ class TestSafety:
                 run()
 
         assert list(Album.objects.values_list("name", flat=True)) == ["Primero"]
+
+
+class TestWhenTheDatabaseConnectionDrops:
+    """From a computer over wifi, the cloud database sometimes closes the connection in the middle of a long run ("server
+    closed the connection unexpectedly"). The run must reconnect and go on, not die and leave the person starting over."""
+
+    def drop(self):
+        from django.db.utils import OperationalError
+
+        return OperationalError("server closed the connection unexpectedly")
+
+    def test_it_reconnects_and_retries_the_same_artist(self, drexler, monkeypatch):
+        from catalog.management.commands import sync_deezer
+
+        calls = {"n": 0}
+        real = sync_deezer.Command._sync_artist
+
+        def flaky(self, artist):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise TestWhenTheDatabaseConnectionDrops().drop()
+            return real(self, artist)
+
+        monkeypatch.setattr(sync_deezer.Command, "_sync_artist", flaky)
+        monkeypatch.setattr(sync_deezer.time, "sleep", lambda s: None)
+        closed = []
+        monkeypatch.setattr(sync_deezer.connection, "close", lambda: closed.append(True))
+        details = {7: album_detail(7, "Eco", [(100, "Eco")])}
+
+        with fake_deezer(releases=[release(7, "Eco")], details=details):
+            text = run()
+
+        assert calls["n"] == 2 and closed == [True]
+        assert Song.objects.filter(title="Eco").exists()
+        assert "se perdió la conexión" in text.lower() and "reintent" in text.lower()
+
+    def test_after_too_many_drops_it_gives_up_on_that_artist_and_goes_on_with_the_next(self, drexler, monkeypatch):
+        from catalog.management.commands import sync_deezer
+
+        other = Artist.objects.create(mbid="mb-other", name="Otro Artista")
+        seen = []
+
+        def always_drops_for_the_first(self, artist):
+            seen.append(artist.name)
+            if artist.pk == drexler.pk:
+                raise TestWhenTheDatabaseConnectionDrops().drop()
+
+        monkeypatch.setattr(sync_deezer.Command, "_sync_artist", always_drops_for_the_first)
+        monkeypatch.setattr(sync_deezer.time, "sleep", lambda s: None)
+        monkeypatch.setattr(sync_deezer.connection, "close", lambda: None)
+
+        with fake_deezer():
+            text = run()
+
+        assert seen.count("Jorge Drexler") == sync_deezer.DB_ATTEMPTS and "Otro Artista" in seen
+        assert "artistas con error" in text and other.pk  # the summary says one artist failed and the run finished
+        drexler.refresh_from_db()
+        assert drexler.deezer_checked_at is None  # not marked as done: the next run takes it again
+
+    def test_an_error_that_is_not_a_connection_problem_is_not_hidden(self, drexler, monkeypatch):
+        from django.db.utils import IntegrityError
+
+        from catalog.management.commands import sync_deezer
+
+        def broken(self, artist):
+            raise IntegrityError("duplicate key")
+
+        monkeypatch.setattr(sync_deezer.Command, "_sync_artist", broken)
+
+        with fake_deezer(), pytest.raises(IntegrityError):
+            run()
