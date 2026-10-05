@@ -56,7 +56,8 @@ class SongAdmin(admin.ModelAdmin):
     """Also what the day form searches in (autocomplete): the title alone is not enough to choose, so it finds by title,
     artist or record in any order and accent ("luna negra drexler vaiven"), and shows who/record/year/length."""
 
-    list_display = ("title", "artist_name", "album", "year", "duration", "times_used")
+    list_display = ("title", "artist_name", "album", "year", "duration", "times_used", "hidden")
+    list_filter = ("hidden", "hidden_reason")
     list_select_related = ("album__artist",)
     search_fields = ("title", "album__name", "album__artist__name")
     ordering = ("title", "album__artist__name", "album__year", "id")

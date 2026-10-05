@@ -21,8 +21,8 @@ MAX_QUERY_LENGTH = 100
 DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE = 20, 50
 DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT = 5, 20
 # A title with no letter or digit at all ("-", "...") cannot be searched or guessed: not for the archive either.
-READABLE = Q(title__regex=r"\w")
-READABLE_SONG = Q(songs__title__regex=r"\w")
+READABLE = Q(title__regex=r"\w") & Q(hidden=False)
+READABLE_SONG = Q(songs__title__regex=r"\w") & Q(songs__hidden=False)
 
 
 # ---------- Reading what was asked ----------
@@ -110,6 +110,9 @@ def _artist_row(artist):
 # ---------- Querysets ----------
 
 
+_READABLE_ARTIST_SONG = Q(albums__songs__title__regex=r"\w") & Q(albums__songs__hidden=False)
+
+
 def songs_queryset():
     return Song.objects.filter(READABLE).select_related("album__artist")
 
@@ -125,8 +128,8 @@ def albums_queryset():
 def artists_queryset():
     return (
         Artist.objects.annotate(
-            songs_count=Count("albums__songs", filter=Q(albums__songs__title__regex=r"\w"), distinct=True),
-            albums_count=Count("albums", filter=Q(albums__songs__title__regex=r"\w"), distinct=True),
+            songs_count=Count("albums__songs", filter=_READABLE_ARTIST_SONG, distinct=True),
+            albums_count=Count("albums", filter=_READABLE_ARTIST_SONG, distinct=True),
             first_year=Min("albums__year"),
             last_year=Max("albums__year"),
         )

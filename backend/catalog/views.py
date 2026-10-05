@@ -2,7 +2,7 @@ from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from .models import Album, Song
 
@@ -32,7 +32,11 @@ class SongListView(APIView):
     def get(self, request):
         payload = cache.get(SONGS_CACHE_KEY)
         if payload is None:
-            songs = Song.objects.select_related("album__artist").order_by("album__artist__name", "title", "id")
+            songs = (
+                Song.objects.filter(hidden=False)
+                .select_related("album__artist")
+                .order_by("album__artist__name", "title", "id")
+            )
             payload = {
                 "songs": [
                     {
@@ -68,7 +72,7 @@ class AlbumListView(APIView):
         if payload is None:
             albums = (
                 Album.objects.select_related("artist")
-                .annotate(songs_count=Count("songs"))
+                .annotate(songs_count=Count("songs", filter=Q(songs__hidden=False)))
                 .filter(songs_count__gt=0)
                 .order_by("artist__name", "year", "name", "id")
             )
