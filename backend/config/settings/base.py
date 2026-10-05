@@ -132,6 +132,7 @@ REST_FRAMEWORK = {
         "score": "10/hour",
         "name": "10/hour",
         "songs": "30/min",
+        "catalog": "60/min",  # the music archive: search and browse artists, albums and songs
         "human": "30/hour",
     },
     "EXCEPTION_HANDLER": "core.throttling.exception_handler",
