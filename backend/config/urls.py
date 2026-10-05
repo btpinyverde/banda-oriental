@@ -13,4 +13,5 @@ urlpatterns = [
     path("api/", include("catalog.urls")),
     path("api/", include("gameplay.urls")),
     path("api/", include("accounts.urls")),
+    path("api/", include("battles.urls")),
 ]

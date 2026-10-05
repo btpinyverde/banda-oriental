@@ -150,3 +150,10 @@ def get_album(album_id):
         "cover_url": raw.get("cover_xl") or raw.get("cover_big") or "",
         "tracks": [_track(t) for t in tracks],
     }
+
+
+def get_track_preview(track_id):
+    """The 30-second preview URL of a track, or None if Deezer has none. The URL is signed and expires in about
+    15 minutes, so it must never be stored."""
+    raw = _get(f"/track/{track_id}")
+    return raw.get("preview") or None

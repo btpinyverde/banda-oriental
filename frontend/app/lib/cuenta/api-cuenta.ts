@@ -9,6 +9,8 @@ export interface DatosDeCuenta {
   accepts_news: boolean;
   /** Cuándo aceptó los Términos y la Política de Privacidad, al crear la cuenta; `null` en cuentas anteriores. */
   terms_accepted_at: string | null;
+  /** Si la cuenta puede crear batallas mientras el modo se prueba (el servidor lo decide). */
+  can_create_battles?: boolean;
 }
 
 /** Cada día jugado por la cuenta, como lo devuelve `GET /api/me/history/`. */

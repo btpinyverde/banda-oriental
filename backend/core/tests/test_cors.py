@@ -29,3 +29,12 @@ def test_the_usual_headers_stay_allowed(client):
     allowed = response["Access-Control-Allow-Headers"].lower()
     assert "content-type" in allowed
     assert "x-device-id" in allowed
+
+
+@pytest.mark.django_db
+def test_the_browser_may_send_the_battle_host_token_cross_origin(client):
+    # The organizer of a battle proves it with X-Host-Token; without it allowed, every call of the organizer is blocked in production,
+    # where the site and the API live on different domains.
+    response = _preflight(client, "x-host-token")
+
+    assert "x-host-token" in response["Access-Control-Allow-Headers"].lower()

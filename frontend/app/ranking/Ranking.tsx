@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cuentasActivas } from "../lib/cuenta/activas";
 import { useSesion } from "../lib/cuenta/useSesion";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
@@ -37,7 +37,7 @@ function rotulo(ranking: RankingServidor): string {
  * posición, las mejores rachas, quiénes jugaron más canciones, las estadísticas globales y, sin sesión, la invitación a crear
  * una cuenta. Todo lo calcula y guarda el servidor.
  */
-export function Ranking() {
+export function Ranking({ selector }: { selector?: ReactNode } = {}) {
   const [periodo, setPeriodo] = useState<PeriodoRanking>("all");
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
   const [intento, setIntento] = useState(0);
@@ -86,6 +86,7 @@ export function Ranking() {
   return (
     <main className="ranking">
       <HeroDelRanking />
+      {selector}
 
       <div className="ranking__controles">
         <label className="ranking__periodo">

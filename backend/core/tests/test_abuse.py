@@ -345,3 +345,12 @@ class TestCheapToServe:
         response = api.post("/api/auth/register/", huge, format="json")
 
         assert response.status_code == 400
+
+
+def test_a_view_can_opt_out_of_the_global_limit(rf):
+    from core.throttling import IpThrottle
+
+    class V:
+        skip_global_throttle = True
+
+    assert IpThrottle().allow_request(rf.get("/"), V()) is True

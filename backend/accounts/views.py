@@ -10,6 +10,8 @@ from rest_framework.views import APIView
 
 from core.human import HasHumanPass
 
+from battles.access import can_create
+
 from .authentication import BearerTokenAuthentication
 from .claim import claim_device_games, device_id_from
 from .emails import send_already_registered, send_confirmation, send_magic_link, send_password_reset
@@ -285,6 +287,8 @@ class MeView(APIView):
             "date_joined": user.date_joined,
             "accepts_news": bool(profile and profile.news_opt_in),
             "terms_accepted_at": profile.terms_accepted_at if profile else None,
+            # So the site only shows the Battle to the accounts allowed to create one while it is being tried out.
+            "can_create_battles": can_create(user),
         }
 
     def delete(self, request):

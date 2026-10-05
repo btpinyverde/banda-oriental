@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "anymail",
     "catalog",
     "gameplay",
+    "battles",
 ]
 
 MIDDLEWARE = [
@@ -134,13 +135,17 @@ REST_FRAMEWORK = {
         "songs": "30/min",
         "catalog": "60/min",  # the music archive: search and browse artists, albums and songs
         "human": "30/hour",
+        "battle-create": "20/hour",
+        "battle-join": "600/hour",  # joining and starting; a bar joins in bursts from one address
+        "battle-answer": "1500/min",
+        "battle-state": "3000/min",  # polling: a bar's phones share one address
     },
     "EXCEPTION_HANDLER": "core.throttling.exception_handler",
 }
 
 # The frontend identifies each player with a custom X-Device-Id header. django-cors-headers only allows a fixed
 # list of headers by default, so without this the browser's preflight fails and every game call is blocked.
-CORS_ALLOW_HEADERS = (*default_headers, "x-device-id", "x-human-pass")
+CORS_ALLOW_HEADERS = (*default_headers, "x-device-id", "x-human-pass", "x-host-token")
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
@@ -151,6 +156,20 @@ CORS_ALLOWED_ORIGINS = [
 # Scoring constants live here (spec §8), never hardcoded in a view or in
 # the frontend, so they can be tuned without a frontend deploy.
 GAMEPLAY_BASE_SCORES = {1: 100, 2: 85, 3: 70, 4: 55, 5: 40, 6: 20}
+BATTLES = {
+    # Who may create battles while the mode is being tried out (env BATTLE_CREATOR_EMAILS, comma separated, lowercase compare).
+    # "*" opens it to everybody, anonymous visitors included: the switch for the public launch. Joining is always open.
+    "CREATOR_EMAILS": [e.strip().lower() for e in os.environ.get("BATTLE_CREATOR_EMAILS", "btpinyverde@gmail.com").split(",") if e.strip()],
+    "MAX_PLAYERS": 60,
+    "MIN_ROUNDS": 3,
+    "MAX_ROUNDS": 30,
+    "MIN_ROUND_SECONDS": 5,
+    "MAX_ROUND_SECONDS": 60,
+    "COUNTDOWN_SECONDS": 5,  # from "Empezar" to the first round
+    "REVEAL_SECONDS": 6,  # between rounds: the answer and the partial ranking
+    "BASE_POINTS": 100,
+    "BONUS_MAX": 50,  # extra for answering fast, falling to 0 as the round runs out
+}
 GAMEPLAY_SPEED_BONUS = {
     "max": 50,
     # Below this, a guess counts as "instant" and gets the full bonus —
