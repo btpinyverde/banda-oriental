@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from gameplay import leaderboards
-from gameplay.models import DailySong, ScoreEntry
+from gameplay.models import DailySong, GuessAttempt, PlayerStats, ScoreEntry
 
 PREFIX = "[prueba]"
 # Fixed namespace: the same test player always has the same device id, so creating twice adds nothing and deleting finds
@@ -65,11 +65,29 @@ class Command(BaseCommand):
         deleted, _ = ScoreEntry.objects.filter(user__isnull=True, device_id__in=test_device_ids()).delete()
         self.stdout.write(self.style.SUCCESS(f"Borrados {deleted} puntajes de prueba."))
 
+    def _report_gap(self):
+        """The rankings come from the saved scores, which exist only when the player taps "guardar puntaje". Someone who
+        won and did not save has attempts and stats, but is not in the ranking: this shows how many are in that case."""
+        winners = set(GuessAttempt.objects.filter(is_correct=True).values_list("user_id", "device_id", "daily_song_id"))
+        saved = set(ScoreEntry.objects.values_list("user_id", "device_id", "daily_song_id"))
+        # A game is the same whoever owns it: by account if it has one, otherwise by device.
+        key = lambda row: (row[0] if row[0] is not None else row[1], row[2])  # noqa: E731
+        won_keys = {key(r) for r in winners}
+        saved_keys = {key(r) for r in saved}
+        self.stdout.write(f"Intentos guardados: {GuessAttempt.objects.count()}")
+        self.stdout.write(f"Ganaron: {len(won_keys)} partidas")
+        self.stdout.write(f"Estadísticas de jugadores: {PlayerStats.objects.count()}")
+        missing = len(won_keys - saved_keys)
+        self.stdout.write(f"Partidas que ganaron y NO guardaron su puntaje: {missing}")
+        if missing:
+            self.stdout.write("  → esas partidas tienen estadísticas pero no entran al ranking (se arma solo con puntajes guardados).")
+
     def _report(self):
         today = timezone.localdate()
         total = ScoreEntry.objects.count()
         tests = ScoreEntry.objects.filter(user__isnull=True, device_id__in=test_device_ids()).count()
         self.stdout.write(f"\nPuntajes guardados: {total} ({tests} de prueba, {total - tests} reales)")
+        self._report_gap()
         published = list(DailySong.objects.filter(state=DailySong.PUBLISHED).order_by("-date")[:5])
         if not published:
             self.stdout.write("No hay ningún día publicado: sin canción del día nadie puede jugar ni guardar puntaje.")

@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from catalog.models import Album, Artist, Song
 from gameplay import leaderboards
-from gameplay.models import DailySong, ScoreEntry
+from gameplay.models import DailySong, GuessAttempt, PlayerStats, ScoreEntry
 
 PREFIX = "[prueba]"
 
@@ -60,6 +60,37 @@ class TestLooking:
         for period in ("day", "week", "month", "all"):
             assert period in text
         assert "Persona real" in text
+
+
+class TestWhyTheRankingCanBeEmptyWhileThereAreGames:
+    """The rankings are built from the saved scores, which exist only when the player taps "guardar puntaje". Players who
+    won without saving have attempts and stats but no row in the ranking: the report has to show that gap."""
+
+    def win(self, daily, device):
+        return GuessAttempt.objects.create(
+            device_id=device, daily_song=daily, attempt_number=1, guessed_song=daily.song, guessed_text="x", is_correct=True, feedback={}
+        )
+
+    def test_it_counts_who_won_without_saving_a_score_and_says_why_they_are_not_in_the_ranking(self, song):
+        daily = publish(song, 0)
+        self.win(daily, "saved-device")
+        real_score(daily, device="saved-device")
+        self.win(daily, "not-saved-device")
+        PlayerStats.objects.create(device_id="not-saved-device", played=1, won=1, total_score=900)
+
+        text = run()
+
+        assert "Ganaron: 2" in text
+        assert "ganaron y no guardaron su puntaje: 1" in text.lower()
+        assert "Estadísticas de jugadores: 1" in text
+        assert "no entran al ranking" in text
+
+    def test_when_everyone_who_won_saved_there_is_no_gap_to_report(self, song):
+        daily = publish(song, 0)
+        self.win(daily, "d1")
+        real_score(daily, device="d1")
+
+        assert "ganaron y no guardaron su puntaje: 0" in run().lower()
 
 
 class TestCreating:
