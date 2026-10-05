@@ -92,6 +92,6 @@ importadores las siguen reconociendo (no vuelven como nuevas). Correlo **despué
 ### Todo con un solo script
 
 `scripts/catalogo.sh <paso>` hace lo de arriba (y lo de ranking) sin armar el entorno a mano. Hace falta solo `DATABASE_URL`.
-Pasos: `reporte`, `cargar`, `deezer-prueba`, `deezer`, `limpiar`, `limpiar-aplicar`, `deshacer-limpieza`, `ranking`,
-`ranking-crear`, `ranking-borrar`. Muestra a qué base va a escribir, y los pasos que cambian datos piden confirmación.
+Pasos: `reporte`, `deezer-prueba`, `deezer`, `limpiar`, `limpiar-aplicar`, `deshacer-limpieza`, `ranking`,
+`ranking-crear`, `ranking-borrar`. La carga de MusicBrainz no está en este script: es la de `scripts/cargar-catalogo.sh`. Muestra a qué base va a escribir, y los pasos que cambian datos piden confirmación.
 

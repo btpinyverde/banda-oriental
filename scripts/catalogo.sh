@@ -6,9 +6,8 @@
 #   export DATABASE_URL='postgres://...'   # la URL de conexión de Neon
 #   ./scripts/catalogo.sh <paso>
 #
-# Pasos, en este orden:
+# Pasos, en este orden (cargar MusicBrainz NO está acá: se hace con tu propio ./scripts/cargar-catalogo.sh):
 #   reporte          mira cuánto falta (solo lectura)
-#   cargar           trae artistas, discos y canciones de MusicBrainz (se puede cortar con Ctrl+C y seguir)
 #   deezer-prueba    prueba Deezer con 20 artistas SIN guardar nada
 #   deezer           completa género, año, portada y duración desde Deezer (tarda; se puede cortar y seguir)
 #   limpiar          dice qué ocultaría (repetidas, clásica, géneros) SIN cambiar nada
@@ -51,7 +50,6 @@ confirmar() {
 
 case "$paso" in
   reporte)          manage catalog_report ;;
-  cargar)           confirmar; exec "$PYTHON" -u scripts/cargar_catalogo.py ;;
   deezer-prueba)    manage sync_deezer --dry-run --limit 20 ;;
   deezer)           confirmar; manage sync_deezer ;;
   limpiar)          manage clean_catalog --duplicadas --clasica --generos ;;
