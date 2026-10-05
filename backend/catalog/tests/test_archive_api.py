@@ -151,6 +151,16 @@ class TestArtists:
         assert rows["Jorge Drexler"]["cover_art_url"] == "https://img/eco.jpg"  # the latest one (2004)
         assert rows["Los Traidores"]["cover_art_url"] == ""  # none has a cover: empty, never invented
 
+    def test_each_artist_comes_with_its_photo_or_an_empty_one(self, client, data):
+        Artist.objects.filter(pk=data["drexler"].pk).update(picture_url="https://cdn/d.jpg")
+
+        rows = {a["name"]: a for a in get(client, "/artists/").json()["results"]}
+
+        assert rows["Jorge Drexler"]["picture_url"] == "https://cdn/d.jpg"
+        assert rows["Los Traidores"]["picture_url"] == ""
+        assert get(client, f"/artists/{data['drexler'].id}/".replace("/artists/", "/artists/")).status_code == 200
+        assert client.get(f"{BASE}/artists/{data['drexler'].id}/").json()["picture_url"] == "https://cdn/d.jpg"
+
     def test_a_record_without_cover_does_not_hide_an_older_one_that_has_it(self, client, data):
         Album.objects.filter(pk=data["vaiven"].pk).update(cover_art_url="https://img/vaiven.jpg")
 

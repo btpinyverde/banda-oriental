@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { fichaDeArtista, idDeFicha, rutaDeArtista } from "../../../lib/archivo-musical";
 import { NOMBRE } from "../../../lib/seo";
 import { FilaDeDisco } from "../../Listados";
+import { FotoDelArtista } from "../../../ui/FotoDelArtista";
 import { Marco } from "../../Marco";
 
 type Props = { params: Promise<{ ficha: string }> };
@@ -44,6 +45,7 @@ export default async function FichaDelArtista({ params }: Props) {
     <Marco>
       <p className="archivo-migas"><Link href="/archivo/artistas">← Artistas</Link></p>
       <header className="archivo-ficha">
+        <FotoDelArtista nombre={artista.name} foto={artista.picture_url} clase="archivo-ficha__foto" />
         <h1>{artista.name}</h1>
         <p className="archivo-ficha__datos">
           {[`${artista.albums.length} ${artista.albums.length === 1 ? "disco" : "discos"}`, `${artista.songs} ${artista.songs === 1 ? "canción" : "canciones"}`, anios.length ? [...new Set(anios)].join("–") : ""].filter(Boolean).join(" · ")}

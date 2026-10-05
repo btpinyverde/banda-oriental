@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buscarEnElArchivo, fichaDeArtista, filtrosDelArchivo, idDeFicha, listarArtistas, listarCanciones, listarDiscos, rutaDeArtista, rutaDeCancion, rutaDeDisco, slug } from "./archivo-musical";
 
-const ARTISTA = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "" };
+const ARTISTA = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "" };
 const respuesta = (cuerpo: unknown, estado = 200) => ({ ok: estado >= 200 && estado < 300, status: estado, json: async () => cuerpo });
 let fetchMock: ReturnType<typeof vi.fn>;
 

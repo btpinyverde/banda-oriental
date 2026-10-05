@@ -16,6 +16,8 @@ export interface ArtistaFila {
   last_year: number | null;
   /** La tapa de su disco más reciente que tenga; vacía si ninguno tiene (nunca se inventa una). */
   cover_art_url: string;
+  /** Su foto (de Deezer, por https); vacía si no tiene. */
+  picture_url: string;
 }
 
 export interface DiscoFila {

@@ -252,6 +252,33 @@ class TestSafety:
         assert list(Album.objects.values_list("name", flat=True)) == ["Primero"]
 
 
+class TestArtistPhoto:
+    def test_the_photo_of_the_matched_profile_is_saved(self, drexler):
+        candidate = {**DREXLER, "picture": "https://cdn/images/artist/abc/1000x1000.jpg"}
+
+        with fake_deezer(candidates=[candidate]):
+            run()
+
+        drexler.refresh_from_db()
+        assert drexler.picture_url == "https://cdn/images/artist/abc/1000x1000.jpg"
+
+    def test_a_photo_that_was_already_there_is_not_replaced(self, drexler):
+        Artist.objects.filter(pk=drexler.pk).update(picture_url="https://x/mia.jpg")
+
+        with fake_deezer(candidates=[{**DREXLER, "picture": "https://cdn/otra.jpg"}]):
+            run()
+
+        drexler.refresh_from_db()
+        assert drexler.picture_url == "https://x/mia.jpg"
+
+    def test_no_photo_leaves_it_empty(self, drexler):
+        with fake_deezer(candidates=[{**DREXLER, "picture": ""}]):
+            run()
+
+        drexler.refresh_from_db()
+        assert drexler.picture_url == ""
+
+
 class TestWhenTheDatabaseConnectionDrops:
     """From a computer over wifi, the cloud database sometimes closes the connection in the middle of a long run ("server
     closed the connection unexpectedly"). The run must reconnect and go on, not die and leave the person starting over."""

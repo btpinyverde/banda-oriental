@@ -52,7 +52,7 @@ export default async function Home() {
         <ModeCards />
         <ComoSeJuega />
         <ArchivoArtistas
-          artistas={(artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a) }))}
+          artistas={(artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a), foto: a.picture_url || undefined }))}
           generos={(filtros?.genres ?? []).slice(0, GENEROS_EN_LOS_CHIPS).map((g) => g.genre)}
           totalCanciones={canciones?.count ?? 0}
         />

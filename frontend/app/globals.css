@@ -1285,6 +1285,7 @@ button {
 
 /* No hay fotos de las bandas: cada artista lleva su inicial sobre un color de la marca. */
 .artista__foto { display: grid; place-items: center; }
+.artista__foto img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .artista__foto--tono-0 { background: var(--rosa); }
 .artista__foto--tono-1 { background: var(--menta); }
 .artista__foto--tono-2 { background: var(--amarillo); }

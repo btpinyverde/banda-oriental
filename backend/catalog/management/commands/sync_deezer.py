@@ -101,7 +101,11 @@ class Command(BaseCommand):
             return
 
         artist.deezer_id = chosen["id"]
-        artist.save(update_fields=["deezer_id"])
+        fields = ["deezer_id"]
+        if not artist.picture_url and chosen.get("picture"):
+            artist.picture_url = chosen["picture"]  # the photo comes with the match: one less request later
+            fields.append("picture_url")
+        artist.save(update_fields=fields)
         self.stats["artistas emparejados"] += 1
 
         releases = [r for r in get_artist_releases(chosen["id"]) if is_wanted_release(r["title"], r["record_type"])]

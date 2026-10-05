@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 const pagina = <T,>(results: T[], extra: Partial<Pagina<T>> = {}): Pagina<T> => ({ count: results.length, page: 1, pages: 1, results, ...extra });
-const ARTISTA: ArtistaFila = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "" };
+const ARTISTA: ArtistaFila = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "" };
 const DISCO: DiscoFila = { id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "Folk", release_type: "album", songs: 2, cover_art_url: "https://img/c.jpg" };
 const CANCION: CancionFila = { id: 5, title: "Luna negra", duration_seconds: 225, artist: { id: 7, name: "Jorge Drexler" }, album: { id: 12, name: "Vaivén", year: 1996, genre: "Folk" }, played_on: null };
 const FILTROS = { decades: [{ decade: 1990, albums: 3 }, { decade: 2000, albums: 5 }], genres: [{ genre: "Folk", albums: 2 }, { genre: "Rock", albums: 4 }], years: { min: 1990, max: 2009 } };
@@ -167,13 +167,26 @@ describe("/archivo/canciones", () => {
 
 describe("fichas", () => {
   it("el artista muestra sus discos y lleva a todas sus canciones", async () => {
-    vi.spyOn(datos, "fichaDeArtista").mockResolvedValue({ id: 7, name: "Jorge Drexler", songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", albums: [DISCO] });
+    vi.spyOn(datos, "fichaDeArtista").mockResolvedValue({ id: 7, name: "Jorge Drexler", songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "", albums: [DISCO] });
 
     render(await FichaArtista({ params: ficha("7-jorge-drexler") }));
 
     expect(screen.getByRole("heading", { level: 1, name: "Jorge Drexler" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Vaivén" })).toHaveAttribute("href", "/archivo/disco/12-vaiven");
     expect(screen.getByRole("link", { name: /todas sus canciones/i })).toHaveAttribute("href", "/archivo/canciones?artista=7");
+  });
+
+  it("la ficha del artista muestra su foto si la tiene, y si no, la inicial", async () => {
+    const base = { id: 7, name: "Jorge Drexler", songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", albums: [DISCO] };
+    vi.spyOn(datos, "fichaDeArtista").mockResolvedValueOnce({ ...base, picture_url: "https://cdn/d.jpg" });
+    const { unmount } = render(await FichaArtista({ params: ficha("7-jorge-drexler") }));
+    expect(screen.getByRole("img", { name: "Foto de Jorge Drexler" })).toHaveAttribute("src", "https://cdn/d.jpg");
+    unmount();
+
+    vi.spyOn(datos, "fichaDeArtista").mockResolvedValueOnce({ ...base, picture_url: "" });
+    render(await FichaArtista({ params: ficha("7-jorge-drexler") }));
+    expect(screen.queryByRole("img", { name: /Foto de/ })).toBeNull();
+    expect(document.querySelector(".artista__inicial")).toHaveTextContent("J");
   });
 
   it("el disco muestra su portada, su artista y sus canciones con la duración", async () => {
