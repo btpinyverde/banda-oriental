@@ -153,7 +153,7 @@ describe("LlamadoACuenta", () => {
     render(<LlamadoACuenta />);
 
     expect(screen.getByRole("heading", { name: /Querés aparecer en el ranking/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Crear cuenta/ })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /Crear cuenta/ })).toHaveAttribute("href", "/login?modo=crear");
   });
 });
 

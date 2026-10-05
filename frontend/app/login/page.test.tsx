@@ -22,18 +22,29 @@ describe("con las cuentas apagadas", () => {
     render(<Pagina />);
 
     expect(screen.getByText("PRÓXIMAMENTE")).toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: "Crear cuenta" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Creá una" })).toBeNull();
     expect(screen.queryByLabelText("Contraseña")).toBeNull();
   });
 });
 
 describe("con las cuentas prendidas", () => {
-  it("/login muestra el formulario", () => {
+  it("/login es una pantalla propia: el logo y el camino de vuelta, sin la barra ni el pie del sitio", async () => {
     vi.stubEnv("NEXT_PUBLIC_CUENTAS_ACTIVAS", "1");
 
     render(<PaginaLogin />);
 
-    expect(screen.getByRole("tab", { name: "Crear cuenta" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Banda Oriental, inicio" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /Volver al inicio/ })).toHaveAttribute("href", "/");
+    expect(screen.queryByRole("navigation", { name: "Principal" })).toBeNull();
     expect(screen.queryByText("PRÓXIMAMENTE")).toBeNull();
+  });
+
+  it("/login muestra el formulario para entrar", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CUENTAS_ACTIVAS", "1");
+
+    render(<PaginaLogin />);
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Iniciá sesión" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Creá una" })).toBeInTheDocument();
   });
 });

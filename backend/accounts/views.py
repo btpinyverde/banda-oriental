@@ -16,7 +16,15 @@ from .emails import send_already_registered, send_confirmation, send_magic_link,
 from .models import AuthToken, EmailChallenge, Profile
 from gameplay.models import GuessAttempt, ScoreEntry
 
-from .users import find_user, is_confirmed, mark_confirmed, matches_pending_password, record_consent, set_news_opt_in
+from .users import (
+    apply_public_name,
+    find_user,
+    is_confirmed,
+    mark_confirmed,
+    matches_pending_password,
+    record_consent,
+    set_news_opt_in,
+)
 from .limits import TOO_MANY, can_send_email, clear_login_failures, login_locked, register_login_failure
 from .serializers import (
     EmailSerializer,
@@ -75,6 +83,7 @@ class RegisterView(PublicView):
                     password_hash,
                     new_address=True,
                     accepts_news=data.validated_data["accepts_news"],
+                    public_name=data.validated_data["public_name"].strip(),
                 ),
             )
         return Response({"detail": REGISTER_DETAIL}, status=status.HTTP_202_ACCEPTED)
@@ -108,6 +117,7 @@ class ConfirmView(PublicView):
                 user.save(update_fields=["password"])
             mark_confirmed(user)
             record_consent(user, challenge.accepts_news)
+            apply_public_name(user, challenge.public_name)
         # Any other confirmation link still pending for this email is now useless; it must not work as a login.
         EmailChallenge.objects.filter(
             email=challenge.email, purpose=EmailChallenge.CONFIRM, used_at__isnull=True

@@ -67,10 +67,18 @@ class EmailChallenge(models.Model):
     # Whether the person ticked "I want news by email" when they asked for this link. It is applied to their profile
     # when the account is created or confirmed with it, not before.
     accepts_news = models.BooleanField(default=False)
+    # The username chosen when registering (a CONFIRM link): it becomes the public name of the rankings once confirmed.
+    public_name = models.CharField(max_length=50, blank=True)
 
     @classmethod
     def issue(
-        cls, email: str, purpose: str, password_hash: str = "", new_address: bool = False, accepts_news: bool = False
+        cls,
+        email: str,
+        purpose: str,
+        password_hash: str = "",
+        new_address: bool = False,
+        accepts_news: bool = False,
+        public_name: str = "",
     ) -> str:
         raw = new_token()
         cls.objects.create(
@@ -79,6 +87,7 @@ class EmailChallenge(models.Model):
             password_hash=password_hash,
             to_new_address=new_address,
             accepts_news=accepts_news,
+            public_name=public_name,
             token_hash=hash_token(raw),
             expires_at=timezone.now() + cls.LIFETIMES[purpose],
         )

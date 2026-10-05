@@ -1,7 +1,12 @@
+import re
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
+
+from gameplay.models import PlayerStats
+from gameplay.moderation import contains_banned_word
 
 User = get_user_model()
 MAX_EMAIL_LENGTH = User._meta.get_field("username").max_length  # 150: the email is the username
@@ -33,6 +38,18 @@ class StrictBoolean(serializers.Field):
 TERMS_REQUIRED = "Para crear la cuenta tenés que aceptar los Términos y la Política de Privacidad."
 
 
+class StrictText(serializers.CharField):
+    """Text and nothing else: DRF's CharField turns a number into its text, and a username is not a number."""
+
+    def to_internal_value(self, data):
+        if not isinstance(data, str):
+            self.fail("invalid")
+        return super().to_internal_value(data)
+
+
+NAME_IN_USE = "Ese nombre ya está en uso. Elegí otro."
+
+
 class RegisterSerializer(serializers.Serializer):
     email = EmailField(max_length=MAX_EMAIL_LENGTH)
     password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
@@ -40,6 +57,21 @@ class RegisterSerializer(serializers.Serializer):
     accepts_terms = StrictBoolean(error_messages={"required": TERMS_REQUIRED, "null": TERMS_REQUIRED, "invalid": TERMS_REQUIRED})
     # Optional and off by default: whether they also want news by email.
     accepts_news = StrictBoolean(required=False, default=False)
+    # Optional: the name the rankings will show. Checked now (so the person knows at once), set when the email is confirmed.
+    public_name = StrictText(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=50,
+        error_messages={"max_length": "Ese nombre es demasiado largo (máximo 50 caracteres).", "invalid": "Nombre inválido."},
+    )
+
+    def validate_public_name(self, value):
+        if re.search(r"[\x00-\x1f\x7f]", value) or contains_banned_word(value):
+            raise serializers.ValidationError("Nombre inválido.")
+        if value and PlayerStats.objects.filter(public_name__iexact=value).exists():
+            raise serializers.ValidationError(NAME_IN_USE)
+        return value
 
     def validate_accepts_terms(self, value):
         if value is not True:

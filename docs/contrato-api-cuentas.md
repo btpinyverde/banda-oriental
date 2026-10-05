@@ -74,3 +74,14 @@ Nada de la API de cuentas queda pendiente; falta el front (pantallas de entrar, 
   la elección de novedades (con su fecha); no cambia nada más de la cuenta.
 - Los correos de la cuenta (confirmar, entrar, cambiar la contraseña) se mandan siempre, sin depender de esta elección.
   Todavía no se manda ningún correo de novedades: esto solo guarda la elección.
+
+## Nombre de usuario al crear la cuenta
+
+`POST /api/auth/register/` acepta `public_name` (opcional, texto de hasta 50 caracteres): el nombre con el que se aparece en los
+rankings. Se valida al registrarse (para que la persona sepa enseguida si no se puede): `400` con "Ese nombre ya está en uso. Elegí
+otro." si ya lo tiene otro jugador (sin distinguir mayúsculas), "Nombre inválido." si trae una palabra no permitida o caracteres de
+control, o si no es texto. Un nombre vacío es lo mismo que no mandarlo. Quedan guardados en el enlace de confirmación y **se aplican
+cuando se confirma el correo**: si mientras tanto alguien lo tomó, la cuenta se crea igual sin nombre (se elige al guardar el primer
+puntaje, como siempre), y nunca pisa un nombre que la cuenta ya tenga. Si el dispositivo que crea la cuenta ya tenía otro nombre, gana el
+elegido al registrarse. No cambia lo de la respuesta: sigue siendo la misma exista o no la cuenta.
+
