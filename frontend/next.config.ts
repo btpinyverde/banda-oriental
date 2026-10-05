@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
     return [
       // Los días pasados del juego vivían en /archivo/<fecha> (ya los conoce Google); el archivo ahora es el de música.
       { source: "/archivo/:fecha(\\d{4}-\\d{2}-\\d{2})", destination: "/anteriores/:fecha", permanent: true },
+      // Las páginas de explorar el catálogo (artistas, épocas, géneros) ahora son parte del archivo de música.
+      { source: "/artistas", destination: "/archivo/artistas", permanent: true },
+      { source: "/epocas", destination: "/archivo/discos?orden=year", permanent: true },
+      { source: "/generos", destination: "/archivo/discos", permanent: true },
     ];
   },
   async rewrites() {

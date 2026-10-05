@@ -63,7 +63,7 @@ describe("BuscadorDelArchivo", () => {
   it("muestra los resultados agrupados, cada canción con artista, disco, año y duración, y todo enlaza a su ficha", async () => {
     buscar.mockResolvedValue(
       busqueda({
-        artists: { results: [{ id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004 }], total: 1 },
+        artists: { results: [{ id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "" }], total: 1 },
         albums: { results: [{ id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "Folk", release_type: "album", songs: 2, cover_art_url: "" }], total: 1 },
         songs: { results: [CANCION], total: 1 },
       }),

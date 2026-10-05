@@ -16,9 +16,9 @@ const columnas = () => [
     titulo: "Explorar",
     enlaces: [
       { href: "/archivo", etiqueta: "Archivo de música" },
-      { href: "/artistas", etiqueta: "Artistas" },
-      { href: "/epocas", etiqueta: "Épocas" },
-      { href: "/generos", etiqueta: "Géneros" },
+      { href: "/archivo/artistas", etiqueta: "Artistas" },
+      { href: "/archivo/discos", etiqueta: "Discos" },
+      { href: "/archivo/canciones", etiqueta: "Canciones" },
     ],
   },
   {

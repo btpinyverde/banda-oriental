@@ -10,4 +10,13 @@ describe("redirecciones del sitio", () => {
     // Solo fechas: lo que cuelgue de /archivo que no sea una fecha es del archivo de música y no se mueve.
     expect(regla!.source).toContain("\\d{4}-\\d{2}-\\d{2}");
   });
+
+  it("las páginas viejas de explorar (artistas, épocas y géneros) pasan de forma permanente a su lugar en el archivo", async () => {
+    const reglas = await nextConfig.redirects!();
+
+    const destino = (origen: string) => reglas.find((r) => r.source === origen);
+    expect(destino("/artistas")).toMatchObject({ destination: "/archivo/artistas", permanent: true });
+    expect(destino("/epocas")).toMatchObject({ destination: "/archivo/discos?orden=year", permanent: true });
+    expect(destino("/generos")).toMatchObject({ destination: "/archivo/discos", permanent: true });
+  });
 });

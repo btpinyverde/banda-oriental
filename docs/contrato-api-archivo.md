@@ -35,8 +35,10 @@ Un solo buscador para todo. `limit` (1 a 20, por defecto 5) es por grupo.
   "songs":   { "results": [ {canción} ], "total": 3 } }
 ```
 
-### `GET /api/catalog/artists/` · `?q=` `?letter=` (una letra, sin tildes ni mayúsculas) · orden alfabético
-Artista: `{ "id", "name", "albums", "songs", "first_year", "last_year" }`.
+### `GET /api/catalog/artists/` · `?q=` `?letter=` (una letra, sin tildes ni mayúsculas) · `?sort=name|songs`
+Orden alfabético por defecto; `sort=songs` pone primero a los que tienen más canciones (lo usa la portada del sitio).
+Artista: `{ "id", "name", "albums", "songs", "first_year", "last_year", "cover_art_url" }`. `cover_art_url` es la tapa de su
+disco más reciente que tenga una (un disco nuevo sin tapa no tapa a uno viejo que sí la tiene); vacía si ninguno tiene.
 
 ### `GET /api/catalog/artists/<id>/`
 El artista y sus discos, por año: `{ ...artista, "albums": [ {disco} ] }`.

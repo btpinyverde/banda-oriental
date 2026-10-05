@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 const pagina = <T,>(results: T[], extra: Partial<Pagina<T>> = {}): Pagina<T> => ({ count: results.length, page: 1, pages: 1, results, ...extra });
-const ARTISTA: ArtistaFila = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004 };
+const ARTISTA: ArtistaFila = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "" };
 const DISCO: DiscoFila = { id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "Folk", release_type: "album", songs: 2, cover_art_url: "https://img/c.jpg" };
 const CANCION: CancionFila = { id: 5, title: "Luna negra", duration_seconds: 225, artist: { id: 7, name: "Jorge Drexler" }, album: { id: 12, name: "Vaivén", year: 1996, genre: "Folk" }, played_on: null };
 const FILTROS = { decades: [{ decade: 1990, albums: 3 }, { decade: 2000, albums: 5 }], genres: [{ genre: "Folk", albums: 2 }, { genre: "Rock", albums: 4 }], years: { min: 1990, max: 2009 } };
@@ -167,7 +167,7 @@ describe("/archivo/canciones", () => {
 
 describe("fichas", () => {
   it("el artista muestra sus discos y lleva a todas sus canciones", async () => {
-    vi.spyOn(datos, "fichaDeArtista").mockResolvedValue({ id: 7, name: "Jorge Drexler", songs: 3, first_year: 1996, last_year: 2004, albums: [DISCO] });
+    vi.spyOn(datos, "fichaDeArtista").mockResolvedValue({ id: 7, name: "Jorge Drexler", songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", albums: [DISCO] });
 
     render(await FichaArtista({ params: ficha("7-jorge-drexler") }));
 
