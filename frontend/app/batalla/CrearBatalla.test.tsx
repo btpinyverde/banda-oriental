@@ -99,7 +99,7 @@ describe("CrearBatalla", () => {
     it("por defecto es al azar y no manda filtros si no se tocó nada", async () => {
       const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
       montar(apiCon(crear));
-      expect(screen.getByLabelText(/al azar/i)).toBeChecked();
+      expect(screen.getByLabelText(/^al azar/i)).toBeChecked();
 
       fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
       await waitFor(() => expect(crear).toHaveBeenCalled());
@@ -164,6 +164,50 @@ describe("CrearBatalla", () => {
       fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
       expect(screen.getByRole("alert")).toHaveTextContent(/al menos una canción/i);
+      expect(crear).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("equipos", () => {
+    it("por defecto no hay equipos y no se manda nada de equipos", async () => {
+      const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+      montar(apiCon(crear));
+      expect(screen.getByLabelText(/sin equipos/i)).toBeChecked();
+      expect(screen.queryByLabelText(/cantidad de equipos/i)).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+      await waitFor(() => expect(crear).toHaveBeenCalled());
+      expect(crear.mock.calls[0][0]).not.toHaveProperty("teamMode");
+    });
+
+    it("equipos al azar: se elige la cantidad y los nombres son opcionales", async () => {
+      const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+      montar(apiCon(crear));
+
+      fireEvent.click(screen.getByLabelText(/equipos al azar/i));
+      fireEvent.change(screen.getByLabelText(/cantidad de equipos/i), { target: { value: "3" } });
+      expect(screen.getAllByLabelText(/nombre del equipo/i)).toHaveLength(3);
+      fireEvent.change(screen.getByLabelText("Nombre del equipo 1"), { target: { value: "Rojos" } });
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+
+      await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ teamMode: "random", teamCount: 3, teamNames: ["Rojos", "", ""] })));
+    });
+
+    it("armar los equipos a mano también se manda", async () => {
+      const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+      montar(apiCon(crear));
+      fireEvent.click(screen.getByLabelText(/armo yo los equipos/i));
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+      await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ teamMode: "manual", teamCount: 2 })));
+    });
+
+    it.each(["1", "7", "x"])("%s equipos se rechaza en pantalla", (valor) => {
+      const crear = vi.fn();
+      montar(apiCon(crear));
+      fireEvent.click(screen.getByLabelText(/equipos al azar/i));
+      fireEvent.change(screen.getByLabelText(/cantidad de equipos/i), { target: { value: valor } });
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+      expect(screen.getByRole("alert")).toHaveTextContent(/entre 2 y 6/);
       expect(crear).not.toHaveBeenCalled();
     });
   });

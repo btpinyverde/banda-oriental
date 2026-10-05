@@ -373,3 +373,78 @@ describe("Sala: rondas con un video de YouTube", () => {
     expect(screen.getByText(/está sonando/i)).toBeInTheDocument();
   });
 });
+
+describe("Sala: equipos", () => {
+  const EQUIPOS = [
+    { id: 11, name: "Rojos", color: "#e8508a" },
+    { id: 12, name: "Azules", color: "#3aa0e8" },
+  ];
+
+  it("quien organiza arma los equipos a mano desde el lobby", async () => {
+    guardarHostToken("ABC234", "secreto");
+    poner({
+      sala: sala({ role: "host", team_mode: "manual", teams: EQUIPOS, players: [{ id: 1, name: "Ana", team: null }, { id: 2, name: "Beto", team: 11 }] }),
+    });
+    const asignarEquipo = vi.fn().mockResolvedValue({ ok: true });
+    montar(apiCon({ asignarEquipo }));
+
+    fireEvent.change(screen.getByLabelText("Equipo de Ana"), { target: { value: "12" } });
+    await waitFor(() => expect(asignarEquipo).toHaveBeenCalledWith("ABC234", 1, 12, "secreto"));
+    fireEvent.change(screen.getByLabelText("Equipo de Beto"), { target: { value: "" } });
+    await waitFor(() => expect(asignarEquipo).toHaveBeenCalledWith("ABC234", 2, null, "secreto"));
+    expect(refrescar).toHaveBeenCalled();
+  });
+
+  it("en equipos al azar quien organiza no asigna: se avisa que se arman al empezar", () => {
+    poner({ sala: sala({ role: "host", team_mode: "random", teams: EQUIPOS, players: [{ id: 1, name: "Ana", team: null }] }) });
+    montar();
+    expect(screen.queryByLabelText("Equipo de Ana")).toBeNull();
+    expect(screen.getByText(/equipos se arman al azar/i)).toBeInTheDocument();
+  });
+
+  it("los jugadores ven en qué equipo está cada uno y cuál es el suyo", () => {
+    poner({ sala: sala({ team_mode: "manual", teams: EQUIPOS, my_team: 11, players: [{ name: "Ana", team: 11 }, { name: "Beto", team: 12 }, { name: "Caro", team: null }] }) });
+    montar();
+
+    expect(screen.getByText(/tu equipo: rojos/i)).toBeInTheDocument();
+    const lista = screen.getByRole("list", { name: /jugadores/i });
+    expect(within(lista).getByText("Ana").closest("li")).toHaveTextContent("Rojos");
+    expect(within(lista).getByText("Beto").closest("li")).toHaveTextContent("Azules");
+    expect(within(lista).getByText("Caro").closest("li")).not.toHaveTextContent(/rojos|azules/i);
+  });
+
+  it("durante la ronda el jugador ve su equipo", async () => {
+    poner({ sala: enRonda({ team_mode: "random", teams: EQUIPOS, my_team: 12 }) }, T0 + 6000);
+    montar();
+    expect(await screen.findByText(/tu equipo: azules/i)).toBeInTheDocument();
+  });
+
+  it("entre rondas y al final se ve el ranking por equipos, con el promedio de puntos", () => {
+    poner({
+      sala: enRevelacion({
+        team_mode: "random",
+        teams: EQUIPOS,
+        my_team: 11,
+        team_ranking: [
+          { position: 1, id: 12, name: "Azules", color: "#3aa0e8", members: 2, points: 100, total: 200, correct: 2 },
+          { position: 2, id: 11, name: "Rojos", color: "#e8508a", members: 2, points: 75, total: 150, correct: 1 },
+        ],
+      }),
+    });
+    montar();
+
+    const tabla = screen.getByRole("table", { name: /equipos/i });
+    const filas = within(tabla).getAllByRole("row");
+    expect(filas).toHaveLength(3);
+    expect(filas[1]).toHaveTextContent("Azules");
+    expect(filas[1]).toHaveTextContent("100");
+    expect(filas[2]).toHaveTextContent("Rojos");
+    expect(screen.getByRole("table", { name: /jugadores/i })).toBeInTheDocument(); // y debajo, las personas
+  });
+
+  it("sin equipos no hay tabla de equipos", () => {
+    poner({ sala: enRevelacion() });
+    montar();
+    expect(screen.queryByRole("table", { name: /equipos/i })).toBeNull();
+  });
+});

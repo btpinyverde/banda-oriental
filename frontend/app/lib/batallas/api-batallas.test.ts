@@ -80,6 +80,23 @@ describe("crearApiBatallas", () => {
     expect(r.suggestions[0].title).toBe("Zafar");
   });
 
+  it("crear manda los equipos si se pidieron", async () => {
+    const mock = simular(respuesta({ code: "ABC234", host_token: "t" }, 201));
+    await crearApiBatallas().crear({ teamMode: "manual", teamCount: 3, teamNames: ["Rojos", "", "Azules"] });
+    expect(ultima(mock).cuerpo).toEqual({ team_mode: "manual", team_count: 3, team_names: ["Rojos", "", "Azules"] });
+  });
+
+  it("asignarEquipo pone o saca a una persona de un equipo", async () => {
+    const mock = simular(respuesta({ ok: true }), respuesta({ ok: true }));
+    const api = crearApiBatallas();
+    await api.asignarEquipo("abc234", 7, 3, "secreto");
+    expect(ultima(mock).url).toBe("https://api.example/api/battles/ABC234/team/");
+    expect(ultima(mock).cuerpo).toEqual({ player_id: 7, team_id: 3 });
+    expect(ultima(mock).opciones.headers["X-Host-Token"]).toBe("secreto");
+    await api.asignarEquipo("abc234", 7, null, "secreto");
+    expect(ultima(mock).cuerpo).toEqual({ player_id: 7, team_id: null });
+  });
+
   it("revisar acepta o rechaza a una persona con la clave del organizador", async () => {
     const mock = simular(respuesta({ ok: true }));
     await crearApiBatallas().revisar("abc234", 7, true, "secreto");

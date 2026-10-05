@@ -56,6 +56,20 @@ export function Lobby({ sala, api, hostToken, audio, refrescar }: Props) {
     }
   }
 
+  const equipoDe = (id: number | null | undefined) => sala.teams?.find((t) => t.id === id);
+  const conEquipos = (sala.team_mode ?? "none") !== "none";
+  const miEquipo = equipoDe(sala.my_team);
+
+  async function asignar(jugadorId: number, equipoId: number | null) {
+    setError(null);
+    try {
+      await api.asignarEquipo(sala.code, jugadorId, equipoId, hostToken);
+      refrescar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos hacer el cambio. Probá de nuevo.");
+    }
+  }
+
   async function empezar() {
     desbloquearAudio(audio.current); // si la música suena acá (anfitrión), este toque la deja sonar después
     setError(null);
@@ -103,10 +117,32 @@ export function Lobby({ sala, api, hostToken, audio, refrescar }: Props) {
       )}
 
       <h2 className="batalla__subtitulo">En la sala ({sala.players.length})</h2>
-      <ul className="batalla__jugadores">
+      {conEquipos && sala.team_mode === "random" && <p className="batalla__nota">Los equipos se arman al azar cuando empiece la batalla.</p>}
+      {conEquipos && sala.team_mode === "manual" && !organiza && <p className="batalla__nota">Quien organiza arma los equipos.</p>}
+      {miEquipo && (
+        <p className="batalla__equipo" style={{ borderColor: miEquipo.color }}>
+          Tu equipo: {miEquipo.name}
+        </p>
+      )}
+      <ul className="batalla__jugadores" aria-label="Jugadores">
         {sala.players.map((j) => (
           <li key={j.name}>
             {j.name}
+            {conEquipos && equipoDe(j.team) && (
+              <span className="batalla__chapa" style={{ background: equipoDe(j.team)!.color }}>
+                {equipoDe(j.team)!.name}
+              </span>
+            )}
+            {organiza && sala.team_mode === "manual" && j.id !== undefined && (
+              <select aria-label={`Equipo de ${j.name}`} value={j.team ?? ""} onChange={(e) => asignar(j.id!, e.target.value === "" ? null : Number(e.target.value))}>
+                <option value="">Sin equipo</option>
+                {sala.teams?.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
             {organiza && j.id !== undefined && (
               <button type="button" className="batalla__mini batalla__mini--no" aria-label={`Sacar a ${j.name}`} onClick={() => revisar(j.id!, false)}>
                 Sacar

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import AnswerView, CreateView, DetailView, JoinView, MineView, PoolView, ReviewView, StartView, YoutubeView
+from .views import AnswerView, CreateView, DetailView, JoinView, MineView, PoolView, ReviewView, StartView, TeamView, YoutubeView
 
 app_name = "battles"
 
@@ -12,6 +12,7 @@ urlpatterns = [
     path("battles/<str:code>/join/", JoinView.as_view(), name="join"),
     path("battles/<str:code>/start/", StartView.as_view(), name="start"),
     path("battles/<str:code>/review/", ReviewView.as_view(), name="review"),
+    path("battles/<str:code>/team/", TeamView.as_view(), name="team"),
     path("battles/<str:code>/answer/", AnswerView.as_view(), name="answer"),
     path("battles/<str:code>/", DetailView.as_view(), name="detail"),
 ]

@@ -35,8 +35,37 @@ export function Resultados({ sala, ahora }: { sala: EstadoSala; ahora: () => num
         </p>
       )}
 
+      {sala.team_ranking && sala.team_ranking.length > 0 && (
+        <table className="batalla__tabla" aria-label="Ranking por equipos">
+          <thead>
+            <tr>
+              <th>Puesto</th>
+              <th>Equipo</th>
+              <th>Promedio</th>
+              <th>Total</th>
+              <th>Integrantes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sala.team_ranking.map((fila) => (
+              <tr key={fila.id}>
+                <td>{fila.position}</td>
+                <td>
+                  <span className="batalla__chapa" style={{ background: fila.color }}>
+                    {fila.name}
+                  </span>
+                </td>
+                <td>{fila.points}</td>
+                <td>{fila.total}</td>
+                <td>{fila.members}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
       {sala.ranking && (
-        <table className="batalla__tabla">
+        <table className="batalla__tabla" aria-label="Ranking de jugadores">
           <thead>
             <tr>
               <th>Puesto</th>

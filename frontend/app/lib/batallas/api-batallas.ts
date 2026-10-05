@@ -7,8 +7,29 @@ export interface JugadorSala {
   /** Solo para quien organiza: sirve para aceptar, rechazar o sacar. */
   id?: number;
   name: string;
+  /** El equipo (su id) si la sala juega por equipos; `null` si todavía no tiene. */
+  team?: number | null;
   /** Solo para quien organiza: si ya respondió en la ronda en curso. */
   answered?: boolean;
+}
+
+export interface Equipo {
+  id: number;
+  name: string;
+  color: string;
+}
+
+/** La posición de un equipo: su puntaje es el promedio de los puntos de sus integrantes. */
+export interface FilaEquipo {
+  position: number;
+  id: number;
+  name: string;
+  color: string;
+  members: number;
+  /** El promedio de puntos por integrante (con eso se ordena). */
+  points: number;
+  total: number;
+  correct: number;
 }
 
 export interface FilaRanking {
@@ -89,6 +110,11 @@ export interface EstadoSala {
   join_mode?: "open" | "approval";
   /** Solo para jugadores: si ya está aceptado, si espera o si no lo aceptaron. */
   my_status?: "accepted" | "pending" | "rejected";
+  team_mode?: "none" | "random" | "manual";
+  teams?: Equipo[];
+  /** Solo para jugadores: el equipo (id) en el que está. */
+  my_team?: number | null;
+  team_ranking?: FilaEquipo[];
   /** Solo para quien organiza, en el lobby: quiénes esperan que los acepte. */
   pending?: { id: number; name: string }[];
   players: JugadorSala[];
@@ -182,6 +208,9 @@ export function crearApiBatallas() {
         modoDeCanciones?: "random" | "list";
         filtros?: FiltrosAzar;
         lista?: ItemDeLista[];
+        teamMode?: "none" | "random" | "manual";
+        teamCount?: number;
+        teamNames?: string[];
       } = {},
     ): Promise<SalaCreada> => {
       const cuerpo = {
@@ -193,6 +222,7 @@ export function crearApiBatallas() {
         ...(opciones.modoDeCanciones && { songs_mode: opciones.modoDeCanciones }),
         ...(opciones.filtros && { filters: opciones.filtros }),
         ...(opciones.lista && { playlist: opciones.lista }),
+        ...(opciones.teamMode && opciones.teamMode !== "none" && { team_mode: opciones.teamMode, team_count: opciones.teamCount, team_names: opciones.teamNames }),
       };
       return comoJson(await enviar("/api/battles/", cuerpo, undefined, true));
     },
@@ -200,6 +230,10 @@ export function crearApiBatallas() {
     unirse: async (code: string, nombre: string, hostToken?: string): Promise<{ player: { name: string; status?: string } }> =>
       // Sin comprobación humana: un bar entero entra desde la misma dirección y el pase se entrega con tope por dirección.
     comoJson(await enviar(ruta(code, "join/"), { display_name: nombre }, hostToken)),
+
+    /** Quien organiza pone a una persona en un equipo (o la saca con `null`). Solo en salas con equipos armados a mano. */
+    asignarEquipo: async (code: string, playerId: number, teamId: number | null, hostToken?: string): Promise<{ ok: boolean }> =>
+      comoJson(await enviar(ruta(code, "team/"), { player_id: playerId, team_id: teamId }, hostToken)),
 
     /** Cuántas canciones tiene un segmento, para ver si alcanza antes de crear la sala. */
     pool: async (filtros: FiltrosAzar): Promise<number> =>

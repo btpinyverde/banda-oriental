@@ -104,6 +104,11 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
       <p className="batalla__ronda">
         Ronda {ronda.index + 1} de {sala.round_count}
       </p>
+      {!organiza && sala.teams?.find((t) => t.id === sala.my_team) && (
+        <p className="batalla__equipo" style={{ borderColor: sala.teams.find((t) => t.id === sala.my_team)!.color }}>
+          Tu equipo: {sala.teams.find((t) => t.id === sala.my_team)!.name}
+        </p>
+      )}
 
       {conVideo && ronda.youtube_id && (
         <ReproductorYoutube key={ronda.index} videoId={ronda.youtube_id} inicio={ronda.start_seconds ?? 0} activo={empezo && !termino} alFallar={() => setVideoFallo(indice)} />
