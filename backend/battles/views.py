@@ -1,13 +1,14 @@
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authentication import BearerTokenAuthentication
 from core.human import HasHumanPass
 
-from . import services
-from .identity import get_caller, is_host
+from . import services, state
+from .identity import get_caller, is_host, player_for
 from .models import Battle
 
 
@@ -61,3 +62,33 @@ class StartView(APIView):
             raise Http404
         services.start_battle(battle)
         return Response({"status": Battle.PLAYING})
+
+
+class DetailView(APIView):
+    throttle_scope = "battle-state"
+    skip_global_throttle = True  # polling: a bar's phones share one address and have their own, higher limit
+    authentication_classes = [BearerTokenAuthentication]
+
+    def get(self, request, code):
+        caller = get_caller(request)
+        battle = get_object_or_404(Battle, code=code.upper())
+        data = state.build_state(battle, caller, request.headers.get("X-Host-Token", ""), request.query_params.get("since", ""), timezone.now())
+        if data is None:
+            raise Http404
+        return Response(data)
+
+
+class AnswerView(APIView):
+    throttle_scope = "battle-answer"
+    authentication_classes = [BearerTokenAuthentication]
+
+    def post(self, request, code):
+        caller = get_caller(request)
+        battle = get_object_or_404(Battle, code=code.upper())
+        if is_host(battle, caller, request.headers.get("X-Host-Token", "")):
+            raise Http404  # whoever organizes does not play
+        player = player_for(battle, caller)
+        if player is None:
+            raise Http404
+        services.submit_answer(battle, player, request.data.get("song_id"), timezone.now())
+        return Response({"received": True})

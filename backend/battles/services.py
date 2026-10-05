@@ -2,7 +2,7 @@ import re
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import F
+from django.db.models import Count, F, Q, Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -10,9 +10,9 @@ from catalog.models import Song
 from gameplay.moderation import contains_banned_word
 
 from .identity import is_host, player_for
-from .models import Battle, BattlePlayer, BattleRound
+from .models import Battle, BattleAnswer, BattlePlayer, BattleRound
 from .previews import preview_url
-from .timeline import build_schedule
+from .timeline import build_schedule, phase_at
 
 NAME_TAKEN = "Ese nombre ya está en la sala. Elegí otro."
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
@@ -111,3 +111,44 @@ def start_battle(battle, now=None):
         BattleRound.objects.bulk_create(
             [BattleRound(battle=battle, index=i, song=song, starts_at=a, ends_at=b) for i, (song, (a, b)) in enumerate(zip(songs, schedule))]
         )
+    battle.refresh_from_db(fields=["status", "started_at", "version"])
+
+
+def submit_answer(battle, player, song_id, now):
+    """Records the player's answer for the open round, timed by the server's clock. The first answer stands."""
+    if battle.status != Battle.PLAYING:
+        raise ValidationError({"detail": "La batalla no está en juego."})
+    rounds = list(battle.rounds.all())
+    phase = phase_at(rounds, now, settings.BATTLES["REVEAL_SECONDS"])
+    if phase.name != "playing":
+        raise ValidationError({"detail": "No hay una ronda abierta."})
+    current = rounds[phase.index]
+    try:
+        guessed = Song.objects.get(pk=song_id)
+    except (Song.DoesNotExist, ValueError, TypeError):
+        raise ValidationError({"detail": "Canción no encontrada."})
+    cfg = settings.BATTLES
+    correct = guessed.pk == current.song_id
+    points = 0
+    if correct:
+        elapsed = (now - current.starts_at).total_seconds()
+        points = cfg["BASE_POINTS"] + round(cfg["BONUS_MAX"] * (1 - elapsed / battle.round_seconds))
+    try:
+        with transaction.atomic():
+            answer = BattleAnswer.objects.create(round=current, player=player, song_guessed=guessed, correct=correct, received_at=now, points=points)
+    except IntegrityError:
+        return BattleAnswer.objects.get(round=current, player=player)  # the first answer stands
+    Battle.objects.filter(pk=battle.pk).update(version=F("version") + 1)
+    return answer
+
+
+def ranking(battle):
+    """The battle's ranking: points, then hits, then name. Points are the sum of the answers, never stored on the player."""
+    rows = [
+        {"name": p.display_name, "points": p.total or 0, "correct": p.hits or 0}
+        for p in battle.players.annotate(total=Sum("answers__points"), hits=Count("answers", filter=Q(answers__correct=True)))
+    ]
+    rows.sort(key=lambda r: (-r["points"], -r["correct"], r["name"].lower()))
+    for position, row in enumerate(rows, start=1):
+        row["position"] = position
+    return rows
