@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 # name -> AAC bitrate. "high" is what `url` points at; "low" is for slow connections and data saving.
 VARIANT_BITRATES = {"high": "128k", "low": "64k"}
-ENCODING_TIMEOUT_SECONDS = 120
+# Generous: it runs in the background, and the free server is slow (several minutes for a full-length song is possible).
+ENCODING_TIMEOUT_SECONDS = 900
 
 
 class AudioError(Exception):
@@ -52,21 +53,22 @@ def encode_variants(data: bytes) -> dict[str, bytes]:
     with tempfile.TemporaryDirectory() as folder:
         source = Path(folder) / "source"
         source.write_bytes(data)
+        # One pass: the input is decoded once and both versions are written (half the work of two runs).
+        command = [executable, "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", str(source)]
+        targets = {}
         for name, bitrate in VARIANT_BITRATES.items():
-            target = Path(folder) / f"{name}.m4a"
-            command = [
-                executable, "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-                "-i", str(source),
-                "-vn", "-map_metadata", "-1",
-                "-c:a", "aac", "-b:a", bitrate, "-ar", "44100",
-                "-movflags", "+faststart",
-                str(target),
+            targets[name] = Path(folder) / f"{name}.m4a"
+            command += [
+                "-map", "0:a:0", "-vn", "-map_metadata", "-1",
+                "-c:a", "aac", "-b:a", bitrate, "-ar", "44100", "-movflags", "+faststart",
+                str(targets[name]),
             ]  # fmt: skip
-            try:
-                subprocess.run(command, check=True, capture_output=True, timeout=ENCODING_TIMEOUT_SECONDS)
-            except subprocess.CalledProcessError as error:
-                raise AudioError(error.stderr.decode(errors="replace").strip() or "ffmpeg falló.") from error
-            except subprocess.TimeoutExpired as error:
-                raise AudioError("ffmpeg tardó demasiado.") from error
+        try:
+            subprocess.run(command, check=True, capture_output=True, timeout=ENCODING_TIMEOUT_SECONDS)
+        except subprocess.CalledProcessError as error:
+            raise AudioError(error.stderr.decode(errors="replace").strip() or "ffmpeg falló.") from error
+        except subprocess.TimeoutExpired as error:
+            raise AudioError("ffmpeg tardó demasiado.") from error
+        for name, target in targets.items():
             results[name] = target.read_bytes()
     return results

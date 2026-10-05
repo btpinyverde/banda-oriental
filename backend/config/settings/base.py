@@ -103,6 +103,8 @@ STORAGES["stems"] = {
 
 # ffmpeg converts the uploaded stems (gameplay/audio.py). Empty = the system one, or the one bundled with imageio-ffmpeg.
 FFMPEG_BINARY = os.environ.get("FFMPEG_BINARY", "")
+# The conversion of an uploaded stem runs in a background thread so the upload request is not held up (gameplay/jobs.py).
+STEM_CONVERSION_BACKGROUND = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

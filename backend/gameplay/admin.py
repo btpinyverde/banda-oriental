@@ -18,7 +18,7 @@ class StemInline(admin.TabularInline):
             return "Se generan al guardar"
         if obj.audio_high and obj.audio_low:
             return "Listas (alta y liviana)"
-        return "Faltan: se sirve el original. Corré `manage.py encode_stems`"
+        return "En proceso (o faltan): mientras tanto suena el original. Si pasa un rato, corré `manage.py encode_stems`"
 
     def get_formset(self, request, obj=None, **kwargs):
         # InlineModelAdmin.get_formset() never reads validate_min/
