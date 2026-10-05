@@ -18,7 +18,7 @@ describe("la portada: Explorá el archivo con datos reales", () => {
     return artistas;
   };
 
-  it("muestra a los artistas con más canciones, con su tapa, y cada uno lleva a su ficha", async () => {
+  it("muestra a los artistas con más canciones, con sus años, y cada uno lleva a su ficha", async () => {
     const artistas = preparar();
 
     render(await Home());
@@ -26,8 +26,9 @@ describe("la portada: Explorá el archivo con datos reales", () => {
     expect(artistas).toHaveBeenCalledWith(expect.objectContaining({ orden: "songs" }));
     const carrusel = screen.getByRole("region", { name: "Explorá el archivo" });
     expect(within(carrusel).getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
-    expect(within(carrusel).getByRole("img", { name: /Jorge Drexler/ })).toHaveAttribute("src", "https://img/d.jpg");
+    expect(within(carrusel).queryByRole("img", { name: /Jorge Drexler/ })).toBeNull(); // no hay fotos de las bandas
     expect(within(carrusel).getByText("120 canciones")).toBeInTheDocument();
+    expect(within(carrusel).getAllByText("2000").length).toBeGreaterThan(0);
   });
 
   it("la bajada usa el total real de canciones y los géneros son los del catálogo", async () => {
