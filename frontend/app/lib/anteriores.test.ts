@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { esFechaValida, obtenerDia, obtenerDias } from "./archivo";
+import { esFechaValida, obtenerDia, obtenerDias } from "./anteriores";
 
 beforeEach(() => vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.example/"));
 afterEach(() => {

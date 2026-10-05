@@ -10,6 +10,12 @@ const destinoApi = process.env.API_PROXY_TARGET?.replace(/\/+$/, "");
 const nextConfig: NextConfig = {
   // Django exige la barra final (/api/songs/): sin esto Next la quita con una redirección y se rompe.
   ...(destinoApi && { skipTrailingSlashRedirect: true }),
+  async redirects() {
+    return [
+      // Los días pasados del juego vivían en /archivo/<fecha> (ya los conoce Google); el archivo ahora es el de música.
+      { source: "/archivo/:fecha(\\d{4}-\\d{2}-\\d{2})", destination: "/anteriores/:fecha", permanent: true },
+    ];
+  },
   async rewrites() {
     if (!destinoApi) return [];
     return [

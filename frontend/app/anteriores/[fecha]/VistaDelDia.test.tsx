@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { DetalleDelDia } from "../../lib/archivo";
+import type { DetalleDelDia } from "../../lib/anteriores";
 import { VistaDelDia } from "./VistaDelDia";
 
 afterEach(cleanup);
@@ -41,10 +41,10 @@ describe("VistaDelDia", () => {
     expect(screen.queryByRole("link", { name: /Instagram/ })).toBeNull();
   });
 
-  it("lleva de vuelta al archivo y a jugar el diario", () => {
+  it("lleva de vuelta a los juegos anteriores y a jugar el diario", () => {
     render(<VistaDelDia dia={detalle()} />);
 
-    expect(screen.getByRole("link", { name: /Volver al archivo/ })).toHaveAttribute("href", "/archivo");
+    expect(screen.getByRole("link", { name: /Volver a los juegos anteriores/ })).toHaveAttribute("href", "/anteriores");
     expect(screen.getByRole("link", { name: /Jugar el diario/ })).toHaveAttribute("href", "/jugar");
   });
 });
