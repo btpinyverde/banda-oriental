@@ -145,7 +145,7 @@ REST_FRAMEWORK = {
 
 # The frontend identifies each player with a custom X-Device-Id header. django-cors-headers only allows a fixed
 # list of headers by default, so without this the browser's preflight fails and every game call is blocked.
-CORS_ALLOW_HEADERS = (*default_headers, "x-device-id", "x-human-pass")
+CORS_ALLOW_HEADERS = (*default_headers, "x-device-id", "x-human-pass", "x-host-token")
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()

@@ -27,6 +27,7 @@ def test_a_player_sees_it_with_the_final_position(client, running, clock):
     client.get(reverse("battles:detail", args=[running.code]), HTTP_X_DEVICE_ID=D2)  # the poll that closes it
     rows = mine(client, D2)
     assert rows[0]["role"] == "player" and rows[0]["status"] == "finished" and rows[0]["my_position"] == 1
+    assert rows[0]["players_count"] == 2  # everybody in the room, not only the caller's own row
     assert mine(client, D3)[0]["my_position"] == 2
 
 

@@ -160,7 +160,10 @@ def my_battles(caller):
         scope = Q(host_user=caller.user) | Q(players__user=caller.user)
     else:
         scope = Q(host_device_id=caller.device_id, host_user__isnull=True) | Q(players__device_id=caller.device_id, players__user__isnull=True)
-    battles = Battle.objects.filter(scope).distinct().annotate(players_count=Count("players", distinct=True)).order_by("-created_at", "-id")[:50]
+    # The ids first and the count after: filtering through the players and counting through them in the same query would count
+    # only the caller's own row.
+    mine_ids = Battle.objects.filter(scope).values("pk")
+    battles = Battle.objects.filter(pk__in=mine_ids).annotate(players_count=Count("players")).order_by("-created_at", "-id")[:50]
     out = []
     for b in battles:
         mine = player_for(b, caller)
