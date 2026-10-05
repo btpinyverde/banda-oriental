@@ -79,7 +79,7 @@ def test_a_stranger_sees_only_the_lobby_basics(client, db):
     b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST, title="Cumple")
     body = get(client, b, STRANGER).json()
     assert body.pop("server_time")  # so the device can tell the offset of its clock from the first poll
-    assert body == {"joinable": True, "code": b.code, "title": "Cumple", "round_count": 3, "round_seconds": 10, "players_count": 0}
+    assert body == {"joinable": True, "code": b.code, "title": "Cumple", "round_count": 3, "round_seconds": 10, "join_mode": "open", "players_count": 0}
 
 
 def test_lobby_lists_the_players_for_members(client, db):

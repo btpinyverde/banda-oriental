@@ -32,6 +32,8 @@ class CreateView(APIView):
             round_count=request.data.get("round_count"),
             round_seconds=request.data.get("round_seconds"),
             title=request.data.get("title"),
+            audio_mode=request.data.get("audio_mode"),
+            join_mode=request.data.get("join_mode"),
         )
         return Response(
             {"code": battle.code, "host_token": battle.host_token, "round_count": battle.round_count, "round_seconds": battle.round_seconds, "title": battle.title},
@@ -53,7 +55,7 @@ class JoinView(APIView):
         player, created = services.join_battle(
             battle, caller, request.data.get("display_name"), request.headers.get("X-Host-Token", "")
         )
-        return Response({"player": {"name": player.display_name}}, status=201 if created else 200)
+        return Response({"player": {"name": player.display_name, "status": player.status}}, status=201 if created else 200)
 
 
 class StartView(APIView):
@@ -95,7 +97,7 @@ class AnswerView(APIView):
         if is_host(battle, caller, request.headers.get("X-Host-Token", "")):
             raise Http404  # whoever organizes does not play
         player = player_for(battle, caller)
-        if player is None:
+        if player is None or player.status != player.ACCEPTED:
             raise Http404
         services.submit_answer(battle, player, request.data.get("song_id"), timezone.now())
         return Response({"received": True})
@@ -108,3 +110,16 @@ class MineView(APIView):
 
     def get(self, request):
         return Response({"battles": services.my_battles(get_caller(request))})
+
+
+class ReviewView(APIView):
+    throttle_scope = "battle-join"
+    authentication_classes = [BearerTokenAuthentication]
+
+    def post(self, request, code):
+        caller = get_caller(request)
+        battle = lobby_battle_or_404(code)
+        if not is_host(battle, caller, request.headers.get("X-Host-Token", "")):
+            raise Http404
+        services.review_player(battle, request.data.get("player_id"), request.data.get("accept"))
+        return Response({"ok": True})

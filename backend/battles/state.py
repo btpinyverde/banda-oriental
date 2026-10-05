@@ -7,7 +7,7 @@ from gameplay.views import song_payload
 from . import services
 from .access import min_players
 from .identity import is_host, player_for
-from .models import Battle, BattleAnswer
+from .models import Battle, BattleAnswer, BattlePlayer
 from .previews import preview_url
 from .timeline import phase_at
 
@@ -36,7 +36,30 @@ def build_state(battle, caller, token, since, now):
             "title": battle.title,
             "round_count": battle.round_count,
             "round_seconds": battle.round_seconds,
-            "players_count": battle.players.count(),
+            "join_mode": battle.join_mode,
+            "players_count": battle.players.filter(status=BattlePlayer.ACCEPTED).count(),
+        }
+
+    if player is not None and player.status != BattlePlayer.ACCEPTED:
+        # Waiting or turned away: only his own status, nothing about the room or its rounds.
+        phase_name = "lobby" if battle.status == Battle.LOBBY else "finished"
+        return {
+            "changed": True,
+            "server_time": now.isoformat(),
+            "key": f"{battle.version}.{player.status}",
+            "code": battle.code,
+            "title": battle.title,
+            "role": "player",
+            "my_status": player.status,
+            "status": battle.status,
+            "round_count": battle.round_count,
+            "round_seconds": battle.round_seconds,
+            "phase": {"name": phase_name, "index": 0},
+            "round": None,
+            "players": [],
+            "audio_mode": battle.audio_mode,
+            "join_mode": battle.join_mode,
+            "min_players": min_players(),
         }
 
     rounds, phase = [], None
@@ -68,14 +91,21 @@ def build_state(battle, caller, token, since, now):
         "phase": {"name": phase_name, "index": phase_index},
         "round": None,
         "min_players": min_players(),
+        "audio_mode": battle.audio_mode,
+        "join_mode": battle.join_mode,
     }
+    if player is not None:
+        data["my_status"] = player.status
 
     # In the round being played the host sees who answered; a player only sees whether he did.
     played = rounds[phase_index] if phase and phase.name in ("playing", "reveal") else None
     answered_ids = set(BattleAnswer.objects.filter(round=played).values_list("player_id", flat=True)) if played else set()
+    accepted = list(battle.players.filter(status=BattlePlayer.ACCEPTED))
     data["players"] = [
-        {"name": p.display_name, **({"answered": p.pk in answered_ids} if host else {})} for p in battle.players.all()
+        {"name": p.display_name, **({"id": p.pk, "answered": p.pk in answered_ids} if host else {})} for p in accepted
     ]
+    if host and battle.status == Battle.LOBBY:
+        data["pending"] = [{"id": p.pk, "name": p.display_name} for p in battle.players.filter(status=BattlePlayer.PENDING)]
 
     if phase is not None and phase.name != "finished":
         # While playing (or counting down) the current round; between rounds the next one, so the device can preload its audio.
@@ -83,8 +113,10 @@ def build_state(battle, caller, token, since, now):
         shown = upcoming if phase.name == "reveal" else rounds[phase.index]
         if shown is not None:
             data["round"] = {"index": shown.index, "starts_at": shown.starts_at.isoformat(), "ends_at": shown.ends_at.isoformat()}
-            if player is not None:
+            # The music reaches whoever is meant to play it: every player, or only the organizer when he is the host.
+            if (host and battle.audio_mode == Battle.HOST) or (player is not None and battle.audio_mode == Battle.EACH):
                 data["round"]["preview_url"] = preview_url(shown.song)
+            if player is not None:
                 data["round"]["answered"] = BattleAnswer.objects.filter(round=shown, player=player).exists()
 
     if phase is not None and phase.name in ("reveal", "finished"):
