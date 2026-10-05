@@ -43,6 +43,9 @@ export function CrearBatalla({
   const [filtros, setFiltros] = useState<FiltrosAzar>(SIN_FILTROS);
   const [cantidad, setCantidad] = useState<number | null>(null);
   const [lista, setLista] = useState<ItemConDatos[]>([]);
+  const [equipos, setEquipos] = useState<"none" | "random" | "manual">("none");
+  const [cantidadDeEquipos, setCantidadDeEquipos] = useState("2");
+  const [nombresDeEquipos, setNombresDeEquipos] = useState<string[]>([]);
   const [generos, setGeneros] = useState<string[]>([]);
   const [canciones, setCanciones] = useState<CancionCatalogo[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,14 @@ export function CrearBatalla({
     if (!Number.isInteger(duracion) || duracion < SEGUNDOS.min || duracion > SEGUNDOS.max) {
       return setError(`Los segundos por ronda tienen que ser entre ${SEGUNDOS.min} y ${SEGUNDOS.max}.`);
     }
+    const cantidadEquipos = Number(cantidadDeEquipos);
+    if (equipos !== "none" && (!Number.isInteger(cantidadEquipos) || cantidadEquipos < 2 || cantidadEquipos > 6)) {
+      return setError("Los equipos tienen que ser entre 2 y 6.");
+    }
+    const conEquipos =
+      equipos === "none"
+        ? {}
+        : { teamMode: equipos, teamCount: cantidadEquipos, teamNames: Array.from({ length: cantidadEquipos }, (_, i) => nombresDeEquipos[i] ?? "") };
     let opciones: Parameters<ApiBatallas["crear"]>[0];
     if (modoDeCanciones === "list") {
       if (lista.length === 0) return setError("Armá la lista con al menos una canción.");
@@ -105,6 +116,7 @@ export function CrearBatalla({
         titulo,
         audioMode,
         joinMode,
+        ...conEquipos,
         modoDeCanciones: "list",
         lista: lista.map(({ song_id, source, youtube_id, start_seconds }) => ({ song_id, source, ...(source === "youtube" && { youtube_id, start_seconds }) })),
       };
@@ -116,7 +128,7 @@ export function CrearBatalla({
       if (hayFiltros(filtros) && cantidad !== null && cantidad < cantidadPedida) {
         return setError(`Con esos filtros no alcanzan las canciones: hay ${cantidad} y pediste ${cantidadPedida}. Ampliá la selección o pedí menos.`);
       }
-      opciones = { rondas: cantidadPedida, segundos: duracion, titulo, audioMode, joinMode, ...(hayFiltros(filtros) && { filtros }) };
+      opciones = { rondas: cantidadPedida, segundos: duracion, titulo, audioMode, joinMode, ...conEquipos, ...(hayFiltros(filtros) && { filtros }) };
     }
     setError(null);
     setCreando(true);
@@ -204,6 +216,40 @@ export function CrearBatalla({
             <input type="radio" name="entrada" checked={joinMode === "approval"} onChange={() => setJoinMode("approval")} />
             Aceptar a cada persona
           </label>
+        </fieldset>
+        <fieldset className="batalla__opciones">
+          <legend>¿Jugar por equipos?</legend>
+          <label>
+            <input type="radio" name="equipos" checked={equipos === "none"} onChange={() => setEquipos("none")} />
+            Sin equipos
+          </label>
+          <label>
+            <input type="radio" name="equipos" checked={equipos === "random"} onChange={() => setEquipos("random")} />
+            Equipos al azar (se arman al empezar)
+          </label>
+          <label>
+            <input type="radio" name="equipos" checked={equipos === "manual"} onChange={() => setEquipos("manual")} />
+            Armo yo los equipos
+          </label>
+          {equipos !== "none" && (
+            <>
+              <label className="batalla__campo">
+                Cantidad de equipos
+                <input inputMode="numeric" value={cantidadDeEquipos} onChange={(e) => setCantidadDeEquipos(e.target.value)} />
+              </label>
+              {Array.from({ length: Number.isInteger(Number(cantidadDeEquipos)) && Number(cantidadDeEquipos) >= 2 && Number(cantidadDeEquipos) <= 6 ? Number(cantidadDeEquipos) : 0 }, (_, i) => (
+                <label key={i} className="batalla__campo">
+                  Nombre del equipo {i + 1}
+                  <input
+                    value={nombresDeEquipos[i] ?? ""}
+                    maxLength={50}
+                    placeholder={`Equipo ${i + 1}`}
+                    onChange={(e) => setNombresDeEquipos((previos) => Object.assign([...previos], { [i]: e.target.value }))}
+                  />
+                </label>
+              ))}
+            </>
+          )}
         </fieldset>
         {error && (
           <p className="batalla__error" role="alert">

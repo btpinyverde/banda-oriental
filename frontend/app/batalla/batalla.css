@@ -47,3 +47,6 @@
 .batalla__orden em { color: var(--tinta-suave); font-size: 13px; font-style: normal; }
 .batalla__video { display: grid; gap: 8px; justify-items: center; }
 .batalla__video-marco { width: 200px; height: 200px; min-width: 200px; min-height: 200px; overflow: hidden; border-radius: 12px; background: #000; }
+.batalla__equipo { margin: 0; padding: 6px 12px; border-left: 6px solid var(--violeta); border-radius: 8px; background: var(--violeta-claro); font-weight: 800; }
+.batalla__chapa { display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 999px; color: #fff; font-size: 13px; font-weight: 700; }
+.batalla__jugadores select { margin-left: 8px; height: 30px; border: 0; border-radius: 8px; font: inherit; font-size: 13px; }

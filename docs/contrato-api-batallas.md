@@ -35,6 +35,13 @@ Al crear: `songs_mode` (`random` por defecto, o `list`).
 - `POST /api/battles/youtube/` `{url}` → `{youtube_id, title, author, suggestions: [canción del catálogo]}`: lee el enlace (watch, youtu.be, shorts, embed, music.youtube) con oEmbed. Un video que no existe (oEmbed 400/404) o que oEmbed dice que no permite embeberse (401) se rechaza con 400 y el motivo. **oEmbed no detecta todos los videos con embed bloqueado** (para algunos, como el clip de «Zafar», responde 200 y el reproductor después da el error 150): por eso el sitio prueba el reproductor sobre el video al armar la lista y, si falla, deja esa canción con el preview de Deezer; y si un video falla durante la ronda, suena el preview de reserva. Las sugerencias son las canciones del catálogo que coinciden con el título.
 - `round` en el estado trae `source` y, para `youtube`, `youtube_id` y `start_seconds`, junto con `preview_url` (la reserva) y solo a quien debe reproducir (según `audio_mode`).
 
+## Etapa 4: equipos
+
+Al crear: `team_mode` (`none` por defecto, `random` o `manual`), `team_count` (2–6, obligatorio con equipos) y `team_names` (opcional, hasta uno por equipo; los vacíos toman «Equipo N»; sin repetir, sin palabras no permitidas). Cada equipo tiene un color de una paleta fija.
+- `random`: al empezar, las personas aceptadas se reparten al azar y parejo. `manual`: en el lobby, quien organiza usa `POST /api/battles/<code>/team/` `{player_id, team_id|null}` (solo organizador, solo en el lobby, solo salas `manual`, solo jugadores aceptados y equipos de esa sala; 404 para el resto); al empezar, quienes quedaron sin equipo van al equipo con menos gente.
+- Para competir por equipos tiene que haber gente en al menos dos equipos (basta con uno mientras el modo se prueba, cuando `min_players` es 1).
+- El estado trae `team_mode`, `teams: [{id, name, color}]`, `team` en cada jugador, `my_team` para jugadores y, en `reveal`/`finished`, `team_ranking: [{position, id, name, color, members, points (promedio por integrante), total, correct}]`. Los equipos sin integrantes no compiten. Se ordena por promedio, luego total, luego nombre; el ranking de personas no cambia.
+
 ## Estado (`GET /api/battles/<code>/`)
 
 - **Quien no participó:** si la sala está en el lobby, `{joinable:true, code, title, round_count, round_seconds, players_count}`; en cualquier otro caso, **404** (igual que una sala inexistente). Los resultados de una batalla solo los ven quienes participaron o la crearon.
