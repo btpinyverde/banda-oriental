@@ -71,3 +71,21 @@ corre desde tu compu contra la base de producción, como el cargador del catálo
     .venv/bin/python manage.py ranking_prueba --crear    # agrega datos de prueba
     .venv/bin/python manage.py ranking_prueba --borrar   # los quita
 
+## Completar y limpiar el catálogo
+
+Todo se corre desde tu compu contra la base de producción, con el mismo entorno que `ranking_prueba` (ver arriba). Orden:
+
+1. **Cargar lo que falta**: `scripts/cargar-catalogo.sh` (MusicBrainz) y después `manage.py sync_deezer --dry-run --limit 20`
+   para ver qué haría y `manage.py sync_deezer` de verdad. Deezer completa de los discos que ya existen el género, el año, la
+   portada y la duración (sin pisar lo que ya hay) y trae discos y canciones que falten.
+2. **Mirar cómo quedó**: `manage.py catalog_report` (solo lectura): cuántos discos sin género, año o portada, canciones sin
+   duración, artistas sin discos o sin emparejar con Deezer, repetidas, clásica y géneros escritos de varias formas.
+3. **Limpiar**: `manage.py clean_catalog --duplicadas --clasica --generos` **solo informa** (modo prueba) y da ejemplos. Con
+   `--aplicar` lo hace. Opciones: `--inferir-genero` (a un disco sin género le pone el que tiene casi todo su artista),
+   `--restaurar` (vuelve a mostrar lo que ocultó este comando; lo ocultado a mano no se toca).
+
+`clean_catalog` **no borra nada**: oculta (`Song.hidden`) las canciones repetidas (mismo artista y título en varios discos: queda
+la del disco completo más antiguo y con más datos) y las de discos de música clásica, y no toca nunca una canción de un día jugado
+o programado. Las canciones ocultas salen del buscador del juego, del archivo y de los conteos, pero siguen en la base y los
+importadores las siguen reconociendo (no vuelven como nuevas). Correlo **después** de `sync_deezer`, cuando ya esté todo cargado.
+

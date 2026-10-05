@@ -37,6 +37,11 @@ class Song(models.Model):
     title = models.CharField(max_length=255)
     album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name="songs")
     duration_seconds = models.IntegerField(null=True, blank=True)
+    # Out of the game and the archive without deleting anything (a duplicate, classical music...). Reversible, and the
+    # importers still find the song by its ids, so running them again does not bring it back as a new one.
+    hidden = models.BooleanField(default=False, db_index=True)
+    # Why: "duplicate" or "classical" when `clean_catalog` hid it (so it can undo exactly that); empty if hidden by hand.
+    hidden_reason = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
         """Enough to tell apart songs that share a title: who, which record, which year, how long. The admin picker
