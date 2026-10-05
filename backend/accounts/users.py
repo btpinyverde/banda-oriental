@@ -59,3 +59,24 @@ def set_news_opt_in(user, value: bool) -> Profile:
         profile.news_opt_in, profile.news_opt_in_at = value, timezone.now()
         profile.save(update_fields=["news_opt_in", "news_opt_in_at"])
     return profile
+
+
+def apply_public_name(user, name: str) -> None:
+    """The username chosen when registering becomes the public name of the rankings. Never replaces a name the account already
+    has, and if somebody took it since (the check at registration was a while ago) the account just has no name yet: it is
+    chosen when saving the first score, as always."""
+    from django.db import IntegrityError, transaction
+
+    from gameplay.models import PlayerStats
+
+    name = (name or "").strip()
+    if not name:
+        return
+    try:
+        with transaction.atomic():
+            row, _ = PlayerStats.objects.get_or_create(user=user)
+            if not row.public_name:
+                row.public_name = name
+                row.save(update_fields=["public_name"])
+    except IntegrityError:
+        pass

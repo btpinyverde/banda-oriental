@@ -167,7 +167,7 @@ export function LlamadoACuenta() {
         <div>
           <h2 id="llamado-titulo">¿Querés aparecer en el ranking?</h2>
           <p>Iniciá sesión para guardar tu progreso y competir con otros jugadores.</p>
-          <Link href="/login" className="boton boton--violeta">
+          <Link href="/login?modo=crear" className="boton boton--violeta">
             Crear cuenta →
           </Link>
         </div>

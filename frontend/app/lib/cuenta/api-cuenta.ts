@@ -53,9 +53,15 @@ export function crearApiCuenta() {
     // Estos tres responden siempre lo mismo (exista o no la cuenta): no devuelven nada.
     // Crear la cuenta exige aceptar los Términos y la Política de Privacidad (la casilla del formulario es obligatoria,
     // por eso se manda siempre `true`). Las novedades por correo son aparte, opcionales y apagadas por defecto.
-    registrar: async (email: string, password: string, aceptaNovedades = false): Promise<void> =>
+    // El nombre de usuario es el nombre público de los rankings; es opcional (vacío = no se manda).
+    registrar: async (email: string, password: string, aceptaNovedades = false, nombre = ""): Promise<void> =>
       sinCuerpo(
-        await enviar("/api/auth/register/", { email, password, accepts_terms: true, accepts_news: aceptaNovedades }, {}, true),
+        await enviar(
+          "/api/auth/register/",
+          { email, password, accepts_terms: true, accepts_news: aceptaNovedades, ...(nombre.trim() && { public_name: nombre.trim() }) },
+          {},
+          true,
+        ),
       ),
     // El enlace puede crear la cuenta, así que lleva la elección de novedades (los Términos se aceptan al continuar).
     pedirEnlace: async (email: string, aceptaNovedades = false): Promise<void> =>

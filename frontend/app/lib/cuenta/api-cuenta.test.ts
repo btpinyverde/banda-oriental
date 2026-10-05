@@ -109,6 +109,16 @@ describe("crearApiCuenta: lo que se acepta al crear la cuenta", () => {
     expect(ultima(mock).cuerpo).toEqual({ email: "ana@example.com", password: "una-clave-larga-1", accepts_terms: true, accepts_news: false });
   });
 
+  it("registrar manda el nombre de usuario solo si hay uno (sin espacios de más)", async () => {
+    const con = ok();
+    await crearApiCuenta().registrar("ana@example.com", "una-clave-larga-1", false, "  BrandonT ");
+    expect(ultima(con).cuerpo.public_name).toBe("BrandonT");
+
+    const sin = ok();
+    await crearApiCuenta().registrar("ana@example.com", "una-clave-larga-1", false, "   ");
+    expect(ultima(sin).cuerpo).not.toHaveProperty("public_name");
+  });
+
   it("registrar con las novedades tildadas lo manda", async () => {
     const mock = ok();
 
