@@ -9,12 +9,14 @@ import { vaciarCache } from "../lib/juego/mezcla";
 import { olvidarPase } from "../lib/humano/pase";
 import { diaDeMontevideo } from "../lib/juego/logica";
 import { borrarSesion, guardarSesion } from "../lib/cuenta/sesion";
+import { marcarTutorialVisto, tutorialVisto } from "../lib/tutorial/visto";
 
 const AUDIO = archivoFalso(...Array(300).fill(0.5));
 const AUDIOS_DEMO = Object.fromEntries([1, 2, 3, 4].map((n) => [`/demo/etapa-${n}.mp3`, AUDIO]));
 
 beforeEach(() => {
   window.localStorage.clear();
+  marcarTutorialVisto(); // el tutorial de la primera vez tiene sus propias pruebas más abajo
   vaciarCache();
   instalarAudioFalso(AUDIOS_DEMO);
 });
@@ -494,5 +496,53 @@ describe("JuegoDiario: cambio de día", () => {
 
     expect(estadoDelDia).toHaveBeenCalledTimes(2);
     expect(screen.getByText("4 oct")).toBeInTheDocument();
+  });
+});
+
+
+describe("JuegoDiario: tutorial de la primera vez", () => {
+  const SIN_VER = () => window.localStorage.removeItem("banda-oriental:tutorial-visto");
+
+  it("la primera vez en el dispositivo se ofrece el tutorial, encima del juego", async () => {
+    SIN_VER();
+    render(<JuegoDiario cliente={crearClienteDemo()} />);
+
+    expect(await screen.findByRole("dialog", { name: /Cómo se juega/ })).toBeInTheDocument();
+  });
+
+  it("al saltarlo o terminarlo se recuerda y no vuelve a aparecer solo", async () => {
+    SIN_VER();
+    const primera = render(<JuegoDiario cliente={crearClienteDemo()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Saltar" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(tutorialVisto()).toBe(true);
+
+    primera.unmount();
+    render(<JuegoDiario cliente={crearClienteDemo()} />);
+    await screen.findByText("Intento 1 de 6");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("quien ya jugó antes en este dispositivo no lo ve, aunque no lo haya visto", async () => {
+    SIN_VER();
+    window.localStorage.setItem(
+      "banda-oriental:historial",
+      JSON.stringify([{ dia: "2026-09-30", ganada: true, intentos: 3, cancion: { title: "A", artist: "B", album: "C" } }]),
+    );
+    render(<JuegoDiario cliente={crearClienteDemo()} />);
+
+    await screen.findByText("Intento 1 de 6");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("se puede volver a abrir cuando se quiera", async () => {
+    render(<JuegoDiario cliente={crearClienteDemo()} />);
+    await screen.findByText("Intento 1 de 6");
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ver el tutorial" }));
+
+    expect(screen.getByRole("dialog", { name: /Cómo se juega/ })).toBeInTheDocument();
   });
 });
