@@ -182,21 +182,23 @@ export function FormularioCuenta({ api, alEntrar, alCambiarModo, modoInicial = "
 
   if (aviso) {
     return (
-      <div className="acceso__formulario">
+      <div className="acceso__formulario acceso__formulario--aviso">
         <h1 className="acceso__titulo">Revisá tu correo</h1>
-        <p className="acceso__aviso" role="status">
-          {aviso}
-        </p>
-        <button
-          type="button"
-          className="acceso__enlace"
-          onClick={() => {
-            limpiar();
-            setContrasena("");
-          }}
-        >
-          Usar otro correo
-        </button>
+        <div className="acceso__tarjeta">
+          <p className="acceso__aviso" role="status">
+            {aviso}
+          </p>
+          <button
+            type="button"
+            className="acceso__enlace"
+            onClick={() => {
+              limpiar();
+              setContrasena("");
+            }}
+          >
+            Usar otro correo
+          </button>
+        </div>
       </div>
     );
   }
@@ -342,9 +344,12 @@ export function FormularioCuenta({ api, alEntrar, alCambiarModo, modoInicial = "
         </button>
 
         {modo === "entrar" && !olvide && (
-          <button type="button" className="acceso__enlace acceso__alternativa" onClick={() => setMetodo(metodo === "enlace" ? "contrasena" : "enlace")}>
-            {metodo === "enlace" ? "Entrar con contraseña" : "Entrar con un enlace por correo"}
-          </button>
+          <>
+            <p className="acceso__divisor">{metodo === "enlace" ? "o con tu contraseña" : "o entrá sin contraseña"}</p>
+            <button type="button" className="acceso__alternativa" onClick={() => setMetodo(metodo === "enlace" ? "contrasena" : "enlace")}>
+              {metodo === "enlace" ? "Entrar con contraseña" : "Entrar con un enlace por correo"}
+            </button>
+          </>
         )}
 
         {modo === "crear" && !olvide && (

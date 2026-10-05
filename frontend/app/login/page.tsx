@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cuentasActivas } from "../lib/cuenta/activas";
 import { PAGINA_CUENTAS_PROXIMAMENTE } from "../lib/paginas";
 import { PaginaDeContenido } from "../ui/PaginaDeContenido";
@@ -16,23 +15,10 @@ export const metadata: Metadata = {
 export default function PaginaLogin() {
   if (!cuentasActivas()) return <PaginaDeContenido pagina={PAGINA_CUENTAS_PROXIMAMENTE} />;
 
-  // Pantalla propia, sin la barra ni el pie del sitio: solo el logo y el camino de vuelta.
+  // Pantalla propia, sin la barra ni el pie del sitio: el cuadro de la escena (con el logo y el camino de vuelta) está en PantallaLogin.
   return (
     <main className="acceso">
-      <header className="acceso__barra">
-        <Link href="/" className="acceso__logo" aria-label="Banda Oriental, inicio">
-          <img src="/assets/brand-wordmark.svg" alt="Banda Oriental" width={150} height={80} />
-        </Link>
-        <Link href="/" className="acceso__volver">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M19 12H5M11 6l-6 6 6 6" />
-          </svg>
-          Volver al inicio
-        </Link>
-      </header>
-      <div className="acceso__escenario">
-        <PantallaLogin />
-      </div>
+      <PantallaLogin />
     </main>
   );
 }

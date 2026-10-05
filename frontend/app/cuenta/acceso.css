@@ -1,78 +1,132 @@
-/* ---------- Entrar / crear la cuenta (funcional; el diseño se afina después) ---------- */
+/*
+ * Entrar / crear la cuenta. La escena es un cuadro con las proporciones del diseño (743 × 995): todo lo que hay adentro (título,
+ * tarjeta, collage) mide y se ubica respecto del ancho del cuadro, así la composición se ve igual a cualquier tamaño. En celular
+ * (menos de 640 px) deja de ser un cuadro: el formulario va en una columna y el collage no se muestra.
+ * Funcional; el diseño se afina después.
+ */
 @font-face { font-family: "Caveat Brush"; src: url("/fonts/CaveatBrush-subset.ttf") format("truetype"); font-display: swap; }
 
-.acceso { position: relative; min-height: 100dvh; padding: 0 var(--gutter) 40px; overflow-x: clip; }
-.acceso__barra { display: flex; align-items: center; justify-content: space-between; max-width: 1180px; margin: 0 auto; padding: 22px 0 6px; }
-.acceso__logo img { display: block; width: 120px; height: auto; }
-.acceso__volver { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--tinta-suave); text-decoration: none; }
+.acceso { min-height: 100dvh; padding: 22px var(--gutter) 40px; background: #f1efe9; display: flex; justify-content: center; align-items: flex-start; }
+.acceso__marco { position: relative; flex: 0 1 720px; width: min(100%, 720px); aspect-ratio: 743 / 995; container-type: inline-size; border-radius: 28px; background: #fbf8f1; overflow: hidden; box-shadow: 0 10px 40px rgba(60, 40, 20, 0.08); }
+
+/* Cabecera: el logo y el camino de vuelta */
+.acceso__barra { display: contents; }
+.acceso__logo { position: absolute; z-index: 5; left: 7.8cqw; top: 4.7cqw; width: 15.6cqw; }
+.acceso__logo img { display: block; width: 100%; height: auto; }
+.acceso__volver { position: absolute; z-index: 5; right: 6cqw; top: 5.6cqw; display: inline-flex; align-items: center; gap: 0.9cqw; font-size: 1.9cqw; color: var(--tinta-suave); text-decoration: none; }
 .acceso__volver:hover { color: var(--violeta); }
 
-.acceso__escenario { position: relative; display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 32px; align-items: start; max-width: 1180px; margin: 0 auto; padding-top: 34px; }
-.acceso__formulario { display: grid; gap: 14px; align-content: start; min-width: 0; }
+/* Título, bajada y tarjeta: posiciones del diseño, una por pantalla */
+.acceso__formulario { display: contents; }
+.acceso__titulo { position: absolute; z-index: 4; left: 12cqw; top: 22.4cqw; margin: 0; font-size: 7.9cqw; font-weight: 900; line-height: 1.05; letter-spacing: -0.045em; }
+.acceso__resaltado { background: linear-gradient(transparent 62%, var(--amarillo) 62%, var(--amarillo) 90%, transparent 90%); padding: 0 0.5cqw; margin: 0 -0.5cqw; }
+.acceso__bajada { position: absolute; z-index: 4; left: 12cqw; top: 32.6cqw; width: 56cqw; margin: 0; font-size: 2.7cqw; line-height: 1.45; color: var(--tinta-suave); }
+.acceso__tarjeta { position: absolute; z-index: 3; left: 10.9cqw; top: 43.2cqw; width: 59.9cqw; min-height: 65.5cqw; box-sizing: border-box; display: flex; flex-direction: column; gap: 2.5cqw; padding: 4.2cqw 4.1cqw 3.4cqw; border-radius: 3.7cqw; background: rgba(255, 255, 255, 0.78); }
+.acceso__marco--crear .acceso__titulo { left: 11.2cqw; top: 20.6cqw; }
+.acceso__marco--crear .acceso__bajada { left: 11.2cqw; top: 31.4cqw; width: 58cqw; }
+.acceso__marco--crear .acceso__tarjeta { left: 9.8cqw; top: 40.9cqw; width: 54.6cqw; min-height: 83.6cqw; gap: 2.1cqw; }
+.acceso__formulario--aviso .acceso__tarjeta, .acceso__formulario--sesion .acceso__tarjeta { min-height: 0; gap: 2cqw; }
 
-.acceso__titulo { margin: 0; font-size: clamp(40px, 5.4vw, 64px); font-weight: 900; line-height: 1; letter-spacing: -0.045em; }
-.acceso__resaltado { background: linear-gradient(transparent 62%, var(--amarillo) 62%, var(--amarillo) 90%, transparent 90%); padding: 0 4px; margin: 0 -4px; }
-.acceso__bajada { margin: 0 0 6px; max-width: 420px; font-size: 18px; line-height: 1.45; color: var(--tinta-suave); }
-
-/* La tarjeta */
-.acceso__tarjeta { display: grid; gap: 16px; padding: 26px; border-radius: 28px; background: rgba(255, 255, 255, 0.78); box-shadow: 0 10px 34px rgba(60, 40, 120, 0.08); }
-.acceso__campo { display: grid; gap: 8px; }
-.acceso__campo label { font-size: 15px; font-weight: 600; }
-.acceso__entrada { position: relative; display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; border: 2px solid #ebe7f4; border-radius: 16px; background: #fbf9f4; color: var(--tinta-suave); }
+/* Campos */
+.acceso__campo { display: grid; gap: 1.2cqw; }
+.acceso__campo label { font-size: 2cqw; font-weight: 600; }
+.acceso__entrada { position: relative; display: flex; align-items: center; gap: 1.4cqw; height: 6.4cqw; padding: 0 2.1cqw; border: 0.27cqw solid #ebe7f4; border-radius: 1.9cqw; background: #fbf9f4; color: var(--tinta-suave); }
 .acceso__entrada:focus-within { border-color: var(--violeta); background: #fff; }
-.acceso__entrada input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 16px; color: var(--tinta); }
+.acceso__entrada input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 2.1cqw; color: var(--tinta); }
 .acceso__entrada input::placeholder { color: #9a95a6; }
-.acceso__icono { flex: none; }
-.acceso__ojo { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--tinta-suave); cursor: pointer; }
+.acceso__icono { flex: none; width: 2.5cqw; height: 2.5cqw; }
+.acceso__ojo { display: grid; place-items: center; flex: none; width: 4.2cqw; height: 4.2cqw; border: 0; border-radius: 50%; background: transparent; color: var(--tinta-suave); cursor: pointer; }
+.acceso__ojo svg { width: 2.6cqw; height: 2.6cqw; }
 .acceso__ojo:hover, .acceso__ojo[aria-pressed="true"] { color: var(--violeta); }
-.acceso__ayuda { margin: 0; font-size: 13px; line-height: 1.45; color: var(--tinta-suave); }
+.acceso__ayuda { margin: 0; font-size: 1.7cqw; line-height: 1.45; color: var(--tinta-suave); }
 .acceso__ayuda a, .acceso__legal a { color: var(--violeta); font-weight: 600; }
-.acceso__olvide { justify-self: end; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; color: var(--violeta); cursor: pointer; }
+.acceso__olvide { justify-self: end; padding: 0; border: 0; background: none; font: inherit; font-size: 1.9cqw; color: var(--violeta); cursor: pointer; }
 .acceso__olvide:hover { text-decoration: underline; }
-.acceso__casilla { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.4; cursor: pointer; }
-.acceso__casilla input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--violeta); flex: none; }
+.acceso__casilla { display: flex; gap: 1.2cqw; align-items: flex-start; font-size: 1.75cqw; line-height: 1.4; cursor: pointer; }
+.acceso__casilla input { width: 2.4cqw; height: 2.4cqw; margin: 0.1cqw 0 0; accent-color: var(--violeta); flex: none; }
 .acceso__casilla em { font-style: normal; color: var(--tinta-suave); }
 
-.acceso__enviar { display: flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 24px; border: 0; border-radius: 999px; background: var(--violeta); color: #fff; font: inherit; font-size: 17px; font-weight: 600; text-decoration: none; cursor: pointer; }
+/* Botones y textos de la tarjeta */
+.acceso__enviar { display: flex; align-items: center; justify-content: center; gap: 1.2cqw; height: 6.8cqw; padding: 0 3cqw; border: 0; border-radius: 999px; background: var(--violeta); color: #fff; font: inherit; font-size: 2.4cqw; font-weight: 500; text-decoration: none; cursor: pointer; }
+.acceso__enviar svg { width: 2.4cqw; height: 2.4cqw; }
 .acceso__enviar:hover:not(:disabled) { filter: brightness(1.06); }
 .acceso__enviar:disabled { opacity: 0.6; cursor: default; }
 .acceso__enviar--claro { background: var(--violeta-claro); color: var(--tinta); }
-.acceso__acciones { display: grid; gap: 12px; margin-top: 6px; }
+.acceso__divisor { display: flex; align-items: center; gap: 1.6cqw; margin: 0.6cqw 0 0; font-size: 1.7cqw; color: var(--tinta-suave); }
+.acceso__divisor::before, .acceso__divisor::after { content: ""; flex: 1; height: 1px; background: #e7e3ee; }
+.acceso__alternativa { height: 6.4cqw; padding: 0 2cqw; border: 0.2cqw solid #ebe7f4; border-radius: 999px; background: #fff; box-shadow: 0 0.4cqw 1.2cqw rgba(60, 40, 120, 0.06); font: inherit; font-size: 2cqw; font-weight: 500; color: var(--tinta); cursor: pointer; }
+.acceso__alternativa:hover { border-color: var(--violeta); color: var(--violeta); }
 .acceso__enlace { padding: 0; border: 0; background: none; font: inherit; color: var(--violeta); font-weight: 600; text-decoration: underline; cursor: pointer; }
-.acceso__alternativa { justify-self: center; font-size: 14px; font-weight: 500; }
-.acceso__cambio { margin: 0; text-align: center; font-size: 15px; color: var(--tinta-suave); }
-.acceso__legal { margin: 0; text-align: center; font-size: 13px; line-height: 1.5; color: var(--tinta-suave); }
-.acceso__aviso { margin: 0; padding: 16px 18px; border-radius: 18px; background: var(--violeta-claro); font-weight: 600; line-height: 1.5; }
-.acceso__error { padding: 12px 16px; border-radius: 14px; background: #ffd9e0; font-size: 14px; font-weight: 600; }
-.acceso__error p { margin: 0 0 6px; }
+.acceso__cambio { margin: auto 0 0; padding-top: 1.4cqw; text-align: center; font-size: 2cqw; color: var(--tinta-suave); }
+.acceso__legal { margin: 0.4cqw 0 0; text-align: center; font-size: 1.7cqw; line-height: 1.5; color: var(--tinta-suave); }
+.acceso__aviso { margin: 0; padding: 2.2cqw 2.4cqw; border-radius: 2.4cqw; background: var(--violeta-claro); font-size: 2cqw; font-weight: 600; line-height: 1.5; }
+.acceso__error { padding: 1.5cqw 2cqw; border-radius: 1.8cqw; background: #ffd9e0; font-size: 1.8cqw; font-weight: 600; }
+.acceso__error p { margin: 0 0 0.6cqw; }
 
-/* Collage de la derecha */
-.colage-acceso { position: relative; min-height: 660px; }
-.colage-acceso > * { position: absolute; }
-.colage-acceso__mancha-amarilla { right: 4%; top: 18%; width: 52%; }
-.colage-acceso__mancha-lila { left: 12%; bottom: 2%; width: 36%; opacity: 0.95; }
-.colage-acceso__mancha-rosa { right: -6%; bottom: 0; width: 70%; }
-.colage-acceso__flan { right: 2%; bottom: 0; width: 56%; height: auto; z-index: 2; }
-.colage-acceso__nota { display: grid; padding: 16px 22px 18px; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.16); font-family: "Caveat Brush", cursive; font-size: clamp(18px, 1.9vw, 25px); line-height: 1.12; text-transform: uppercase; color: var(--tinta); }
-.colage-acceso__nota--rosa { right: 14%; top: 4%; background: #f8bfda; transform: rotate(-9deg); }
-.colage-acceso__nota--verde { left: -4%; bottom: 3%; background: #cdf1dc; transform: rotate(-8deg); }
-.colage-acceso__nota--lila { right: 10%; top: 2%; z-index: 3; background: #d4cdf8; transform: rotate(-9deg); }
-.colage-acceso__foto { left: 12%; top: 22%; width: 46%; margin: 0; padding: 8px 8px 12px; background: #fff; box-shadow: 0 10px 28px rgba(60, 40, 20, 0.2); transform: rotate(1.5deg); }
-.colage-acceso__foto img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; object-position: 60% 40%; filter: grayscale(1) contrast(1.05); }
-.colage-acceso__estrella { left: 52%; top: 44%; width: 78px; color: var(--violeta); }
-.colage-acceso__estrella--negra { left: auto; right: 8%; bottom: 2%; top: auto; width: 56px; color: var(--tinta); }
-.colage-acceso__musica { right: 6%; top: 58%; width: 44px; height: auto; }
-.colage-acceso__flecha { left: 30%; bottom: 4%; width: 90px; height: auto; }
-.colage-acceso__casete { right: -7%; top: 33%; width: 68%; z-index: 1; transform: rotate(-9deg); filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.25)); }
-.colage-acceso__corona { right: 19%; top: 52%; width: 60px; z-index: 4; color: var(--tinta); }
-.colage-acceso__rayas { width: 34px; height: auto; }
-.colage-acceso__rayas--a { right: 2%; top: 3%; }
-.colage-acceso__rayas--b { left: 8%; top: 38%; width: 40px; }
+/* El collage: dentro del mismo cuadro, con las posiciones y tamaños del diseño (en % del cuadro) */
+.colage-acceso { position: absolute; inset: 0; pointer-events: none; }
+.colage-acceso > * { position: absolute; height: auto; }
+.colage-acceso__nota { display: grid; font-family: "Caveat Brush", cursive; text-transform: uppercase; line-height: 1.1; color: var(--tinta); box-shadow: 0 0.9cqw 2.4cqw rgba(60, 40, 20, 0.14); }
+.colage-acceso__rayas { width: 4.6%; }
 
-@media (max-width: 960px) {
-  .acceso__escenario { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
+/* Entrar */
+.colage-acceso--entrar .colage-acceso__borde-lila { z-index: 1; left: -2.4%; top: 36%; width: 8%; }
+.colage-acceso--entrar .colage-acceso__mancha-amarilla { z-index: 1; left: 85%; top: 23%; width: 24%; }
+.colage-acceso--entrar .colage-acceso__mancha-amarilla-baja { z-index: 1; left: 70%; top: 54%; width: 14%; }
+.colage-acceso--entrar .colage-acceso__mancha-lila { z-index: 1; left: 56%; top: 89%; width: 18%; }
+.colage-acceso--entrar .colage-acceso__nota--rosa { z-index: 4; left: 67%; top: 14.5%; width: 27%; box-sizing: border-box; padding: 2.2cqw 2.6cqw 2.4cqw; background: #f8bfda; font-size: 3.5cqw; transform: rotate(-13deg); }
+.colage-acceso--entrar .colage-acceso__foto { z-index: 2; left: 70.8%; top: 30%; width: 29.2%; margin: 0; padding: 0.9cqw 0.9cqw 1.4cqw; background: #fff; box-shadow: 0 1.2cqw 3cqw rgba(60, 40, 20, 0.2); transform: rotate(0.6deg); }
+.colage-acceso--entrar .colage-acceso__foto img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 58% 35%; filter: grayscale(1) contrast(1.05); }
+.colage-acceso--entrar .colage-acceso__estrella { z-index: 5; left: 90%; top: 49.5%; width: 10.8%; color: var(--violeta); }
+.colage-acceso--entrar .colage-acceso__musica { display: none; }
+/* La imagen de Flan trae su propio fondo (manchas, notas): el perro ocupa cerca de dos tercios, así que se agranda para que mida lo del diseño. */
+.colage-acceso--entrar .colage-acceso__flan { z-index: 5; left: 49.5%; top: auto; bottom: -3%; width: 58%; }
+.colage-acceso--entrar .colage-acceso__nota--verde { z-index: 4; left: 8.6%; top: 80.5%; width: 30%; box-sizing: border-box; padding: 2cqw 2.6cqw 2.2cqw; background: #cdf1dc; font-size: 3cqw; transform: rotate(-15deg); }
+.colage-acceso--entrar .colage-acceso__flecha { z-index: 4; left: 43%; top: 91.5%; width: 12%; }
+.colage-acceso--entrar .colage-acceso__rayas--a { left: 91%; top: 13.5%; }
+.colage-acceso--entrar .colage-acceso__rayas--b { left: 7%; top: 70.5%; width: 5%; }
+.colage-acceso--entrar .colage-acceso__rayas--c { left: 66%; top: 27.5%; width: 4%; }
+.colage-acceso--entrar .colage-acceso__rayas--d { left: 72%; top: 58%; width: 5.5%; }
+
+/* Crear */
+.colage-acceso--crear .colage-acceso__mancha-amarilla { z-index: 1; left: 66%; top: 31%; width: 17%; }
+.colage-acceso--crear .colage-acceso__mancha-lila { z-index: 1; left: 83%; top: 37%; width: 17%; }
+.colage-acceso--crear .colage-acceso__mancha-rosa { z-index: 1; left: 61%; top: 60%; width: 40%; }
+.colage-acceso--crear .colage-acceso__nota--lila { z-index: 4; left: 68.4%; top: 17.5%; width: 28%; box-sizing: border-box; padding: 2.2cqw 2.6cqw 2.4cqw; background: #d4cdf8; font-size: 3.3cqw; transform: rotate(-16deg); }
+.colage-acceso--crear .colage-acceso__casete { z-index: 2; left: 67.7%; top: 39.5%; width: 36%; transform: rotate(-9deg); filter: drop-shadow(0 1cqw 1.4cqw rgba(0, 0, 0, 0.28)); }
+.colage-acceso--crear .colage-acceso__flan { z-index: 5; left: 55%; top: auto; bottom: -3%; width: 55%; }
+.colage-acceso--crear .colage-acceso__corona { z-index: 6; left: 78%; top: 62%; width: 8%; color: var(--tinta); }
+.colage-acceso--crear .colage-acceso__estrella--negra { z-index: 6; left: 76.8%; top: 93%; width: 6%; color: var(--tinta); }
+.colage-acceso--crear .colage-acceso__rayas--a { left: 92%; top: 16.5%; }
+.colage-acceso--crear .colage-acceso__rayas--b { left: 66.5%; top: 41%; width: 4%; }
+.colage-acceso--crear .colage-acceso__rayas--c { left: 66%; top: 69%; width: 3.4%; }
+.colage-acceso--crear .colage-acceso__rayas--d { display: none; }
+.colage-acceso--crear .colage-acceso__borde-lila, .colage-acceso--crear .colage-acceso__musica { display: none; }
+
+/* Celular: sin cuadro ni collage, el formulario en una columna */
+@media (max-width: 640px) {
+  .acceso { padding: 0; background: #fbf8f1; }
+  .acceso__marco { flex-basis: 100%; width: 100%; aspect-ratio: auto; container-type: normal; border-radius: 0; box-shadow: none; overflow: visible; display: block; padding: 0 var(--gutter) 40px; }
+  .acceso__barra { display: flex; align-items: center; justify-content: space-between; padding: 18px 0 10px; }
+  .acceso__logo, .acceso__volver, .acceso__titulo, .acceso__bajada, .acceso__tarjeta { position: static; }
+  .acceso__logo { width: 110px; }
+  .acceso__volver { font-size: 14px; gap: 6px; }
+  .acceso__formulario { display: grid; gap: 14px; }
+  .acceso__titulo, .acceso__marco--crear .acceso__titulo { margin-top: 18px; font-size: clamp(36px, 11vw, 46px); }
+  .acceso__bajada, .acceso__marco--crear .acceso__bajada { width: auto; font-size: 17px; }
+  .acceso__tarjeta, .acceso__marco--crear .acceso__tarjeta { width: auto; min-height: 0; gap: 16px; padding: 20px 16px; border-radius: 24px; }
+  .acceso__campo label { font-size: 15px; }
+  .acceso__entrada { height: 52px; padding: 0 14px; gap: 10px; border-width: 2px; border-radius: 14px; }
+  .acceso__entrada input { font-size: 16px; }
+  .acceso__icono { width: 20px; height: 20px; }
+  .acceso__ojo { width: 32px; height: 32px; }
+  .acceso__ojo svg { width: 20px; height: 20px; }
+  .acceso__ayuda, .acceso__legal, .acceso__error { font-size: 13px; }
+  .acceso__olvide, .acceso__casilla, .acceso__cambio, .acceso__divisor { font-size: 14px; }
+  .acceso__casilla input { width: 18px; height: 18px; }
+  .acceso__enviar { height: 54px; font-size: 17px; gap: 10px; padding: 0 22px; }
+  .acceso__enviar svg { width: 18px; height: 18px; }
+  .acceso__alternativa { height: 50px; font-size: 15px; border-width: 2px; }
+  .acceso__aviso { font-size: 15px; padding: 16px; border-radius: 16px; }
   .colage-acceso { display: none; }
-}
-@media (max-width: 480px) {
-  .acceso__tarjeta { padding: 20px 16px; }
 }
