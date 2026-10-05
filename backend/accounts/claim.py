@@ -41,7 +41,23 @@ def claim_device_games(user, device_id: str | None) -> None:
                 ScoreEntry.objects.filter(daily_song_id=day, **unowned).update(user=user)
         except IntegrityError:
             continue  # another request claimed it first
+    claim_device_battles(user, device_id)
     adopt_device_stats(user, device_id)
+
+
+def claim_device_battles(user, device_id: str) -> None:
+    """The battles played or organized on this device go to the account, unless the account already plays that battle
+    (one player per person: the device's row stays as it was)."""
+    # Imported here: battles depends on gameplay, which this module also uses.
+    from battles.models import Battle, BattlePlayer
+
+    for player in BattlePlayer.objects.filter(device_id=device_id, user__isnull=True):
+        if BattlePlayer.objects.filter(battle=player.battle, user=user).exists():
+            continue
+        player.user = user
+        player.device_id = ""
+        player.save(update_fields=["user", "device_id"])
+    Battle.objects.filter(host_device_id=device_id, host_user__isnull=True).update(host_user=user, host_device_id="")
 
 
 def adopt_device_stats(user, device_id: str) -> None:

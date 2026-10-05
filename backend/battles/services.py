@@ -152,3 +152,30 @@ def ranking(battle):
     for position, row in enumerate(rows, start=1):
         row["position"] = position
     return rows
+
+
+def my_battles(caller):
+    """The battles the caller took part in or created: only those, never anybody else's."""
+    if caller.user is not None:
+        scope = Q(host_user=caller.user) | Q(players__user=caller.user)
+    else:
+        scope = Q(host_device_id=caller.device_id, host_user__isnull=True) | Q(players__device_id=caller.device_id, players__user__isnull=True)
+    battles = Battle.objects.filter(scope).distinct().annotate(players_count=Count("players", distinct=True)).order_by("-created_at", "-id")[:50]
+    out = []
+    for b in battles:
+        mine = player_for(b, caller)
+        position = None
+        if mine is not None and b.status == Battle.FINISHED:
+            position = next((r["position"] for r in ranking(b) if r["name"] == mine.display_name), None)
+        out.append(
+            {
+                "code": b.code,
+                "title": b.title,
+                "status": b.status,
+                "created_at": b.created_at.isoformat(),
+                "players_count": b.players_count,
+                "role": "player" if mine else "host",
+                "my_position": position,
+            }
+        )
+    return out

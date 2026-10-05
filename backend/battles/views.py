@@ -92,3 +92,12 @@ class AnswerView(APIView):
             raise Http404
         services.submit_answer(battle, player, request.data.get("song_id"), timezone.now())
         return Response({"received": True})
+
+
+class MineView(APIView):
+    throttle_scope = "battle-state"
+    skip_global_throttle = True
+    authentication_classes = [BearerTokenAuthentication]
+
+    def get(self, request):
+        return Response({"battles": services.my_battles(get_caller(request))})
