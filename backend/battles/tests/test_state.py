@@ -90,3 +90,14 @@ def test_lobby_lists_the_players_for_members(client, db):
     r = get(client, b, D2).json()
     assert r["status"] == "lobby" and r["phase"]["name"] == "lobby" and [p["name"] for p in r["players"]] == ["Ana"]
     assert get(client, b, HOST).json()["role"] == "host"
+
+
+def test_the_state_tells_the_minimum_of_players_to_start(client, db, settings):
+    from battles.models import BattlePlayer
+
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["alguien@x.uy"], "MIN_PLAYERS": None}
+    b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST)
+    BattlePlayer.objects.create(battle=b, device_id=D2, display_name="Ana")
+    assert get(client, b, HOST).json()["min_players"] == 1
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["*"]}
+    assert get(client, b, HOST).json()["min_players"] == 2

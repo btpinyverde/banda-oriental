@@ -160,6 +160,8 @@ BATTLES = {
     # Who may create battles while the mode is being tried out (env BATTLE_CREATOR_EMAILS, comma separated, lowercase compare).
     # "*" opens it to everybody, anonymous visitors included: the switch for the public launch. Joining is always open.
     "CREATOR_EMAILS": [e.strip().lower() for e in os.environ.get("BATTLE_CREATOR_EMAILS", "btpinyverde@gmail.com").split(",") if e.strip()],
+    # Minimum players to start (env BATTLE_MIN_PLAYERS). Empty: 1 while the mode is restricted, 2 once it is open to everybody.
+    "MIN_PLAYERS": int(os.environ["BATTLE_MIN_PLAYERS"]) if os.environ.get("BATTLE_MIN_PLAYERS", "").isdigit() else None,
     "MAX_PLAYERS": 60,
     "MIN_ROUNDS": 3,
     "MAX_ROUNDS": 30,

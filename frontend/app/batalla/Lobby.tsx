@@ -19,6 +19,8 @@ export function Lobby({ sala, api, hostToken, refrescar }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [empezando, setEmpezando] = useState(false);
   const organiza = sala.role === "host";
+  const minimo = sala.min_players ?? 2;
+  const faltaGente = sala.players.length < Math.max(1, minimo);
 
   // El origen se conoce recién en el navegador: calcularlo al renderizar rompería la hidratación.
   useEffect(() => setEnlace(`${window.location.origin}/batalla/${sala.code}`), [sala.code]);
@@ -83,10 +85,10 @@ export function Lobby({ sala, api, hostToken, refrescar }: Props) {
               {error}
             </p>
           )}
-          <button type="button" className="boton boton--violeta" onClick={empezar} disabled={sala.players.length < 2 || empezando}>
+          <button type="button" className="boton boton--violeta" onClick={empezar} disabled={faltaGente || empezando}>
             {empezando ? "Empezando…" : "Empezar"}
           </button>
-          {sala.players.length < 2 && <p className="batalla__nota">Hace falta al menos otra persona para jugar.</p>}
+          {faltaGente && <p className="batalla__nota">{minimo > 1 ? "Hace falta al menos otra persona para jugar." : "Hace falta que entre alguien para jugar."}</p>}
         </>
       ) : (
         <p className="batalla__nota">Esperando que empiece…</p>

@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from catalog.models import Song
 from gameplay.moderation import contains_banned_word
 
+from .access import min_players
 from .identity import is_host, player_for
 from .models import Battle, BattleAnswer, BattlePlayer, BattleRound
 from .previews import preview_url
@@ -98,8 +99,8 @@ def _pick_songs(count):
 
 def start_battle(battle, now=None):
     now = now or timezone.now()
-    if battle.players.count() < 2:
-        raise ValidationError({"detail": "Hace falta al menos otra persona para jugar."})
+    if battle.players.count() < min_players():
+        raise ValidationError({"detail": "Hace falta al menos otra persona para jugar." if min_players() > 1 else "Hace falta que entre alguien para jugar."})
     songs = _pick_songs(battle.round_count)
     cfg = settings.BATTLES
     schedule = build_schedule(now, battle.round_count, battle.round_seconds, cfg["COUNTDOWN_SECONDS"], cfg["REVEAL_SECONDS"])

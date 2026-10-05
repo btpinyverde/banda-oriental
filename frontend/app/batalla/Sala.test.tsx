@@ -100,6 +100,22 @@ describe("Sala: lobby", () => {
     expect(screen.getByRole("button", { name: /empezar/i })).toBeDisabled();
   });
 
+  it("si el servidor deja jugar de a uno, con 1 jugador ya se puede empezar", () => {
+    poner({ sala: sala({ role: "host", min_players: 1, players: [{ name: "Ana", answered: false }] }) });
+    montar();
+
+    expect(screen.getByRole("button", { name: /empezar/i })).toBeEnabled();
+    expect(screen.queryByText(/al menos otra persona/i)).toBeNull();
+  });
+
+  it("sin nadie en la sala no se puede empezar aunque alcance con uno", () => {
+    poner({ sala: sala({ role: "host", min_players: 1, players: [] }) });
+    montar();
+
+    expect(screen.getByRole("button", { name: /empezar/i })).toBeDisabled();
+    expect(screen.getByText(/que entre alguien/i)).toBeInTheDocument();
+  });
+
   it("con 2 jugadores el organizador empieza con su clave", async () => {
     guardarHostToken("ABC234", "secreto");
     poner({ sala: sala({ role: "host" }) });

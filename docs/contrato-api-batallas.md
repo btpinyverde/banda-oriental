@@ -12,7 +12,7 @@ Principios: sin sockets; el servidor es la fuente de verdad del estado y del tie
 |---|---|---|
 | `POST /api/battles/` | cuentas autorizadas | Crea la sala. Mientras el modo se prueba solo pueden las cuentas de `BATTLE_CREATOR_EMAILS` (por defecto, la de Brandon); el resto recibe **404**, como si la ruta no existiera. Con `BATTLE_CREATOR_EMAILS=*` puede cualquiera, también sin cuenta (el lanzamiento público). `GET /api/me/` trae `can_create_battles` para que el sitio sepa si mostrar el modo. Entrar y jugar siguen abiertos a quien tenga el código. Cuerpo opcional: `round_count` (3–30, def. 10), `round_seconds` (5–60, def. 20), `title` (≤60). Devuelve `201 {code, host_token, round_count, round_seconds, title}`. |
 | `POST /api/battles/<code>/join/` | cualquiera | Entra con `{display_name}` (1–50, único en la sala sin distinguir mayúsculas). `201 {player:{name}}`; si ya estaba, `200` con su nombre. Solo en el lobby (si no, 404). Quien organiza recibe 400. Sala llena: 400. |
-| `POST /api/battles/<code>/start/` | organizador | Sortea las canciones (con preview de Deezer), fija el cronograma y pasa a `playing`. Hacen falta ≥2 jugadores. `200 {status:"playing"}`. A cualquier otra persona: 404. |
+| `POST /api/battles/<code>/start/` | organizador | Sortea las canciones (con preview de Deezer), fija el cronograma y pasa a `playing`. Hace falta el mínimo de jugadores que dice `min_players` en el estado: 1 mientras el modo está restringido a algunas cuentas, 2 cuando se abre a todos (`BATTLE_CREATOR_EMAILS=*`); se fija con `BATTLE_MIN_PLAYERS`. `200 {status:"playing"}`. A cualquier otra persona: 404. |
 | `GET /api/battles/<code>/?since=<key>` | participantes | Estado de la sala (abajo). |
 | `POST /api/battles/<code>/answer/` | jugadores | `{song_id}`. Solo con una ronda abierta. `200 {received:true}`; **no dice si acertó**. La primera respuesta de la ronda es la que vale. El organizador y los ajenos reciben 404. |
 | `GET /api/battles/mine/` | quien consulta | Las batallas en las que participó o que creó: `{battles:[{code,title,status,created_at,players_count,role,my_position}]}`, más recientes primero, máximo 50. |
@@ -20,7 +20,7 @@ Principios: sin sockets; el servidor es la fuente de verdad del estado y del tie
 ## Estado (`GET /api/battles/<code>/`)
 
 - **Quien no participó:** si la sala está en el lobby, `{joinable:true, code, title, round_count, round_seconds, players_count}`; en cualquier otro caso, **404** (igual que una sala inexistente). Los resultados de una batalla solo los ven quienes participaron o la crearon.
-- **Participantes:** `{changed:true, server_time, key, code, title, role, status, round_count, round_seconds, phase:{name,index}, round, players, reveal?, ranking?}`.
+- **Participantes:** `{changed:true, server_time, key, code, title, role, status, round_count, round_seconds, phase:{name,index}, round, min_players, players, reveal?, ranking?}`.
   - `phase.name`: `lobby`, `countdown` (antes de la primera ronda), `playing`, `reveal` (pausa entre rondas) o `finished`.
   - `round`: en `countdown`/`playing`, la ronda actual; en `reveal`, la **siguiente** (para precargar el audio); `null` si no hay. Trae `{index, starts_at, ends_at}` y, **solo a jugadores**, `preview_url` y `answered`. El link del preview caduca en ~15 min: no se guarda.
   - `players`: `[{name}]`; al organizador se le agrega `answered` en la ronda en curso.

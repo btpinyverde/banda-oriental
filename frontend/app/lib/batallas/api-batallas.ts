@@ -40,6 +40,8 @@ export interface EstadoSala {
   round_seconds: number;
   phase: { name: NombreDeFase; index: number };
   round: { index: number; starts_at: string; ends_at: string; preview_url?: string | null; answered?: boolean } | null;
+  /** Cuántos jugadores hacen falta para empezar (lo decide el servidor: 1 mientras se prueba el modo, 2 al abrirlo a todos). */
+  min_players?: number;
   players: JugadorSala[];
   reveal?: { song: CancionResuelta; my_answer: { correct: boolean; points: number; guessed: string | null } | null };
   ranking?: FilaRanking[];

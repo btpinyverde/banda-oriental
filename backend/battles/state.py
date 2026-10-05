@@ -5,6 +5,7 @@ from django.db.models import F
 from gameplay.views import song_payload
 
 from . import services
+from .access import min_players
 from .identity import is_host, player_for
 from .models import Battle, BattleAnswer
 from .previews import preview_url
@@ -66,6 +67,7 @@ def build_state(battle, caller, token, since, now):
         "round_seconds": battle.round_seconds,
         "phase": {"name": phase_name, "index": phase_index},
         "round": None,
+        "min_players": min_players(),
     }
 
     # In the round being played the host sees who answered; a player only sees whether he did.
