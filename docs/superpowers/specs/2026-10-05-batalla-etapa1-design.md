@@ -37,7 +37,7 @@ Dentro:
 - Canciones al azar del catálogo (sin ocultas), sin repetir dentro de la sala.
 - **Cada dispositivo reproduce su propio audio** y responde ahí.
 - Puntaje por rapidez y acierto; ranking de la sala al final de cada ronda y al terminar.
-- **Ranking de batallas**, aparte del ranking del juego diario pero **en la misma pantalla** (`/ranking`): ver la sección "Ranking de batallas".
+- **Mis batallas**: en la pantalla de ranking (`/ranking`), aparte del ranking del juego diario, cada persona ve las batallas en las que participó o que creó, y el ranking de cada una. Ver la sección "Mis batallas".
 
 Fuera (etapas siguientes): modo anfitrión, aceptación manual, rangos y listas a mano, enlaces de YouTube, equipos, presentación.
 
@@ -60,7 +60,7 @@ Fuera (etapas siguientes): modo anfitrión, aceptación manual, rangos y listas 
 - `BattlePlayer`: `battle`, `user` o `device_id`, `display_name` (único dentro de la sala, sin distinguir mayúsculas), `joined_at`, `last_seen_at`, `score`.
 - `BattleAnswer`: `round`, `player`, `song_guessed`, `correct`, `received_at` (hora del servidor), `points`. Una respuesta final por jugador y ronda.
 
-La reserva del nombre dentro de la sala reutiliza las reglas del nombre público (palabras no permitidas, caracteres de control, largo).
+El nombre dentro de la sala es único solo en esa sala y reutiliza las reglas de validación del nombre público (palabras no permitidas, caracteres de control, largo).
 
 ## Flujo y estados
 
@@ -69,7 +69,7 @@ La reserva del nombre dentro de la sala reutiliza las reglas del nombre público
 3. **Ronda:** `starts_at` es unos segundos en el futuro (cuenta regresiva común). Cada dispositivo reproduce su audio y el jugador responde
    eligiendo una canción del buscador del juego diario. El servidor acepta la respuesta solo entre `starts_at` y `ends_at`.
 4. **Entre rondas:** se muestra la respuesta correcta y el ranking parcial durante unos segundos; después abre la siguiente ronda sola.
-5. **Final:** ranking final de la sala. La sala queda de solo lectura y se borra a los 7 días.
+5. **Final:** ranking final de la sala. La sala queda de solo lectura y pasa a "Mis batallas" de cada participante y del organizador.
 
 Las transiciones **no las ejecuta un reloj del servidor**: se calculan al consultar. Cada consulta compara la hora actual con
 `starts_at`/`ends_at` y avanza el estado si corresponde (con bloqueo de fila para que dos consultas simultáneas no lo avancen dos veces).
@@ -80,7 +80,8 @@ Así el sistema funciona aunque el servidor se haya dormido y no hace falta ning
 Todas bajo `/api/battles/`. Identidad: `X-Device-Id` y/o sesión, como el juego diario.
 
 - `POST /` crear sala → `{code, host_token}` (el token del organizador se guarda en su dispositivo).
-- `GET /<code>/` estado de la sala. Parámetro `since=<version>`: si no cambió, responde `{changed: false, server_time}` sin tocar la base.
+- `GET /mine/` lista de las batallas en las que participó o que creó quien consulta.
+- `GET /<code>/` estado de la sala (solo para jugadores y organizador; quien aún no entró ve únicamente los datos necesarios para unirse). Parámetro `since=<version>`: si no cambió, responde `{changed: false, server_time}` sin tocar la base.
 - `POST /<code>/join/` entrar con `display_name`.
 - `POST /<code>/start/` (organizador) empezar.
 - `POST /<code>/answer/` responder la ronda actual.
@@ -90,20 +91,24 @@ Toda respuesta incluye `server_time` para el ajuste de reloj. Las respuestas con
 (con `starts_at`/`ends_at` y la URL fresca del preview solo para jugadores y solo cuando corresponde), lista de jugadores, ranking.
 **El jugador nunca recibe la canción correcta antes de que termine la ronda.**
 
-## Ranking de batallas
+## Mis batallas (ranking de batallas)
 
-Decidido por Brandon: las batallas tienen un **ranking aparte** del juego diario, mostrado **en la misma pantalla de ranking**.
+Decidido por Brandon: el ranking de una batalla es **privado de esa batalla**. Solo lo ven quienes **participaron** o quien la **creó**. No existe
+un ranking general ni público de batallas, y nadie puede ver los resultados de una batalla en la que no estuvo.
 
-- En `/ranking` hay un selector arriba (por ejemplo "Diario | Batallas"). "Diario" es el ranking de hoy; "Batallas" muestra el de batallas con el mismo diseño de filas.
-- El ranking de batallas suma los **puntos de las batallas terminadas** de cada jugador. Usa las mismas escalas de tiempo del ranking diario
-  (semana, mes, global) para no inventar otra navegación.
-- Los puntos de batalla **no se mezclan** con los del juego diario: no cambian su racha, sus estadísticas ni su posición diaria.
-- Cuenta cada jugador de una batalla terminada; el organizador, que no juega, no suma.
-- El ranking se **calcula en el backend** (como el diario) y se puede compartir la posición, igual que en el ranking actual.
-- **Identidad:** para que el ranking tenga nombres únicos, el nombre con el que se entra a una sala es el **nombre público** del jugador
-  (único sin distinguir mayúsculas). Si ya tiene uno, se usa; si no, el que escriba pasa a ser su nombre público si está libre, y si no
-  se le pide otro. Así no hay dos "Juan" distintos en la misma lista. Los jugadores sin cuenta se siguen identificando por `device_id`.
-- Una batalla de una sola persona no suma al ranking (evita sumar puntos jugando solo).
+- En `/ranking` hay un selector arriba ("Diario | Mis batallas"). "Diario" sigue como hoy.
+- "Mis batallas" lista, de la más reciente a la más antigua, las batallas en las que la persona participó o que creó (nombre o fecha,
+  cantidad de jugadores, su posición si jugó). Al abrir una se ve **el ranking de esa batalla**, con el mismo diseño de filas.
+- Los puntos de una batalla **no se mezclan** con el juego diario: no cambian racha, estadísticas ni posición diaria.
+- **Acceso:** el servidor solo entrega una batalla a quien figura como jugador o como organizador (por `user`, `device_id` o `host_token`).
+  Para cualquier otra persona la respuesta es "no encontrada", igual que si la sala no existiera; el código de sala solo sirve para **unirse**
+  mientras la sala está en el lobby, no para ver resultados.
+- **Cuentas:** la persona que juega sin cuenta ve sus batallas por su `device_id`. Al crear la cuenta, sus batallas pasan a la cuenta, igual
+  que ya ocurre con las partidas del juego diario (`claim_device_games`).
+- **Retención:** la sala y su ranking se conservan para que "Mis batallas" tenga historial (el volumen es chico). Propuesta: sin borrado en
+  la etapa 1; se revisa si crece.
+- Dentro de una sala, el **nombre visible** es el que la persona escribe al entrar (único en esa sala, sin distinguir mayúsculas). No se
+  vincula al nombre público del ranking diario: como no hay ranking general, no hace falta que sea único en todo el sitio.
 
 ## Puntaje
 
@@ -116,7 +121,8 @@ Valores exactos en `settings`, como `GAMEPLAY_BASE_SCORES`; se fijan en el plan.
 - Código de sala aleatorio con espacio suficiente para que no se adivine; límite de pedidos por IP al crear y al unirse.
 - Máximo de jugadores por sala (valor inicial: 60) y de salas activas por organizador.
 - Solo el organizador puede empezar o cerrar; verificado por `host_token`.
-- Nombres validados igual que el nombre público.
+- Nombres visibles validados con las mismas reglas del nombre público (palabras no permitidas, caracteres de control, largo).
+- Los resultados de una batalla solo los ve quien participó o la creó; para el resto es "no encontrada". Hay una prueba específica de esto.
 - No se expone la respuesta correcta durante la ronda; la URL del preview no revela título.
 
 ## Capacidad (estimación, no medida)
@@ -143,11 +149,11 @@ antes de decidir si se paga un plan. El servidor gratis se duerme a los 15 minut
 
 ## Decisiones tomadas
 
-- Las batallas son un **ranking aparte, en la misma pantalla** del ranking (Brandon, 2026-10-05).
+- Las batallas tienen **ranking aparte, en la misma pantalla** del ranking, y **solo lo ven quienes participaron o la crearon**; no hay ranking general (Brandon, 2026-10-05).
 - Valores por defecto: **10 canciones y 20 segundos por ronda** (propuesta aceptada por Brandon).
 - El organizador **no necesita cuenta**: alcanza con su dispositivo (propuesta aceptada por Brandon).
 
 ## Preguntas abiertas
 
-1. ¿El ranking de batallas debe mostrar también las batallas más recientes (quién ganó cada una), además de los puntos acumulados?
-2. Regla de identidad por nombre público al entrar a una sala (ver "Ranking de batallas"): ¿te parece bien?
+1. ¿Querés poder compartir el resultado de una batalla (por ejemplo una imagen o un link para quien participó) sin que eso muestre la batalla a quien no estuvo? Propuesta: no en la etapa 1.
+2. ¿Conviene un nombre o título para la batalla que ponga quien la crea ("Cumple de Ana"), o alcanza con la fecha y los participantes? Propuesta: título opcional.
