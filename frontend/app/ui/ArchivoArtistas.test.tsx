@@ -4,17 +4,17 @@ import { ArchivoArtistas, textoCatalogo, type ArtistaArchivo } from "./ArchivoAr
 
 afterEach(cleanup);
 
-const artista = (nombre: string, canciones: number, tapa?: string, id = nombre.length): ArtistaArchivo => ({
+const artista = (nombre: string, canciones: number, anios?: string, id = nombre.length): ArtistaArchivo => ({
   id,
   nombre,
   canciones,
   href: `/archivo/artista/${id}-${nombre.toLowerCase().replace(/\s+/g, "-")}`,
-  tapa,
+  anios,
 });
 
 const ARTISTAS = [
-  artista("No Te Va Gustar", 28, "https://img.example/ntvg.jpg", 1),
-  artista("Jorge Drexler", 16, "https://img.example/drexler.jpg", 2),
+  artista("No Te Va Gustar", 28, "1999–2026", 1),
+  artista("Jorge Drexler", 16, "1996–2004", 2),
   artista("Rada", 6, undefined, 3),
 ];
 
@@ -40,25 +40,47 @@ describe("textoCatalogo", () => {
 });
 
 describe("ArchivoArtistas", () => {
-  it("muestra cada artista con su nombre, sus canciones y su tapa, y lleva a su ficha", () => {
+  it("muestra cada artista con su nombre, sus canciones y sus años, y lleva a su ficha", () => {
     renderizar();
 
     const tarjeta = screen.getByText("No Te Va Gustar").closest("li") as HTMLElement;
     expect(within(tarjeta).getByText("28 canciones")).toBeInTheDocument();
-    expect(within(tarjeta).getByRole("img")).toHaveAttribute("src", "https://img.example/ntvg.jpg");
+    expect(within(tarjeta).getByText("1999–2026")).toBeInTheDocument();
     expect(within(tarjeta).getByRole("link", { name: /No Te Va Gustar/ })).toHaveAttribute("href", "/archivo/artista/1-no-te-va-gustar");
+  });
+
+  it("no hay fotos de las bandas: en su lugar va la inicial del nombre sobre un color, y ninguna imagen", () => {
+    const { container } = renderizar();
+
+    const tarjeta = screen.getByText("Jorge Drexler").closest("li") as HTMLElement;
+    expect(within(tarjeta).queryByRole("img")).toBeNull();
+    expect(container.querySelectorAll("img.artista__imagen, .artista__foto img")).toHaveLength(0);
+    const inicial = tarjeta.querySelector(".artista__inicial");
+    expect(inicial).toHaveTextContent("J");
+    expect(inicial).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("la inicial de un nombre que empieza con un símbolo es la primera letra o número", () => {
+    renderizar({ artistas: [artista("#TocoParaVos", 11), artista("¡Ay! Caramba", 3, undefined, 8), artista("ñandú", 2, undefined, 9)] });
+
+    const iniciales = [...document.querySelectorAll(".artista__inicial")].map((n) => n.textContent);
+    expect(iniciales).toEqual(["T", "A", "Ñ"]);
+  });
+
+  it("cada tarjeta tiene un color de la marca, siempre el mismo para el mismo artista", () => {
+    const { container, unmount } = renderizar();
+    const colores = () => [...container.querySelectorAll<HTMLElement>(".artista__foto")].map((n) => n.className);
+    const primera = colores();
+    expect(primera.every((c) => /artista__foto--tono-\d/.test(c))).toBe(true);
+    unmount();
+
+    const { container: otra } = renderizar();
+    expect([...otra.querySelectorAll<HTMLElement>(".artista__foto")].map((n) => n.className)).toEqual(primera);
   });
 
   it("escribe en singular cuando el artista tiene una sola canción", () => {
     renderizar({ artistas: [artista("Solista", 1)] });
     expect(screen.getByText("1 canción")).toBeInTheDocument();
-  });
-
-  it("no inventa una imagen para un artista sin tapa", () => {
-    renderizar();
-
-    const tarjeta = screen.getByText("Rada").closest("li") as HTMLElement;
-    expect(within(tarjeta).queryByRole("img")).toBeNull();
   });
 
   it("usa el total de canciones en la bajada", () => {

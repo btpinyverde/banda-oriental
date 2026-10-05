@@ -26,6 +26,12 @@ import { Navbar } from "./ui/Navbar";
 export const revalidate = 600;
 
 const ARTISTAS_EN_EL_CARRUSEL = 12;
+
+/** "1996–2004", o un solo año si es el mismo, o nada si no se sabe. */
+function aniosDe(a: { first_year: number | null; last_year: number | null }): string | undefined {
+  if (!a.first_year || !a.last_year) return undefined;
+  return a.first_year === a.last_year ? String(a.first_year) : `${a.first_year}–${a.last_year}`;
+}
 const GENEROS_EN_LOS_CHIPS = 8;
 
 export default async function Home() {
@@ -46,7 +52,7 @@ export default async function Home() {
         <ModeCards />
         <ComoSeJuega />
         <ArchivoArtistas
-          artistas={(artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), tapa: a.cover_art_url || undefined }))}
+          artistas={(artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a) }))}
           generos={(filtros?.genres ?? []).slice(0, GENEROS_EN_LOS_CHIPS).map((g) => g.genre)}
           totalCanciones={canciones?.count ?? 0}
         />
