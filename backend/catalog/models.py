@@ -9,6 +9,10 @@ class Artist(models.Model):
     deezer_id = models.PositiveBigIntegerField(null=True, blank=True, unique=True)
     # Cuándo se buscó en Deezer por última vez; con `deezer_id` vacío significa "no se encontró".
     deezer_checked_at = models.DateTimeField(null=True, blank=True)
+    # La foto del artista, de Deezer (https). Vacía si no tiene o todavía no se buscó: nunca se inventa una.
+    picture_url = models.URLField(max_length=300, blank=True)
+    # Cuándo se buscó su foto en Deezer por última vez (para no volver a pedir la de quien no tiene).
+    picture_checked_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name

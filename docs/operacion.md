@@ -78,6 +78,10 @@ Todo se corre desde tu compu contra la base de producción, con el mismo entorno
 1. **Cargar lo que falta**: `scripts/cargar-catalogo.sh` (MusicBrainz) y después `manage.py sync_deezer --dry-run --limit 20`
    para ver qué haría y `manage.py sync_deezer` de verdad. Deezer completa de los discos que ya existen el género, el año, la
    portada y la duración (sin pisar lo que ya hay) y trae discos y canciones que falten.
+1b. **Fotos de los artistas**: `scripts/catalogo.sh fotos-prueba` y después `scripts/catalogo.sh fotos` (`manage.py fill_artist_pictures`). Guarda la
+   foto (de Deezer) de cada artista ya emparejado; un pedido por artista, despacio. Solo completa las que faltan y marca a los que no
+   tienen foto para no volver a pedirla (`--reintentar` lo fuerza). `sync_deezer` ya la guarda al emparejar a un artista nuevo.
+   Las fotos son imágenes de Deezer, mostradas con el enlace que da su API; si no hay foto, el sitio muestra la inicial del nombre.
 2. **Mirar cómo quedó**: `manage.py catalog_report` (solo lectura): cuántos discos sin género, año o portada, canciones sin
    duración, artistas sin discos o sin emparejar con Deezer, repetidas, clásica y géneros escritos de varias formas.
 3. **Limpiar**: `manage.py clean_catalog --duplicadas --clasica --generos` **solo informa** (modo prueba) y da ejemplos. Con

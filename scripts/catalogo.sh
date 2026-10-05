@@ -10,6 +10,8 @@
 #   reporte          mira cuánto falta (solo lectura)
 #   deezer-prueba    prueba Deezer con 20 artistas SIN guardar nada
 #   deezer           completa género, año, portada y duración desde Deezer (tarda; se puede cortar y seguir)
+#   fotos-prueba     busca la foto de 20 artistas en Deezer SIN guardar nada
+#   fotos            guarda la foto de cada artista emparejado con Deezer (despacio; se puede cortar y seguir)
 #   limpiar          dice qué ocultaría (repetidas, clásica, géneros) SIN cambiar nada
 #   limpiar-aplicar  lo hace de verdad (oculta, no borra)
 #   deshacer-limpieza   vuelve a mostrar lo que ocultó limpiar-aplicar
@@ -20,7 +22,7 @@ set -euo pipefail
 
 : "${DATABASE_URL:?Falta DATABASE_URL (la URL de conexión de la base de producción)}"
 paso="${1:-}"
-[ -n "$paso" ] || { sed -n '2,22p' "$0"; exit 1; }
+[ -n "$paso" ] || { sed -n '2,24p' "$0"; exit 1; }
 
 cd "$(dirname "$0")/.."
 
@@ -52,11 +54,13 @@ case "$paso" in
   reporte)          manage catalog_report ;;
   deezer-prueba)    manage sync_deezer --dry-run --limit 20 ;;
   deezer)           confirmar; manage sync_deezer ;;
+  fotos-prueba)     manage fill_artist_pictures --dry-run --limit 20 ;;
+  fotos)            confirmar; manage fill_artist_pictures ;;
   limpiar)          manage clean_catalog --duplicadas --clasica --generos ;;
   limpiar-aplicar)  confirmar; manage clean_catalog --duplicadas --clasica --generos --aplicar ;;
   deshacer-limpieza) confirmar; manage clean_catalog --restaurar --aplicar ;;
   ranking)          manage ranking_prueba ;;
   ranking-crear)    confirmar; manage ranking_prueba --crear ;;
   ranking-borrar)   confirmar; manage ranking_prueba --borrar ;;
-  *) echo "Paso desconocido: $paso"; sed -n '2,22p' "$0"; exit 1 ;;
+  *) echo "Paso desconocido: $paso"; sed -n '2,24p' "$0"; exit 1 ;;
 esac

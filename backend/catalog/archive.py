@@ -105,6 +105,7 @@ def _artist_row(artist):
         "first_year": artist.first_year,
         "last_year": artist.last_year,
         "cover_art_url": artist.cover or "",
+        "picture_url": artist.picture_url,
     }
 
 

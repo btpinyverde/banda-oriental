@@ -83,6 +83,16 @@ def _pages(path):
         index += PAGE_SIZE
 
 
+def _photo(raw):
+    """The artist's photo (the biggest size Deezer has), or "" if it has none. Deezer gives a grey silhouette (a URL with an
+    empty hash, ".../artist//...") to artists without a photo: that is not a photo. Only https URLs are taken."""
+    for key in ("picture_xl", "picture_big", "picture_medium"):
+        url = raw.get(key) or ""
+        if url.startswith("https://") and "/artist//" not in url:
+            return url
+    return ""
+
+
 def search_artists(name):
     body = _get("/search/artist", {"q": name, "limit": 10})
     return [
@@ -91,9 +101,15 @@ def search_artists(name):
             "name": a["name"],
             "nb_album": a.get("nb_album", 0),
             "nb_fan": a.get("nb_fan", 0),
+            "picture": _photo(a),
         }
         for a in body.get("data", [])
     ]
+
+
+def get_artist(artist_id):
+    raw = _get(f"/artist/{artist_id}")
+    return {"id": raw["id"], "name": raw["name"], "picture": _photo(raw)}
 
 
 def get_artist_releases(artist_id):

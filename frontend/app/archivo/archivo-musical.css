@@ -40,3 +40,4 @@
 @media (max-width: 560px) { .archivo-buscador form { flex-wrap: wrap; } .archivo-buscador form .boton { flex: 1 1 100%; } }
 /* Solo para lectores de pantalla (esta hoja puede cargarse sin la de /jugar, que es donde está definida la clase general). */
 .archivo-musical .solo-lectores, .archivo-buscador .solo-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.archivo-ficha .archivo-ficha__foto { width: 160px; aspect-ratio: 1; border-radius: 24px; overflow: hidden; }

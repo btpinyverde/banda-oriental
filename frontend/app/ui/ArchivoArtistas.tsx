@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
+import { FotoDelArtista } from "./FotoDelArtista";
 import { Ondulada } from "./Ondulada";
 
 export type ArtistaArchivo = {
@@ -10,6 +11,8 @@ export type ArtistaArchivo = {
   canciones: number;
   /** La ficha del artista en el archivo. */
   href: string;
+  /** La foto del artista (de Deezer). Si falta, va la inicial de su nombre sobre un color de la marca. */
+  foto?: string;
   /** Los años de sus discos ("1996–2004"), si se sabe. */
   anios?: string;
 };
@@ -29,15 +32,6 @@ export function textoCatalogo(canciones: number): string {
   if (canciones > 0) return `${canciones} ${canciones === 1 ? "canción" : "canciones"} ${COLA_DE_LA_BAJADA}`;
   return "Canciones uruguayas de todas las épocas, géneros y rincones del país.";
 }
-
-const TONOS = 5;
-/** La letra o el número con que empieza el nombre ("#TocoParaVos" → "T"), para el bloque de color que reemplaza a la foto. */
-export function inicialDe(nombre: string): string {
-  const letra = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").match(/[\p{L}\p{N}]/u);
-  return (letra ? nombre.normalize("NFC").match(/[\p{L}\p{N}]/u)![0] : "·").toLocaleUpperCase("es");
-}
-/** Un color de la marca por artista, siempre el mismo (sale del nombre, no del orden en que aparece). */
-const tonoDe = (nombre: string) => [...nombre].reduce((suma, c) => suma + c.charCodeAt(0), 0) % TONOS;
 
 const cancionesDe = (n: number) => `${n} ${n === 1 ? "canción" : "canciones"}`;
 
@@ -81,12 +75,7 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
             {artistas.map((artista) => (
               <li key={artista.id} className="artista">
                 <Link href={artista.href} className="artista__enlace">
-                  {/* No hay fotos de las bandas: un bloque de color con la inicial, sin inventar ninguna imagen. */}
-                  <div className={`artista__foto artista__foto--tono-${tonoDe(artista.nombre)}`}>
-                    <span className="artista__inicial" aria-hidden="true">
-                      {inicialDe(artista.nombre)}
-                    </span>
-                  </div>
+                  <FotoDelArtista nombre={artista.nombre} foto={artista.foto} />
                   <p className="artista__nombre">{artista.nombre}</p>
                   <p className="artista__canciones">{cancionesDe(artista.canciones)}</p>
                   {artista.anios && <p className="artista__anios">{artista.anios}</p>}

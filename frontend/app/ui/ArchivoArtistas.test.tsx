@@ -4,10 +4,11 @@ import { ArchivoArtistas, textoCatalogo, type ArtistaArchivo } from "./ArchivoAr
 
 afterEach(cleanup);
 
-const artista = (nombre: string, canciones: number, anios?: string, id = nombre.length): ArtistaArchivo => ({
+const artista = (nombre: string, canciones: number, anios?: string, id = nombre.length, foto?: string): ArtistaArchivo => ({
   id,
   nombre,
   canciones,
+  foto,
   href: `/archivo/artista/${id}-${nombre.toLowerCase().replace(/\s+/g, "-")}`,
   anios,
 });
@@ -49,15 +50,14 @@ describe("ArchivoArtistas", () => {
     expect(within(tarjeta).getByRole("link", { name: /No Te Va Gustar/ })).toHaveAttribute("href", "/archivo/artista/1-no-te-va-gustar");
   });
 
-  it("no hay fotos de las bandas: en su lugar va la inicial del nombre sobre un color, y ninguna imagen", () => {
-    const { container } = renderizar();
+  it("con la foto del artista la muestra; sin ella va la inicial sobre un color, nunca una imagen inventada", () => {
+    renderizar({ artistas: [artista("Jorge Drexler", 16, undefined, 2, "https://cdn.example/d.jpg"), artista("Rada", 6, undefined, 3)] });
 
-    const tarjeta = screen.getByText("Jorge Drexler").closest("li") as HTMLElement;
-    expect(within(tarjeta).queryByRole("img")).toBeNull();
-    expect(container.querySelectorAll("img.artista__imagen, .artista__foto img")).toHaveLength(0);
-    const inicial = tarjeta.querySelector(".artista__inicial");
-    expect(inicial).toHaveTextContent("J");
-    expect(inicial).toHaveAttribute("aria-hidden", "true");
+    const con = screen.getByText("Jorge Drexler").closest("li") as HTMLElement;
+    expect(within(con).getByRole("img", { name: "Foto de Jorge Drexler" })).toHaveAttribute("src", "https://cdn.example/d.jpg");
+    const sin = screen.getByText("Rada").closest("li") as HTMLElement;
+    expect(within(sin).queryByRole("img")).toBeNull();
+    expect(sin.querySelector(".artista__inicial")).toHaveTextContent("R");
   });
 
   it("la inicial de un nombre que empieza con un símbolo es la primera letra o número", () => {
