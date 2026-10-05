@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "anymail",
     "catalog",
     "gameplay",
+    "battles",
 ]
 
 MIDDLEWARE = [
@@ -134,6 +135,10 @@ REST_FRAMEWORK = {
         "songs": "30/min",
         "catalog": "60/min",  # the music archive: search and browse artists, albums and songs
         "human": "30/hour",
+        "battle-create": "20/hour",
+        "battle-join": "120/hour",
+        "battle-answer": "240/min",
+        "battle-state": "3000/min",  # polling: a bar's phones share one address
     },
     "EXCEPTION_HANDLER": "core.throttling.exception_handler",
 }
@@ -151,6 +156,17 @@ CORS_ALLOWED_ORIGINS = [
 # Scoring constants live here (spec §8), never hardcoded in a view or in
 # the frontend, so they can be tuned without a frontend deploy.
 GAMEPLAY_BASE_SCORES = {1: 100, 2: 85, 3: 70, 4: 55, 5: 40, 6: 20}
+BATTLES = {
+    "MAX_PLAYERS": 60,
+    "MIN_ROUNDS": 3,
+    "MAX_ROUNDS": 30,
+    "MIN_ROUND_SECONDS": 5,
+    "MAX_ROUND_SECONDS": 60,
+    "COUNTDOWN_SECONDS": 5,  # from "Empezar" to the first round
+    "REVEAL_SECONDS": 6,  # between rounds: the answer and the partial ranking
+    "BASE_POINTS": 100,
+    "BONUS_MAX": 50,  # extra for answering fast, falling to 0 as the round runs out
+}
 GAMEPLAY_SPEED_BONUS = {
     "max": 50,
     # Below this, a guess counts as "instant" and gets the full bonus —
