@@ -34,8 +34,19 @@ Detalles:
 
 `songs_mode`: `random` (con filtros) o `list` (ítems explícitos y ordenados).
 
-- **Azar acotado:** filtros opcionales por años (`year_from`, `year_to`) y géneros (`genres`), sobre las canciones visibles con preview. `GET /api/battles/pool/` devuelve
-  cuántas canciones cumplen (con ids de ejemplo no; solo el conteo) para que quien organiza vea si alcanza antes de crear.
+- **Azar segmentado (pedido por Brandon: segmentar por todo lo que se pueda, y también excluir):** cuando quien organiza no elige canciones puntuales, las que salen
+  se sortean dentro de un segmento definido por filtros. Con lo que hoy tiene el catálogo, se puede **incluir** y **excluir** por:
+  - años (rango desde/hasta) y, derivado, décadas;
+  - géneros (varios);
+  - artistas (varios, elegidos del catálogo);
+  - tipo de disco (álbum, EP, single);
+  - duración de la canción (rango en segundos);
+  - canciones puntuales (excluir una por una, por ejemplo las que ya salieron en otra batalla).
+  Cada filtro tiene su par "solo estas" / "todas menos estas": `filters = {include: {year_from, year_to, genres, artists, release_types, duration_min, duration_max},
+  exclude: {genres, artists, release_types, years: [[desde, hasta]], songs}}`. Un filtro vacío no filtra. Siempre se aplican las reglas de base: canciones visibles
+  (no ocultas) y con preview de Deezer. Se guardan en la sala (`Battle.filters`, JSON validado) para poder mostrarlos y repetir la selección.
+  `POST /api/battles/pool/` (misma autorización que crear) recibe los filtros y devuelve `{count, sample_genres, years}` para que quien organiza vea cuántas canciones
+  cumplen antes de crear (y avisa si no alcanzan para las rondas pedidas). Si más adelante el catálogo suma datos (idioma, ritmo, etc.), se agregan como filtros nuevos.
 - **Lista elegida:** quien organiza busca canciones del catálogo y arma la lista, con orden (subir/bajar) y quitar. `round_count` es el largo de la lista.
 - **Enlaces de YouTube:** quien organiza pega un enlace; el servidor consulta oEmbed (sin clave) para traer título y canal y propone la canción del catálogo que
   coincide; quien organiza confirma o elige otra. Cada ítem queda como `{song, source: "deezer"|"youtube", youtube_id, start_seconds}`.
