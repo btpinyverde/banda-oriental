@@ -29,7 +29,15 @@ def _int_in_range(value, default, low, high, field):
     return value
 
 
-def create_battle(caller, round_count=None, round_seconds=None, title=None):
+def _choice(value, allowed, default, field):
+    if value is None:
+        return default
+    if not isinstance(value, str) or value not in allowed:
+        raise ValidationError({field: "Valor no válido."})
+    return value
+
+
+def create_battle(caller, round_count=None, round_seconds=None, title=None, audio_mode=None, join_mode=None):
     cfg = settings.BATTLES
     round_count = _int_in_range(round_count, 10, cfg["MIN_ROUNDS"], cfg["MAX_ROUNDS"], "round_count")
     round_seconds = _int_in_range(round_seconds, 20, cfg["MIN_ROUND_SECONDS"], cfg["MAX_ROUND_SECONDS"], "round_seconds")
@@ -40,6 +48,8 @@ def create_battle(caller, round_count=None, round_seconds=None, title=None):
     title = title.strip()
     if len(title) > 60 or contains_banned_word(title):
         raise ValidationError({"title": "Título inválido."})
+    audio_mode = _choice(audio_mode, (Battle.EACH, Battle.HOST), Battle.EACH, "audio_mode")
+    join_mode = _choice(join_mode, (Battle.OPEN, Battle.APPROVAL), Battle.OPEN, "join_mode")
     for _ in range(5):  # a code collision is possible, if rare: try again with another
         try:
             with transaction.atomic():
@@ -49,6 +59,8 @@ def create_battle(caller, round_count=None, round_seconds=None, title=None):
                     round_count=round_count,
                     round_seconds=round_seconds,
                     title=title,
+                    audio_mode=audio_mode,
+                    join_mode=join_mode,
                 )
         except IntegrityError:
             continue
@@ -72,12 +84,16 @@ def join_battle(battle, caller, display_name, host_token=""):
     if is_host(battle, caller, host_token):
         raise ValidationError({"detail": "Quien organiza la batalla no juega."})
     name = _clean_name(display_name)
-    if battle.players.count() >= settings.BATTLES["MAX_PLAYERS"]:
+    if battle.players.exclude(status=BattlePlayer.REJECTED).count() >= settings.BATTLES["MAX_PLAYERS"]:
         raise ValidationError({"detail": "La sala está llena."})
     try:
         with transaction.atomic():
             player = BattlePlayer.objects.create(
-                battle=battle, user=caller.user, device_id=caller.device_id if caller.user is None else "", display_name=name
+                battle=battle,
+                user=caller.user,
+                device_id=caller.device_id if caller.user is None else "",
+                display_name=name,
+                status=BattlePlayer.PENDING if battle.join_mode == Battle.APPROVAL else BattlePlayer.ACCEPTED,
             )
     except IntegrityError:
         raise ValidationError({"display_name": NAME_TAKEN})
@@ -99,7 +115,8 @@ def _pick_songs(count):
 
 def start_battle(battle, now=None):
     now = now or timezone.now()
-    if battle.players.count() < min_players():
+    accepted = battle.players.filter(status=BattlePlayer.ACCEPTED).count()
+    if accepted < min_players():
         raise ValidationError({"detail": "Hace falta al menos otra persona para jugar." if min_players() > 1 else "Hace falta que entre alguien para jugar."})
     songs = _pick_songs(battle.round_count)
     cfg = settings.BATTLES
@@ -109,6 +126,8 @@ def start_battle(battle, now=None):
         moved = Battle.objects.filter(pk=battle.pk, status=Battle.LOBBY).update(status=Battle.PLAYING, started_at=now, version=F("version") + 1)
         if not moved:
             raise ValidationError({"detail": "La batalla ya empezó."})
+        # Whoever is still waiting when it starts does not get in.
+        battle.players.filter(status=BattlePlayer.PENDING).update(status=BattlePlayer.REJECTED)
         BattleRound.objects.bulk_create(
             [BattleRound(battle=battle, index=i, song=song, starts_at=a, ends_at=b) for i, (song, (a, b)) in enumerate(zip(songs, schedule))]
         )
@@ -119,6 +138,8 @@ def submit_answer(battle, player, song_id, now):
     """Records the player's answer for the open round, timed by the server's clock. The first answer stands."""
     if battle.status != Battle.PLAYING:
         raise ValidationError({"detail": "La batalla no está en juego."})
+    if player.status != BattlePlayer.ACCEPTED:
+        raise ValidationError({"detail": "No estás en esta batalla."})
     rounds = list(battle.rounds.all())
     phase = phase_at(rounds, now, settings.BATTLES["REVEAL_SECONDS"])
     if phase.name != "playing":
@@ -147,7 +168,7 @@ def ranking(battle):
     """The battle's ranking: points, then hits, then name. Points are the sum of the answers, never stored on the player."""
     rows = [
         {"name": p.display_name, "points": p.total or 0, "correct": p.hits or 0}
-        for p in battle.players.annotate(total=Sum("answers__points"), hits=Count("answers", filter=Q(answers__correct=True)))
+        for p in battle.players.filter(status=BattlePlayer.ACCEPTED).annotate(total=Sum("answers__points"), hits=Count("answers", filter=Q(answers__correct=True)))
     ]
     rows.sort(key=lambda r: (-r["points"], -r["correct"], r["name"].lower()))
     for position, row in enumerate(rows, start=1):
@@ -164,7 +185,7 @@ def my_battles(caller):
     # The ids first and the count after: filtering through the players and counting through them in the same query would count
     # only the caller's own row.
     mine_ids = Battle.objects.filter(scope).values("pk")
-    battles = Battle.objects.filter(pk__in=mine_ids).annotate(players_count=Count("players")).order_by("-created_at", "-id")[:50]
+    battles = Battle.objects.filter(pk__in=mine_ids).annotate(players_count=Count("players", filter=Q(players__status=BattlePlayer.ACCEPTED))).order_by("-created_at", "-id")[:50]
     out = []
     for b in battles:
         mine = player_for(b, caller)
@@ -183,3 +204,17 @@ def my_battles(caller):
             }
         )
     return out
+
+
+def review_player(battle, player_id, accept):
+    """The organizer accepts or turns away someone in the lobby (turning away an accepted player takes him out)."""
+    if not isinstance(accept, bool):
+        raise ValidationError({"accept": "Tiene que ser verdadero o falso."})
+    try:
+        player = battle.players.get(pk=player_id)
+    except (BattlePlayer.DoesNotExist, ValueError, TypeError):
+        raise ValidationError({"player_id": "No encontramos a esa persona en la sala."})
+    player.status = BattlePlayer.ACCEPTED if accept else BattlePlayer.REJECTED
+    player.save(update_fields=["status"])
+    Battle.objects.filter(pk=battle.pk).update(version=F("version") + 1)
+    return player

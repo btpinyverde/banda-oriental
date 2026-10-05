@@ -6,7 +6,7 @@ import { guardarHostToken } from "../lib/batallas/api-batallas";
 import type { CancionCatalogo } from "../lib/juego/tipos";
 import { useSala } from "../lib/batallas/useSala";
 import { Sala } from "./Sala";
-import { T0, enRevelacion, enRonda, sala, terminada, unible } from "./fixtures";
+import { T0, enRevelacion, enRonda, iso, sala, terminada, unible } from "./fixtures";
 
 vi.mock("../lib/batallas/useSala", () => ({ useSala: vi.fn() }));
 vi.mock("qrcode", () => ({ default: { toDataURL: vi.fn().mockResolvedValue("data:image/png;base64,QR") } }));
@@ -222,5 +222,87 @@ describe("Sala: resultados", () => {
     expect(screen.getByRole("heading", { name: /resultados/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /mis batallas/i })).toHaveAttribute("href", "/ranking?vista=batallas");
     expect(screen.getByRole("link", { name: /crear otra batalla/i })).toHaveAttribute("href", "/batalla");
+  });
+});
+
+describe("Sala: aceptar participantes", () => {
+  it("quien espera ve que lo tienen que aceptar y no ve la sala", () => {
+    poner({ sala: sala({ my_status: "pending", players: [] }) });
+    montar();
+    expect(screen.getByText(/esperando que te acepten/i)).toBeInTheDocument();
+    expect(screen.queryByText(/en la sala/i)).toBeNull();
+  });
+
+  it("a quien rechazaron se lo dice", () => {
+    poner({ sala: sala({ my_status: "rejected", players: [] }) });
+    montar();
+    expect(screen.getByText(/no te aceptaron/i)).toBeInTheDocument();
+  });
+
+  it("quien organiza ve a los que esperan y los acepta o rechaza", async () => {
+    guardarHostToken("ABC234", "secreto");
+    poner({ sala: sala({ role: "host", join_mode: "approval", players: [{ id: 1, name: "Ana" }], pending: [{ id: 2, name: "Beto" }] }) });
+    const revisar = vi.fn().mockResolvedValue({ ok: true });
+    montar(apiCon({ revisar }));
+
+    expect(screen.getByText(/esperan que los aceptes/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /aceptar a beto/i }));
+    await waitFor(() => expect(revisar).toHaveBeenCalledWith("ABC234", 2, true, "secreto"));
+    fireEvent.click(screen.getByRole("button", { name: /rechazar a beto/i }));
+    await waitFor(() => expect(revisar).toHaveBeenCalledWith("ABC234", 2, false, "secreto"));
+    expect(refrescar).toHaveBeenCalled();
+  });
+
+  it("quien organiza puede sacar a alguien que ya entró", async () => {
+    poner({ sala: sala({ role: "host", players: [{ id: 1, name: "Ana" }] }) });
+    const revisar = vi.fn().mockResolvedValue({ ok: true });
+    montar(apiCon({ revisar }));
+
+    fireEvent.click(screen.getByRole("button", { name: /sacar a ana/i }));
+    await waitFor(() => expect(revisar).toHaveBeenCalledWith("ABC234", 1, false, undefined));
+  });
+
+  it("al entrar a una sala con aprobación avisa que hay que esperar", () => {
+    poner({ sala: { ...unible(), join_mode: "approval" } });
+    montar();
+    expect(screen.getByText(/quien organiza tiene que aceptarte/i)).toBeInTheDocument();
+  });
+});
+
+describe("Sala: el anfitrión pone la música", () => {
+  it("en modo anfitrión el jugador no oye nada en su dispositivo: escucha en la pantalla del anfitrión y busca", async () => {
+    poner({ sala: enRonda({ audio_mode: "host", round: { index: 0, starts_at: iso(5), ends_at: iso(15), answered: false } }) }, T0 + 6000);
+    montar();
+
+    expect(await screen.findByText(/en la pantalla del anfitrión/i)).toBeInTheDocument();
+    expect(await screen.findByRole("combobox")).toBeInTheDocument();
+    expect(window.HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /tocá para escuchar/i })).toBeNull();
+  });
+
+  it("en modo anfitrión suena en la pantalla de quien organiza", async () => {
+    poner({ sala: enRonda({ role: "host", audio_mode: "host", players: [{ id: 1, name: "Ana", answered: false }], round: { index: 0, starts_at: iso(5), ends_at: iso(15), preview_url: "https://cdn/x.mp3" } }) }, T0 + 6000);
+    montar();
+
+    await waitFor(() => expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalled());
+    expect(screen.getByText(/está sonando/i)).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("el toque en Empezar desbloquea el audio del anfitrión", async () => {
+    poner({ sala: sala({ role: "host", audio_mode: "host" }) });
+    montar(apiCon({ empezar: vi.fn().mockResolvedValue({ status: "playing" }) }));
+
+    fireEvent.click(screen.getByRole("button", { name: /empezar/i }));
+    expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalled();
+  });
+
+  it("el toque en Entrar a la sala desbloquea el audio del jugador", async () => {
+    poner({ sala: unible() });
+    montar(apiCon({ unirse: vi.fn().mockResolvedValue({ player: { name: "Zoe", status: "accepted" } }) }));
+
+    fireEvent.change(screen.getByLabelText(/tu nombre/i), { target: { value: "Zoe" } });
+    fireEvent.click(screen.getByRole("button", { name: /entrar a la sala/i }));
+    expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalled();
   });
 });

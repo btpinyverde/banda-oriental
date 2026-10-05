@@ -3,16 +3,18 @@
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import type { ApiBatallas, EstadoSala } from "../lib/batallas/api-batallas";
+import { desbloquearAudio } from "../lib/batallas/audio";
 
 interface Props {
   sala: EstadoSala;
   api: ApiBatallas;
   hostToken?: string;
+  audio: React.RefObject<HTMLAudioElement | null>;
   refrescar: () => void;
 }
 
 /** La sala de espera: el enlace y el QR para sumar gente, quiénes entraron y, para quien organiza, el botón de empezar. */
-export function Lobby({ sala, api, hostToken, refrescar }: Props) {
+export function Lobby({ sala, api, hostToken, audio, refrescar }: Props) {
   const [enlace, setEnlace] = useState("");
   const [qr, setQr] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -44,7 +46,18 @@ export function Lobby({ sala, api, hostToken, refrescar }: Props) {
     }
   }
 
+  async function revisar(id: number, aceptar: boolean) {
+    setError(null);
+    try {
+      await api.revisar(sala.code, id, aceptar, hostToken);
+      refrescar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos hacer el cambio. Probá de nuevo.");
+    }
+  }
+
   async function empezar() {
+    desbloquearAudio(audio.current); // si la música suena acá (anfitrión), este toque la deja sonar después
     setError(null);
     setEmpezando(true);
     try {
@@ -70,10 +83,36 @@ export function Lobby({ sala, api, hostToken, refrescar }: Props) {
       </div>
       {qr && <img className="batalla__qr" src={qr} alt="Código QR de la sala" width={240} height={240} />}
 
+      {organiza && (sala.pending?.length ?? 0) > 0 && (
+        <>
+          <h2 className="batalla__subtitulo">Esperan que los aceptes ({sala.pending!.length})</h2>
+          <ul className="batalla__jugadores batalla__jugadores--espera">
+            {sala.pending!.map((j) => (
+              <li key={j.id}>
+                {j.name}
+                <button type="button" className="batalla__mini" aria-label={`Aceptar a ${j.name}`} onClick={() => revisar(j.id, true)}>
+                  Aceptar
+                </button>
+                <button type="button" className="batalla__mini batalla__mini--no" aria-label={`Rechazar a ${j.name}`} onClick={() => revisar(j.id, false)}>
+                  Rechazar
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       <h2 className="batalla__subtitulo">En la sala ({sala.players.length})</h2>
       <ul className="batalla__jugadores">
         {sala.players.map((j) => (
-          <li key={j.name}>{j.name}</li>
+          <li key={j.name}>
+            {j.name}
+            {organiza && j.id !== undefined && (
+              <button type="button" className="batalla__mini batalla__mini--no" aria-label={`Sacar a ${j.name}`} onClick={() => revisar(j.id!, false)}>
+                Sacar
+              </button>
+            )}
+          </li>
         ))}
       </ul>
 

@@ -20,6 +20,12 @@ def new_host_token():
 class Battle(models.Model):
     LOBBY, PLAYING, FINISHED = "lobby", "playing", "finished"
     STATUS_CHOICES = [(LOBBY, "En espera"), (PLAYING, "Jugando"), (FINISHED, "Terminada")]
+    # Where the music plays: on every player's device, or only on the organizer's (who then acts as the host).
+    EACH, HOST = "each", "host"
+    AUDIO_MODES = [(EACH, "En cada dispositivo"), (HOST, "En el dispositivo del anfitrión")]
+    # Who may come in: anybody with the link, or only whom the organizer accepts.
+    OPEN, APPROVAL = "open", "approval"
+    JOIN_MODES = [(OPEN, "Cualquiera con el enlace"), (APPROVAL, "Con aprobación")]
 
     code = models.CharField(max_length=8, unique=True, default=new_code)
     # A capability: whoever holds it organizes the battle (kept on the host's device). Compared in constant time.
@@ -27,6 +33,8 @@ class Battle(models.Model):
     host_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="hosted_battles")
     host_device_id = models.CharField(max_length=64, blank=True)
     title = models.CharField(max_length=60, blank=True)
+    audio_mode = models.CharField(max_length=10, choices=AUDIO_MODES, default=EACH)
+    join_mode = models.CharField(max_length=10, choices=JOIN_MODES, default=OPEN)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=LOBBY, db_index=True)
     round_count = models.PositiveSmallIntegerField()
     round_seconds = models.PositiveSmallIntegerField()
@@ -52,10 +60,15 @@ class BattleRound(models.Model):
 
 
 class BattlePlayer(models.Model):
+    ACCEPTED, PENDING, REJECTED = "accepted", "pending", "rejected"
+    STATUS_CHOICES = [(ACCEPTED, "Aceptado"), (PENDING, "Esperando"), (REJECTED, "Rechazado")]
+
     battle = models.ForeignKey(Battle, on_delete=models.CASCADE, related_name="players")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="battle_players")
     device_id = models.CharField(max_length=64, blank=True)
     display_name = models.CharField(max_length=50)
+    # Only the accepted play, rank and count; the waiting and the rejected keep their name reserved in the room.
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=ACCEPTED)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

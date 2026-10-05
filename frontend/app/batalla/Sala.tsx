@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { crearApiBatallas, leerHostToken, type ApiBatallas, type EstadoSala, type SalaUnible } from "../lib/batallas/api-batallas";
+import { desbloquearAudio } from "../lib/batallas/audio";
 import { useSala } from "../lib/batallas/useSala";
 import { crearClienteHttp } from "../lib/juego/cliente-http";
 import { ApiError, type CancionCatalogo } from "../lib/juego/tipos";
@@ -59,9 +60,21 @@ export function Sala({ code, api, cargarCanciones = () => crearClienteHttp().lis
         <Aviso titulo="Cargando la sala…" />
       );
   } else if ("joinable" in sala) {
-    contenido = <UnirseASala sala={sala} api={cliente} hostToken={hostToken} alEntrar={refrescar} />;
+    contenido = <UnirseASala sala={sala} api={cliente} hostToken={hostToken} audio={audio} alEntrar={refrescar} />;
+  } else if (sala.my_status === "pending") {
+    contenido = (
+      <Aviso titulo="Esperando que te acepten…">
+        <p>Quien organiza la batalla tiene que aceptarte. No cierres esta pantalla: apenas te acepte, entrás solo.</p>
+      </Aviso>
+    );
+  } else if (sala.my_status === "rejected") {
+    contenido = (
+      <Aviso titulo="No te aceptaron en esta sala">
+        <p>Quien organiza la batalla no te dejó entrar.</p>
+      </Aviso>
+    );
   } else if (sala.status === "lobby") {
-    contenido = <Lobby sala={sala} api={cliente} hostToken={hostToken} refrescar={refrescar} />;
+    contenido = <Lobby sala={sala} api={cliente} hostToken={hostToken} audio={audio} refrescar={refrescar} />;
   } else if (sala.phase.name === "reveal" || sala.phase.name === "finished") {
     contenido = <Resultados sala={sala} ahora={ahora} />;
   } else {
@@ -86,13 +99,26 @@ function Aviso({ titulo, children }: { titulo: string; children?: React.ReactNod
   );
 }
 
-function UnirseASala({ sala, api, hostToken, alEntrar }: { sala: SalaUnible; api: ApiBatallas; hostToken?: string; alEntrar: () => void }) {
+function UnirseASala({
+  sala,
+  api,
+  hostToken,
+  audio,
+  alEntrar,
+}: {
+  sala: SalaUnible;
+  api: ApiBatallas;
+  hostToken?: string;
+  audio: React.RefObject<HTMLAudioElement | null>;
+  alEntrar: () => void;
+}) {
   const [nombre, setNombre] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [entrando, setEntrando] = useState(false);
 
   async function enviar(evento: FormEvent) {
     evento.preventDefault();
+    desbloquearAudio(audio.current); // el toque de entrar deja sonar las rondas después
     setError(null);
     setEntrando(true);
     try {
@@ -110,6 +136,7 @@ function UnirseASala({ sala, api, hostToken, alEntrar }: { sala: SalaUnible; api
       <p className="batalla__bajada">
         {sala.round_count} canciones, {sala.round_seconds} segundos cada una. Ya hay {sala.players_count} {sala.players_count === 1 ? "persona" : "personas"} en la sala.
       </p>
+      {sala.join_mode === "approval" && <p className="batalla__nota">Quien organiza tiene que aceptarte para que entres.</p>}
       <label className="batalla__campo">
         Tu nombre
         <input value={nombre} maxLength={50} onChange={(e) => setNombre(e.target.value)} autoComplete="nickname" />

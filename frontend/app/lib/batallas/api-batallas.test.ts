@@ -45,6 +45,20 @@ describe("crearApiBatallas", () => {
     expect(sala.code).toBe("ABC234");
   });
 
+  it("manda los modos de audio y de entrada si se pasan", async () => {
+    const mock = simular(respuesta({ code: "ABC234", host_token: "t" }, 201));
+    await crearApiBatallas().crear({ audioMode: "host", joinMode: "approval" });
+    expect(ultima(mock).cuerpo).toEqual({ audio_mode: "host", join_mode: "approval" });
+  });
+
+  it("revisar acepta o rechaza a una persona con la clave del organizador", async () => {
+    const mock = simular(respuesta({ ok: true }));
+    await crearApiBatallas().revisar("abc234", 7, true, "secreto");
+    expect(ultima(mock).url).toBe("https://api.example/api/battles/ABC234/review/");
+    expect(ultima(mock).cuerpo).toEqual({ player_id: 7, accept: true });
+    expect(ultima(mock).opciones.headers["X-Host-Token"]).toBe("secreto");
+  });
+
   it("manda también los segundos y el título si se pasan", async () => {
     const mock = simular(respuesta({ code: "ABC234", host_token: "t" }, 201));
     await crearApiBatallas().crear({ rondas: 8, segundos: 15, titulo: "Cumple de Ana" });
