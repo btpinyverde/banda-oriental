@@ -171,3 +171,14 @@ ffmpeg del sistema o, si no hay, el que trae el paquete `imageio-ffmpeg` (ajuste
 los primeros), para poder decir "puesto 3 de 128". El front lo usa en la imagen para compartir la posición
 (`/compartir/posicion`, en cada escala: hoy, semana, mes y de siempre). Es un campo nuevo: el front funciona igual si falta.
 
+## Ranking: lo que muestra la página nueva
+
+- Cada fila de `GET /api/leaderboard/?period=...` (y `me`) trae además `current_streak` (racha actual), `win_percentage`
+  (partidas ganadas sobre terminadas, en %, `null` si todavía no hay estadísticas) y `played` (partidas terminadas; sin
+  estadísticas, las que tiene en el período). Nada privado: nunca un identificador de dispositivo ni una cuenta.
+- `GET /api/leaderboard/highlights/` → `{"streaks": [{"display_name","value"}], "songs": [...]}`: las cinco mejores rachas actuales y
+  quiénes jugaron más canciones. Solo jugadores con nombre público y al menos una partida; el empate se desempata por nombre.
+- `GET /api/stats/global/` → `{"players", "games", "days"}`: jugadores con partidas, partidas terminadas y días publicados hasta hoy.
+- Los tres son públicos, de solo lectura y con caché de un minuto (los dos últimos). La página tolera que falten (un servidor más
+  viejo): muestra "—" en las columnas nuevas y no muestra las listas ni las cifras globales.
+

@@ -1,6 +1,6 @@
 import { comoJson } from "./http";
 import { pedirDelJuego } from "./pedir-del-juego";
-import type { EstadisticasServidor, PeriodoRanking, RankingServidor } from "./tipos";
+import type { Destacados, EstadisticasGlobales, EstadisticasServidor, PeriodoRanking, RankingServidor } from "./tipos";
 
 /**
  * Las estadísticas de quien juega, tal como las calculó y guardó el servidor (con la sesión si hay una; si no, las
@@ -18,6 +18,18 @@ export async function pedirRanking(periodo: PeriodoRanking, idDispositivo?: stri
     cache: "no-store",
   });
   return comoJson<RankingServidor>(respuesta);
+}
+
+/** Las mejores rachas y quiénes jugaron más canciones (para las listas laterales del ranking). */
+export async function pedirDestacados(): Promise<Destacados> {
+  const respuesta = await pedirDelJuego("/api/leaderboard/highlights/", { cache: "no-store" });
+  return comoJson<Destacados>(respuesta);
+}
+
+/** Jugadores, partidas y días del juego (para las estadísticas globales del ranking). */
+export async function pedirGlobales(): Promise<EstadisticasGlobales> {
+  const respuesta = await pedirDelJuego("/api/stats/global/", { cache: "no-store" });
+  return comoJson<EstadisticasGlobales>(respuesta);
 }
 
 /**

@@ -68,19 +68,39 @@ def _names(players: list[dict]) -> dict:
     return names
 
 
+def _stats(players: list[dict]) -> dict:
+    """What the server knows of each shown player besides the score: current streak, how many games finished and the accuracy
+    (percentage won). A player with no stats row yet gets zeros and no accuracy."""
+    user_ids = [p["key"][1] for p in players if p["key"][0] == "u"]
+    device_ids = [p["key"][1] for p in players if p["key"][0] == "d"]
+    found = {}
+    for row in PlayerStats.objects.filter(user_id__in=user_ids):
+        found[("u", row.user_id)] = row
+    for row in PlayerStats.objects.filter(device_id__in=device_ids, user__isnull=True):
+        found[("d", row.device_id)] = row
+    return found
+
+
 def build(period: str, today: date, *, limit: int, me_key=None) -> dict:
     start, end = period_range(period, today)
     players = _totals(start, end)
     shown = players[:limit]
     me = next((p for p in players if p["key"] == me_key), None) if me_key else None
-    names = _names(shown + ([me] if me and me not in shown else []))
+    visible = shown + ([me] if me and me not in shown else [])
+    names = _names(visible)
+    stats = _stats(visible)
 
     def public(player):
+        row = stats.get(player["key"])
         return {
             "rank": player["rank"],
             "display_name": names[player["key"]],
             "score": player["score"],
             "games": player["games"],
+            "current_streak": row.current_streak if row else 0,
+            "win_percentage": round(row.won * 100 / row.played) if row and row.played else None,
+            # Games finished in all, or (without stats yet) the scores it has.
+            "played": row.played if row and row.played else player["games"],
         }
 
     return {

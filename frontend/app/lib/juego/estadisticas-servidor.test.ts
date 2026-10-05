@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cambiarNombre, pedirEstadisticas, pedirRanking } from "./estadisticas-servidor";
+import { cambiarNombre, pedirDestacados, pedirEstadisticas, pedirGlobales, pedirRanking } from "./estadisticas-servidor";
 import { ApiError } from "./tipos";
 import { guardarSesion, leerSesion } from "../cuenta/sesion";
 
@@ -167,3 +167,24 @@ describe("cambiarNombre", () => {
     });
   });
 });
+
+describe("pedirDestacados y pedirGlobales", () => {
+  it("piden las listas laterales y las cifras globales sin guardarlas en caché", async () => {
+    const mock = simular(respuesta({ streaks: [{ display_name: "Ana", value: 5 }], songs: [] }), respuesta({ players: 10, games: 40, days: 3 }));
+
+    expect((await pedirDestacados()).streaks[0]).toEqual({ display_name: "Ana", value: 5 });
+    expect(await pedirGlobales()).toEqual({ players: 10, games: 40, days: 3 });
+
+    expect(String(mock.mock.calls[0][0])).toBe("https://api.example/api/leaderboard/highlights/");
+    expect(String(mock.mock.calls[1][0])).toBe("https://api.example/api/stats/global/");
+    expect(mock.mock.calls[0][1].cache).toBe("no-store");
+  });
+
+  it("si la API responde con error, lanzan (la página decide qué hacer)", async () => {
+    simular(respuesta({}, 500), respuesta({}, 500));
+
+    await expect(pedirDestacados()).rejects.toThrow();
+    await expect(pedirGlobales()).rejects.toThrow();
+  });
+});
+
