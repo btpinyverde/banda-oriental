@@ -37,6 +37,7 @@ Dentro:
 - Canciones al azar del catálogo (sin ocultas), sin repetir dentro de la sala.
 - **Cada dispositivo reproduce su propio audio** y responde ahí.
 - Puntaje por rapidez y acierto; ranking de la sala al final de cada ronda y al terminar.
+- **Ranking de batallas**, aparte del ranking del juego diario pero **en la misma pantalla** (`/ranking`): ver la sección "Ranking de batallas".
 
 Fuera (etapas siguientes): modo anfitrión, aceptación manual, rangos y listas a mano, enlaces de YouTube, equipos, presentación.
 
@@ -89,6 +90,21 @@ Toda respuesta incluye `server_time` para el ajuste de reloj. Las respuestas con
 (con `starts_at`/`ends_at` y la URL fresca del preview solo para jugadores y solo cuando corresponde), lista de jugadores, ranking.
 **El jugador nunca recibe la canción correcta antes de que termine la ronda.**
 
+## Ranking de batallas
+
+Decidido por Brandon: las batallas tienen un **ranking aparte** del juego diario, mostrado **en la misma pantalla de ranking**.
+
+- En `/ranking` hay un selector arriba (por ejemplo "Diario | Batallas"). "Diario" es el ranking de hoy; "Batallas" muestra el de batallas con el mismo diseño de filas.
+- El ranking de batallas suma los **puntos de las batallas terminadas** de cada jugador. Usa las mismas escalas de tiempo del ranking diario
+  (semana, mes, global) para no inventar otra navegación.
+- Los puntos de batalla **no se mezclan** con los del juego diario: no cambian su racha, sus estadísticas ni su posición diaria.
+- Cuenta cada jugador de una batalla terminada; el organizador, que no juega, no suma.
+- El ranking se **calcula en el backend** (como el diario) y se puede compartir la posición, igual que en el ranking actual.
+- **Identidad:** para que el ranking tenga nombres únicos, el nombre con el que se entra a una sala es el **nombre público** del jugador
+  (único sin distinguir mayúsculas). Si ya tiene uno, se usa; si no, el que escriba pasa a ser su nombre público si está libre, y si no
+  se le pide otro. Así no hay dos "Juan" distintos en la misma lista. Los jugadores sin cuenta se siguen identificando por `device_id`.
+- Una batalla de una sola persona no suma al ranking (evita sumar puntos jugando solo).
+
 ## Puntaje
 
 Reutiliza la idea del juego diario (base + bonus por rapidez): acierto en la ronda da puntos base más un bonus decreciente según
@@ -125,8 +141,13 @@ antes de decidir si se paga un plan. El servidor gratis se duerme a los 15 minut
 - Frontend: pruebas de pantallas (crear, lobby, ronda, resultados) con la API simulada.
 - Prueba de carga con 50 jugadores simulados.
 
+## Decisiones tomadas
+
+- Las batallas son un **ranking aparte, en la misma pantalla** del ranking (Brandon, 2026-10-05).
+- Valores por defecto: **10 canciones y 20 segundos por ronda** (propuesta aceptada por Brandon).
+- El organizador **no necesita cuenta**: alcanza con su dispositivo (propuesta aceptada por Brandon).
+
 ## Preguntas abiertas
 
-1. Valores por defecto: ¿cuántas canciones (propuesta: 10) y cuántos segundos por ronda (propuesta: 20)?
-2. ¿El organizador necesita cuenta, o alcanza con su dispositivo? (propuesta: alcanza con el dispositivo)
-3. ¿Las batallas dan puntos o racha al ranking general, o son aparte? (propuesta: aparte en la etapa 1)
+1. ¿El ranking de batallas debe mostrar también las batallas más recientes (quién ganó cada una), además de los puntos acumulados?
+2. Regla de identidad por nombre público al entrar a una sala (ver "Ranking de batallas"): ¿te parece bien?
