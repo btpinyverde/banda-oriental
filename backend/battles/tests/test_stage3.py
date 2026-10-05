@@ -234,8 +234,15 @@ def test_a_video_that_does_not_allow_embedding_is_refused_with_a_clear_reason(cl
     assert r.status_code == 400 and "fuera de YouTube" in str(r.json())
 
 
-def test_a_video_that_does_not_exist_or_a_failing_youtube_is_refused(client, catalog, monkeypatch):
-    monkeypatch.setattr(youtube.requests, "get", lambda *a, **k: FakeResponse(404))
+@pytest.mark.parametrize("status", [400, 404])
+def test_a_video_that_does_not_exist_says_so(client, catalog, monkeypatch, status):
+    monkeypatch.setattr(youtube.requests, "get", lambda *a, **k: FakeResponse(status))
+    r = lookup(client, "https://youtu.be/dQw4w9WgXcQ")
+    assert r.status_code == 400 and "No encontramos ese video" in str(r.json())
+
+
+def test_a_failing_youtube_is_refused(client, catalog, monkeypatch):
+    monkeypatch.setattr(youtube.requests, "get", lambda *a, **k: FakeResponse(500))
     assert lookup(client, "https://youtu.be/dQw4w9WgXcQ").status_code == 400
 
     def boom(*a, **k):

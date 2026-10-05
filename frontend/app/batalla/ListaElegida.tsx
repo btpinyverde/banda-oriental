@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { ItemDeLista, LecturaDeYoutube } from "../lib/batallas/api-batallas";
 import type { CancionCatalogo } from "../lib/juego/tipos";
 import { BuscadorCanciones } from "../jugar/BuscadorCanciones";
+import type { ApiYoutube } from "../lib/batallas/youtube-iframe";
+import { ReproductorYoutube } from "./ReproductorYoutube";
 
 /** Un elemento de la lista con lo necesario para mostrarlo (el servidor solo recibe `ItemDeLista`). */
 export type ItemConDatos = ItemDeLista & { titulo: string; artista: string };
@@ -15,6 +17,8 @@ interface Props {
   canciones: CancionCatalogo[];
   leerYoutube: (url: string) => Promise<LecturaDeYoutube>;
   maximo: number;
+  /** Para los tests: cómo se carga el reproductor de YouTube con el que se prueba el video. */
+  cargarVideo?: () => Promise<ApiYoutube>;
 }
 
 const minutos = (segundos: number) => `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
@@ -23,12 +27,14 @@ const minutos = (segundos: number) => `${Math.floor(segundos / 60)}:${String(seg
  * La lista de canciones que arma quien organiza, en el orden en que van a salir. Cada una se oye con el preview de Deezer o,
  * si se pega un enlace, con el video de YouTube (la respuesta siempre es una canción del catálogo).
  */
-export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo }: Props) {
+export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo, cargarVideo }: Props) {
   const [errorCatalogo, setErrorCatalogo] = useState<string | null>(null);
   const [enlace, setEnlace] = useState("");
   const [lectura, setLectura] = useState<LecturaDeYoutube | null>(null);
   const [inicio, setInicio] = useState("0");
   const [leyendo, setLeyendo] = useState(false);
+  // El video leído no se puede reproducir en el sitio (el dueño no deja embeberlo, aunque YouTube lo muestre normal).
+  const [videoBloqueado, setVideoBloqueado] = useState(false);
   const [errorYoutube, setErrorYoutube] = useState<string | null>(null);
   const lleno = items.length >= maximo;
 
@@ -49,6 +55,7 @@ export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo 
   async function leer() {
     if (enlace.trim() === "") return;
     setErrorYoutube(null);
+    setVideoBloqueado(false);
     setLeyendo(true);
     try {
       setLectura(await leerYoutube(enlace.trim()));
@@ -63,11 +70,13 @@ export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo 
   function usarParaYoutube(cancion: CancionCatalogo) {
     if (!lectura) return;
     const segundo = Number(inicio);
-    const motivo = agregar(cancion, {
-      source: "youtube",
-      youtube_id: lectura.youtube_id,
-      start_seconds: Number.isInteger(segundo) && segundo >= 0 && segundo <= 600 ? segundo : 0,
-    });
+    // Un video que no se puede reproducir acá no sirve: la canción queda con su preview de Deezer.
+    const motivo = agregar(
+      cancion,
+      videoBloqueado
+        ? { source: "deezer" }
+        : { source: "youtube", youtube_id: lectura.youtube_id, start_seconds: Number.isInteger(segundo) && segundo >= 0 && segundo <= 600 ? segundo : 0 },
+    );
     setErrorYoutube(motivo);
     if (!motivo) {
       setLectura(null);
@@ -106,6 +115,13 @@ export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo 
             <p className="batalla__nota">
               Video: {lectura.title} ({lectura.author})
             </p>
+            <ReproductorYoutube key={lectura.youtube_id} videoId={lectura.youtube_id} inicio={0} activo={false} alFallar={() => setVideoBloqueado(true)} cargar={cargarVideo} />
+            {videoBloqueado && (
+              <p className="batalla__error">
+                Este video no se puede reproducir en el sitio (el dueño no deja verlo en otras páginas). Si elegís la canción, va a sonar con el
+                preview de Deezer.
+              </p>
+            )}
             <label className="batalla__campo">
               Empezar en el segundo
               <input inputMode="numeric" value={inicio} onChange={(e) => setInicio(e.target.value)} />

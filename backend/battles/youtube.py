@@ -71,9 +71,10 @@ def lookup(url):
     except requests.RequestException:
         raise ValidationError({"url": "No pudimos leer ese enlace ahora. Probá de nuevo."})
     if response.status_code == 401:
-        # oEmbed answers 401 for a video whose owner does not allow playing it outside YouTube: it would not play here either.
+        # oEmbed answers 401 for some videos whose owner does not allow playing them outside YouTube. It does not catch them all (it says 200
+        # for others that the player then refuses with error 150), so the site also tries the player on the video before adding it.
         raise ValidationError({"url": "Ese video no permite reproducirse fuera de YouTube. Probá con otro."})
-    if response.status_code == 404:
+    if response.status_code in (400, 404):
         raise ValidationError({"url": "No encontramos ese video."})
     if response.status_code != 200:
         raise ValidationError({"url": "No pudimos leer ese enlace ahora. Probá de nuevo."})
