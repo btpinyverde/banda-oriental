@@ -38,6 +38,10 @@ class Battle(models.Model):
     # How the songs are chosen: at random inside a segment (`filters`, see filters.py) or from an ordered list (`playlist`).
     RANDOM, LIST = "random", "list"
     SONGS_MODES = [(RANDOM, "Al azar"), (LIST, "Lista elegida")]
+    # Teams: none, assigned at random when the battle starts, or put together by the organizer in the lobby.
+    NO_TEAMS, RANDOM_TEAMS, MANUAL_TEAMS = "none", "random", "manual"
+    TEAM_MODES = [(NO_TEAMS, "Sin equipos"), (RANDOM_TEAMS, "Equipos al azar"), (MANUAL_TEAMS, "Equipos armados")]
+    team_mode = models.CharField(max_length=10, choices=TEAM_MODES, default=NO_TEAMS)
     songs_mode = models.CharField(max_length=10, choices=SONGS_MODES, default=RANDOM)
     filters = models.JSONField(default=dict, blank=True)
     playlist = models.JSONField(default=list, blank=True)
@@ -51,6 +55,17 @@ class Battle(models.Model):
 
     def __str__(self):
         return f"Batalla {self.code}"
+
+
+class BattleTeam(models.Model):
+    battle = models.ForeignKey(Battle, on_delete=models.CASCADE, related_name="teams")
+    index = models.PositiveSmallIntegerField()
+    name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7)
+
+    class Meta:
+        ordering = ["index"]
+        constraints = [models.UniqueConstraint(fields=["battle", "index"], name="battle_team_index_unique")]
 
 
 class BattleRound(models.Model):
@@ -77,6 +92,7 @@ class BattlePlayer(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="battle_players")
     device_id = models.CharField(max_length=64, blank=True)
     display_name = models.CharField(max_length=50)
+    team = models.ForeignKey(BattleTeam, null=True, blank=True, on_delete=models.SET_NULL, related_name="players")
     # Only the accepted play, rank and count; the waiting and the rejected keep their name reserved in the room.
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=ACCEPTED)
     joined_at = models.DateTimeField(auto_now_add=True)

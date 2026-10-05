@@ -101,9 +101,19 @@ def build_state(battle, caller, token, since, now):
     played = rounds[phase_index] if phase and phase.name in ("playing", "reveal") else None
     answered_ids = set(BattleAnswer.objects.filter(round=played).values_list("player_id", flat=True)) if played else set()
     accepted = list(battle.players.filter(status=BattlePlayer.ACCEPTED))
+    with_teams = battle.team_mode != Battle.NO_TEAMS
+    data["team_mode"] = battle.team_mode
+    data["teams"] = [{"id": t.pk, "name": t.name, "color": t.color} for t in battle.teams.all()]
     data["players"] = [
-        {"name": p.display_name, **({"id": p.pk, "answered": p.pk in answered_ids} if host else {})} for p in accepted
+        {
+            "name": p.display_name,
+            **({"id": p.pk, "answered": p.pk in answered_ids} if host else {}),
+            **({"team": p.team_id} if with_teams else {}),
+        }
+        for p in accepted
     ]
+    if player is not None and with_teams:
+        data["my_team"] = player.team_id
     if host and battle.status == Battle.LOBBY:
         data["pending"] = [{"id": p.pk, "name": p.display_name} for p in battle.players.filter(status=BattlePlayer.PENDING)]
 
@@ -133,4 +143,6 @@ def build_state(battle, caller, token, since, now):
             else None,
         }
         data["ranking"] = services.ranking(battle)
+        if with_teams:
+            data["team_ranking"] = services.team_ranking(battle)
     return data

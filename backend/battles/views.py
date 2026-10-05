@@ -41,6 +41,9 @@ class CreateView(APIView):
             songs_mode=request.data.get("songs_mode"),
             filters=request.data.get("filters"),
             playlist=request.data.get("playlist"),
+            team_mode=request.data.get("team_mode"),
+            team_count=request.data.get("team_count"),
+            team_names=request.data.get("team_names"),
         )
         return Response(
             {"code": battle.code, "host_token": battle.host_token, "round_count": battle.round_count, "round_seconds": battle.round_seconds, "title": battle.title},
@@ -162,3 +165,16 @@ class YoutubeView(APIView):
                 "suggestions": [song_payload(s) for s in found["songs"]],
             }
         )
+
+
+class TeamView(APIView):
+    throttle_scope = "battle-join"
+    authentication_classes = [BearerTokenAuthentication]
+
+    def post(self, request, code):
+        caller = get_caller(request)
+        battle = lobby_battle_or_404(code)
+        if not is_host(battle, caller, request.headers.get("X-Host-Token", "")):
+            raise Http404
+        services.assign_team(battle, request.data.get("player_id"), request.data.get("team_id"))
+        return Response({"ok": True})
