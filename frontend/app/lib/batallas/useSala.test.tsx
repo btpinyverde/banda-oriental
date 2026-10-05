@@ -16,6 +16,7 @@ const estado = (cambios: Partial<EstadoSala> = {}): EstadoSala => ({
   round_seconds: 10,
   phase: { name: "lobby", index: 0 },
   round: null,
+  min_players: 2,
   players: [{ name: "Ana" }],
   ...cambios,
 });

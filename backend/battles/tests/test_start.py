@@ -53,11 +53,32 @@ def test_only_the_host_can_start_and_others_get_not_found(client, battle, songs)
     assert start(client, battle, device=D3, token=battle.host_token).status_code == 200  # the token is enough
 
 
-def test_needs_at_least_two_players(client, songs, db):
+def test_one_player_is_enough_while_the_mode_is_restricted(client, songs, db, settings):
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["alguien@x.uy"], "MIN_PLAYERS": None}
+    b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST)
+    BattlePlayer.objects.create(battle=b, device_id=D2, display_name="Ana")
+    assert start(client, b).status_code == 200
+
+
+def test_needs_at_least_two_players_once_it_is_open_to_everybody(client, songs, db, settings):
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["*"], "MIN_PLAYERS": None}
     b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST)
     BattlePlayer.objects.create(battle=b, device_id=D2, display_name="Ana")
     r = start(client, b)
     assert r.status_code == 400 and "al menos otra persona" in str(r.json())
+
+
+def test_the_minimum_can_be_set_explicitly(client, songs, db, settings):
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["alguien@x.uy"], "MIN_PLAYERS": 2}
+    b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST)
+    BattlePlayer.objects.create(battle=b, device_id=D2, display_name="Ana")
+    assert start(client, b).status_code == 400
+
+
+def test_nobody_in_the_room_is_never_enough(client, songs, db, settings):
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["alguien@x.uy"], "MIN_PLAYERS": None}
+    b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST)
+    assert start(client, b).status_code == 400
 
 
 def test_skips_songs_without_preview_and_hidden_ones(client, battle, songs, monkeypatch):
