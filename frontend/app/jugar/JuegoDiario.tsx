@@ -12,6 +12,7 @@ import { useSesion } from "../lib/cuenta/useSesion";
 import { useDiaActual } from "../lib/juego/useDiaActual";
 import { useEstadisticasServidor } from "../lib/juego/useEstadisticasServidor";
 import type { CancionCatalogo, ClienteJuego, EstadoDelDia, EstadoEnCurso } from "../lib/juego/tipos";
+import { EsqueletoDelJuego } from "./EsqueletoDelJuego";
 import { AyudaColores } from "./AyudaColores";
 import { BuscadorCanciones } from "./BuscadorCanciones";
 import { FilaStems } from "./FilaStems";
@@ -204,14 +205,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   }
 
   if (vista.tipo === "cargando") {
-    return (
-      <div className="jugar__mensaje">
-        <p role="status">Cargando la canción de hoy…</p>
-        {tardando && (
-          <p className="jugar__espera">El servidor estaba dormido y está despertando. Puede tardar hasta un minuto.</p>
-        )}
-      </div>
-    );
+    return <EsqueletoDelJuego tardando={tardando} />;
   }
 
   if (vista.tipo === "error") {
