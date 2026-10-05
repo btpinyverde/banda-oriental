@@ -44,10 +44,13 @@ export function useSala(code: string, apiExterna?: ApiBatallas) {
       temporizador = setTimeout(consultar, INTERVALO_MS[fase]);
     };
 
+    let primera = true;
     async function consultar() {
       clearTimeout(temporizador);
       if (!vivo) return;
-      if (typeof document !== "undefined" && document.hidden) return programar(); // con la pestaña oculta no se gasta ni batería ni cuota
+      // Con la pestaña oculta no se gasta batería ni cuota, pero la primera consulta se hace siempre: así la sala ya está lista al mirarla.
+      if (!primera && typeof document !== "undefined" && document.hidden) return programar();
+      primera = false;
       const antes = Date.now();
       try {
         const r = await api.estado(code, { since: clave || undefined, hostToken });

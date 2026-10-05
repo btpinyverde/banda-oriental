@@ -99,6 +99,28 @@ describe("useSala", () => {
     expect(Math.abs(result.current.ahora() - (Date.now() + 10_000))).toBeLessThan(50);
   });
 
+  it("con la pestaña oculta hace igual la primera consulta y después deja de consultar hasta que se vea", async () => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    try {
+      const { api, estadoMock } = apiCon(estado());
+      const { result } = renderHook(() => useSala("ABC234", api));
+
+      await act(async () => {});
+      expect(estadoMock).toHaveBeenCalledTimes(1);
+      expect(result.current.sala).toMatchObject({ code: "ABC234" });
+      await act(async () => vi.advanceTimersByTimeAsync(10_000));
+      expect(estadoMock).toHaveBeenCalledTimes(1);
+
+      Object.defineProperty(document, "hidden", { configurable: true, get: () => false });
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      expect(estadoMock).toHaveBeenCalledTimes(2);
+    } finally {
+      delete (document as unknown as Record<string, unknown>).hidden;
+    }
+  });
+
   it("un error de red no corta la consulta", async () => {
     const { api, estadoMock } = apiCon(new ApiError("No se pudo conectar con el servidor.", 0), estado());
     const { result } = renderHook(() => useSala("ABC234", api));

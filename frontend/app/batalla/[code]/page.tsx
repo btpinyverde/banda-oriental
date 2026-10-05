@@ -4,6 +4,7 @@ import { batallaActiva } from "../../lib/funciones";
 import { Footer } from "../../ui/Footer";
 import { Navbar } from "../../ui/Navbar";
 import { Sala } from "../Sala";
+import "../../jugar/jugar.css"; // el buscador de canciones es el del juego diario y trae sus estilos
 import "../batalla.css";
 
 export const metadata: Metadata = {
