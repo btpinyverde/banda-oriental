@@ -53,6 +53,7 @@ export interface SinCambios {
 /** Lo único que ve quien todavía no entró a una sala que está en su lobby. */
 export interface SalaUnible {
   joinable: true;
+  server_time: string;
   code: string;
   title: string;
   round_count: number;

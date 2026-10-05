@@ -30,6 +30,7 @@ def build_state(battle, caller, token, since, now):
             return None
         return {
             "joinable": True,
+            "server_time": now.isoformat(),
             "code": battle.code,
             "title": battle.title,
             "round_count": battle.round_count,

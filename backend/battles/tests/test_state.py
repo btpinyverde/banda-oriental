@@ -77,7 +77,9 @@ def test_the_battle_is_marked_finished_when_the_time_is_over(client, running, cl
 
 def test_a_stranger_sees_only_the_lobby_basics(client, db):
     b = Battle.objects.create(round_count=3, round_seconds=10, host_device_id=HOST, title="Cumple")
-    assert get(client, b, STRANGER).json() == {"joinable": True, "code": b.code, "title": "Cumple", "round_count": 3, "round_seconds": 10, "players_count": 0}
+    body = get(client, b, STRANGER).json()
+    assert body.pop("server_time")  # so the device can tell the offset of its clock from the first poll
+    assert body == {"joinable": True, "code": b.code, "title": "Cumple", "round_count": 3, "round_seconds": 10, "players_count": 0}
 
 
 def test_lobby_lists_the_players_for_members(client, db):

@@ -1,0 +1,27 @@
+/* La batalla: crear la sala, entrar, el lobby, las rondas y los resultados. Funcional; el diseño se afina después. */
+.batalla { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px var(--gutter) 56px; min-height: 60dvh; }
+.batalla__tarjeta { width: min(100%, 560px); display: flex; flex-direction: column; gap: 14px; padding: 28px 24px; border-radius: 24px; background: #fff; box-shadow: 0 8px 30px rgba(60, 40, 120, 0.1); }
+.batalla__titulo { margin: 0; font-size: clamp(28px, 6vw, 40px); font-weight: 900; line-height: 1.05; letter-spacing: -0.03em; }
+.batalla__subtitulo { margin: 8px 0 0; font-size: 18px; }
+.batalla__bajada { margin: 0; font-size: 18px; line-height: 1.45; color: var(--tinta-suave); }
+.batalla__bajada strong { color: var(--tinta); }
+.batalla__nota { margin: 0; font-size: 14px; color: var(--tinta-suave); }
+.batalla__ronda { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--violeta); }
+.batalla__campo { display: grid; gap: 6px; font-size: 15px; font-weight: 600; }
+.batalla__campo input, .batalla__enlace input { height: 48px; padding: 0 14px; border: 2px solid #ebe7f4; border-radius: 14px; background: #fbf9f4; font: inherit; font-size: 16px; color: var(--tinta); }
+.batalla__campo input:focus, .batalla__enlace input:focus { outline: none; border-color: var(--violeta); }
+.batalla__enlace { display: flex; gap: 8px; }
+.batalla__enlace input { flex: 1; min-width: 0; }
+.batalla__qr { align-self: center; border-radius: 12px; }
+.batalla__jugadores { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.batalla__jugadores li { padding: 6px 12px; border-radius: 999px; background: var(--violeta-claro); font-weight: 600; }
+.batalla__error { margin: 0; padding: 10px 14px; border-radius: 12px; background: #ffd9e0; font-size: 15px; font-weight: 600; }
+.batalla__aviso-red { margin: 0; padding: 6px 12px; border-radius: 999px; background: var(--amarillo); font-size: 13px; font-weight: 600; }
+.batalla__cuenta { margin: 0; text-align: center; font-size: 96px; font-weight: 900; line-height: 1; color: var(--violeta); }
+.batalla__tiempo { margin: 0; font-size: 32px; font-weight: 900; color: var(--violeta); }
+.batalla__tu-puntaje { margin: 0; font-size: 20px; font-weight: 800; }
+.batalla__tabla { width: 100%; border-collapse: collapse; font-size: 16px; }
+.batalla__tabla th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tinta-suave); }
+.batalla__tabla th, .batalla__tabla td { padding: 8px 6px; border-bottom: 1px solid #ebe7f4; }
+.batalla__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.batalla .boton { align-self: flex-start; }

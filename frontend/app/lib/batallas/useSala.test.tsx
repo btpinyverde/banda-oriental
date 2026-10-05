@@ -84,12 +84,27 @@ describe("useSala", () => {
     expect(Math.abs(result.current.ahora() - (Date.now() + 10_000))).toBeLessThan(50);
   });
 
+  it("una respuesta sin hora del servidor no rompe el reloj", async () => {
+    const estadoMock = vi
+      .fn()
+      .mockResolvedValueOnce({ joinable: true, code: "ABC234", title: "", round_count: 3, round_seconds: 10, players_count: 1 })
+      // El servidor va 10 s adelantado: su hora se calcula en el momento de contestar.
+      .mockImplementation(async () => estado({ server_time: new Date(Date.now() + 10_000).toISOString() }));
+    const api = { estado: estadoMock } as unknown as ApiBatallas; // fuera del renderHook: un cliente nuevo en cada render reinicia la consulta
+    const { result } = renderHook(() => useSala("ABC234", api));
+
+    await act(async () => {});
+    expect(Number.isFinite(result.current.ahora())).toBe(true);
+    await act(async () => vi.advanceTimersByTimeAsync(3100));
+    expect(Math.abs(result.current.ahora() - (Date.now() + 10_000))).toBeLessThan(50);
+  });
+
   it("un error de red no corta la consulta", async () => {
     const { api, estadoMock } = apiCon(new ApiError("No se pudo conectar con el servidor.", 0), estado());
     const { result } = renderHook(() => useSala("ABC234", api));
 
     await act(async () => {});
-    expect(result.current.error?.status).toBe(0);
+    expect((result.current.error as ApiError).status).toBe(0);
     await act(async () => vi.advanceTimersByTimeAsync(3100));
     expect(estadoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
     expect(result.current.error).toBeNull();

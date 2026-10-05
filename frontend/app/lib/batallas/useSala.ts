@@ -18,6 +18,8 @@ const INTERVALO_MS: Record<NombreDeFase | "otro", number> = {
  * La sala de una batalla, consultada cada pocos segundos. El dispositivo no se conecta a nada permanente: pregunta, y el
  * servidor contesta el estado (o "sin cambios"). Con la hora del servidor de cada respuesta se estima el desfase del
  * reloj, así `ahora()` marca el mismo instante en todos los dispositivos aunque tengan la hora mal.
+ *
+ * `apiExterna` (para los tests) tiene que ser siempre el mismo objeto: si cambia en cada render, la consulta se reinicia.
  */
 export function useSala(code: string, apiExterna?: ApiBatallas) {
   // Un solo cliente por pantalla: si se creara uno nuevo en cada render, la consulta se reiniciaría sin parar.
@@ -52,9 +54,11 @@ export function useSala(code: string, apiExterna?: ApiBatallas) {
         if (!vivo) return;
         const despues = Date.now();
         const retardo = (despues - antes) / 2; // lo que tardó la ida, suponiendo que ida y vuelta duran lo mismo
-        if (retardo <= mejorRetardo.current) {
+        const delServidor = Date.parse(r.server_time);
+        // Una respuesta sin hora válida no puede arruinar el reloj: se la ignora y se espera a la próxima.
+        if (Number.isFinite(delServidor) && retardo <= mejorRetardo.current) {
           mejorRetardo.current = retardo;
-          desfase.current = Date.parse(r.server_time) + retardo - despues;
+          desfase.current = delServidor + retardo - despues;
         }
         setError(null);
         if ("joinable" in r) {
