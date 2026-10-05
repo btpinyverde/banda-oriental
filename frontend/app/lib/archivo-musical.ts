@@ -36,7 +36,7 @@ export interface CancionFila {
   title: string;
   duration_seconds: number | null;
   artist: { id: number; name: string };
-  album: { id: number; name: string; year: number | null; genre: string };
+  album: { id: number; name: string; year: number | null; genre: string; cover_art_url: string };
   /** Lista: el último día vencido en que fue la canción del día. Ficha: todos esos días. Nunca hoy ni días futuros. */
   played_on: string | string[] | null;
 }
@@ -138,8 +138,10 @@ export const listarArtistas = (f: { q?: string; letra?: string; orden?: "name" |
 export const listarDiscos = (f: { q?: string; decada?: number; anio?: number; genero?: string; artista?: number; orden?: "name" | "year"; pagina?: number; porPagina?: number }) =>
   lista<DiscoFila>(`/api/catalog/albums/${consulta({ q: f.q, decade: f.decada, year: f.anio, genre: f.genero, artist: f.artista, sort: f.orden, page: f.pagina, page_size: f.porPagina })}`);
 
-export const listarCanciones = (f: { q?: string; artista?: number; disco?: number; decada?: number; genero?: string; pagina?: number }) =>
-  lista<CancionFila>(`/api/catalog/songs/${consulta({ q: f.q, artist: f.artista, album: f.disco, decade: f.decada, genre: f.genero, page: f.pagina })}`);
+export type OrdenDeCanciones = "title" | "artist" | "newest" | "oldest";
+
+export const listarCanciones = (f: { q?: string; artista?: number; disco?: number; decada?: number; genero?: string; orden?: OrdenDeCanciones; pagina?: number; porPagina?: number }) =>
+  lista<CancionFila>(`/api/catalog/songs/${consulta({ q: f.q, artist: f.artista, album: f.disco, decade: f.decada, genre: f.genero, sort: f.orden, page: f.pagina, page_size: f.porPagina })}`);
 
 export type Resultado<T> = T | "no-encontrado" | null;
 

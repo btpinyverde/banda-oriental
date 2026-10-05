@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { filtrosDelArchivo, listarArtistas, listarCanciones, listarDiscos } from "../lib/archivo-musical";
+import { filtrosDelArchivo, listarCanciones, type OrdenDeCanciones } from "../lib/archivo-musical";
 import { NOMBRE } from "../lib/seo";
-import { BuscadorDelArchivo } from "./BuscadorDelArchivo";
-import { Marco } from "./Marco";
-import { cantidad } from "./utiles";
+import { BarraDeFiltros } from "./BarraDeFiltros";
+import { ChipsDeGenero } from "./ChipsDeGenero";
+import { elegirChips } from "./generos";
+import { ColageDelArchivo } from "./ColageDelArchivo";
+import { FilaDeCancion } from "./Listados";
+import { Aviso, Marco } from "./Marco";
+import { PaginasNumeradas } from "./PaginasNumeradas";
+import { TarjetaDeCancion } from "./TarjetaDeCancion";
+import { cantidad, enteroDe, sinVacios, textoDe, type Parametros } from "./utiles";
+import "./archivo-explorador.css";
 
-// El catálogo cambia solo cuando se importa: la portada se vuelve a armar como mucho cada diez minutos.
+// El catálogo cambia solo cuando se importa: el explorador se arma como mucho cada diez minutos por cada combinación de filtros.
 export const revalidate = 600;
 
 const TITULO = "Archivo de música";
@@ -21,60 +28,96 @@ export const metadata: Metadata = {
   twitter: { title: TITULO, description: DESCRIPCION },
 };
 
-const nombreDeDecada = (decada: number) => `Años ${decada < 2000 ? decada - 1900 : decada}`;
+const POR_PAGINA = 18; // seis por fila, tres filas
+const GENEROS_EN_LOS_CHIPS = 7;
+const ORDENES: OrdenDeCanciones[] = ["title", "artist", "newest", "oldest"];
 
-export default async function PortadaDelArchivo() {
-  const [filtros, artistas, discos, canciones] = await Promise.all([filtrosDelArchivo(), listarArtistas({}), listarDiscos({}), listarCanciones({})]);
-  const puertas = [
-    { href: "/archivo/artistas", nombre: "Artistas", cuenta: artistas && `${cantidad(artistas.count)} artistas` },
-    { href: "/archivo/discos", nombre: "Discos", cuenta: discos && `${cantidad(discos.count)} discos` },
-    { href: "/archivo/canciones", nombre: "Canciones", cuenta: canciones && `${cantidad(canciones.count)} canciones` },
-  ];
+export default async function ExploradorDelArchivo({ searchParams }: { searchParams: Parametros }) {
+  const consulta = await searchParams;
+  const q = textoDe(consulta.q);
+  const decada = enteroDe(consulta.decada);
+  const genero = textoDe(consulta.genero, 60);
+  const orden = ORDENES.find((o) => o === consulta.orden);
+  const numero = enteroDe(consulta.pagina) ?? 1;
+  const lista = consulta.vista === "lista";
+
+  const [canciones, todas, filtros] = await Promise.all([
+    listarCanciones({ q, decada, genero, orden, pagina: numero, porPagina: POR_PAGINA }),
+    listarCanciones({ porPagina: 1 }),
+    filtrosDelArchivo(),
+  ]);
+
+  const generos = elegirChips((filtros?.genres ?? []).map((g) => g.genre), GENEROS_EN_LOS_CHIPS);
+  const filtrosPuestos = sinVacios({ q, decada, genero, orden: orden && orden !== "title" ? orden : undefined });
+  const conVista = (vista: "lista" | undefined) => {
+    const busqueda = new URLSearchParams({ ...filtrosPuestos, ...(vista && { vista }) });
+    return busqueda.size ? `/archivo?${busqueda}` : "/archivo";
+  };
+
   return (
-    <Marco>
-      <h1>Archivo</h1>
-      <p className="archivo-musical__bajada">Los artistas, discos y canciones uruguayos que están en el juego. Cualquiera de ellos puede ser la canción del día.</p>
-      <BuscadorDelArchivo />
+    <Marco ancho>
+      <section className="hero-archivo">
+        <div className="hero-archivo__texto">
+          <p className="hero-archivo__etiqueta">Archivo de canciones</p>
+          <h1>
+            Toda la música uruguaya en un <span className="hero-archivo__resaltado">solo lugar.</span>
+          </h1>
+          <p className="hero-archivo__bajada">
+            {todas && todas.count >= 100 ? `Más de ${cantidad(Math.floor(todas.count / 100) * 100)} canciones` : "Canciones uruguayas"} de todas las épocas. Explorá, filtrá y jugá las que quieras.
+          </p>
+        </div>
+        <ColageDelArchivo />
+      </section>
 
-      <ul className="archivo-entradas">
-        {puertas.map(({ href, nombre, cuenta }) => (
-          <li key={href}>
-            <Link href={href}>
-              <strong>{nombre}</strong>
-              {cuenta && <span>{cuenta}</span>}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <BarraDeFiltros
+        q={q ?? ""}
+        decada={decada ? String(decada) : ""}
+        orden={orden ?? "title"}
+        decadas={(filtros?.decades ?? []).map((d) => d.decade)}
+        parametros={sinVacios({ genero, vista: lista ? "lista" : undefined })}
+      />
+      <ChipsDeGenero generos={generos} actual={genero} parametros={sinVacios({ q, decada, orden: orden && orden !== "title" ? orden : undefined, vista: lista ? "lista" : undefined })} />
 
-      {filtros && filtros.decades.length > 0 && (
-        <section aria-labelledby="por-epoca" className="archivo-grupo">
-          <h2 id="por-epoca">Explorar por época</h2>
-          <ul className="archivo-chips">
-            {filtros.decades.map(({ decade, albums }) => (
-              <li key={decade}>
-                <Link href={`/archivo/discos?decada=${decade}`}>{`${nombreDeDecada(decade)} (${albums})`}</Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {canciones === null ? (
+        <Aviso>No pudimos cargar las canciones ahora. Probá de nuevo en un rato.</Aviso>
+      ) : (
+        <>
+          <div className="resultados__cabecera">
+            <p className="resultados__cuenta">{`${cantidad(canciones.count)} ${canciones.count === 1 ? "canción encontrada" : "canciones encontradas"}`}</p>
+            <div className="vistas" role="group" aria-label="Vista">
+              <Link href={conVista(undefined)} className="vistas__boton" aria-label="Ver como tarjetas" aria-current={!lista ? "true" : undefined}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+                </svg>
+              </Link>
+              <Link href={conVista("lista")} className="vistas__boton" aria-label="Ver como lista" aria-current={lista ? "true" : undefined}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+
+          {canciones.results.length === 0 ? (
+            <div className="archivo-aviso">
+              <p>No encontramos canciones con ese criterio.</p>
+              <Link href="/archivo">Ver todas las canciones</Link>
+            </div>
+          ) : lista ? (
+            <ul className="archivo-lista" aria-label="Canciones">
+              {canciones.results.map((c) => <FilaDeCancion key={c.id} cancion={c} />)}
+            </ul>
+          ) : (
+            <ul className="grilla" aria-label="Canciones">
+              {canciones.results.map((c) => <TarjetaDeCancion key={c.id} cancion={c} />)}
+            </ul>
+          )}
+          <PaginasNumeradas pagina={canciones.page} paginas={canciones.pages} ruta="/archivo" parametros={sinVacios({ ...filtrosPuestos, vista: lista ? "lista" : undefined })} />
+        </>
       )}
 
-      {filtros && filtros.genres.length > 0 && (
-        <section aria-labelledby="por-genero" className="archivo-grupo">
-          <h2 id="por-genero">Explorar por género</h2>
-          <ul className="archivo-chips">
-            {filtros.genres.slice(0, 24).map(({ genre, albums }) => (
-              <li key={genre}>
-                <Link href={`/archivo/discos?${new URLSearchParams({ genero: genre })}`}>{`${genre} (${albums})`}</Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <p>
-        Los días que ya pasaron del juego diario están en <Link href="/anteriores">juegos anteriores</Link>.
+      <p className="archivo-musical__tambien">
+        También podés explorar por <Link href="/archivo/artistas">Artistas</Link> · <Link href="/archivo/discos">Discos</Link> · o ver los <Link href="/anteriores">juegos anteriores</Link>.
       </p>
     </Marco>
   );

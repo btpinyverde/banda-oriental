@@ -51,8 +51,9 @@ El género es el nombre exacto (sin distinguir mayúsculas): `Folk` no trae `Fol
 ### `GET /api/catalog/albums/<id>/`
 El disco y sus canciones: `{ ...disco, "songs": [ {"id","title","duration_seconds"} ] }`.
 
-### `GET /api/catalog/songs/` · `?q=` `?artist=<id>` `?album=<id>` `?year=` `?decade=` `?genre=`
-Canción: `{ "id", "title", "duration_seconds", "artist": {"id","name"}, "album": {"id","name","year","genre"}, "played_on" }`.
+### `GET /api/catalog/songs/` · `?q=` `?artist=<id>` `?album=<id>` `?year=` `?decade=` `?genre=` · `?sort=title|artist|newest|oldest`
+Por defecto ordena por título; `newest`/`oldest` por el año del disco (los sin año, al final); con `q` el nombre exacto va primero igual.
+Canción: `{ "id", "title", "duration_seconds", "artist": {"id","name"}, "album": {"id","name","year","genre","cover_art_url"}, "played_on" }`.
 Varias canciones pueden llamarse igual (de distintos artistas o del mismo en discos distintos): el artista y el disco dentro de
 cada resultado sirven para distinguirlas. En la lista `played_on` es el último día vencido en que fue la canción del día, o `null`.
 

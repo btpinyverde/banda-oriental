@@ -80,6 +80,13 @@ describe("pedidos a la API del archivo", () => {
     expect(params.get("sort")).toBe("year");
   });
 
+  it("la lista de canciones se puede ordenar y pedir de a cierta cantidad", async () => {
+    await listarCanciones({ orden: "newest", porPagina: 18, pagina: 3, genero: "Rock", decada: 1990 });
+
+    const params = urlPedida().searchParams;
+    expect([params.get("sort"), params.get("page_size"), params.get("page"), params.get("genre"), params.get("decade")]).toEqual(["newest", "18", "3", "Rock", "1990"]);
+  });
+
   it("la lista de canciones filtra por artista y disco", async () => {
     await listarCanciones({ q: "luna", artista: 7, disco: 12 });
 
