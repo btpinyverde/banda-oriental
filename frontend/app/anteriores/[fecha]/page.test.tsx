@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import * as archivo from "../../lib/archivo";
+import * as archivo from "../../lib/anteriores";
 import PaginaDelDia, { generateMetadata, generateStaticParams } from "./page";
 
 afterEach(() => {
@@ -11,7 +11,7 @@ afterEach(() => {
 const parametros = (fecha: string) => ({ params: Promise.resolve({ fecha }) });
 const dia = { date: "2026-10-02", song_title: "Luna negra", artist: "Jorge Drexler", album: "Vaivén", artist_instagram_handle: "" };
 
-describe("/archivo/<fecha>", () => {
+describe("/anteriores/<fecha>", () => {
   it("muestra el día", async () => {
     vi.spyOn(archivo, "obtenerDia").mockResolvedValue(dia);
 
@@ -44,10 +44,10 @@ describe("/archivo/<fecha>", () => {
     expect(String(meta.title)).toContain("Luna negra");
     expect(String(meta.title)).toContain("Jorge Drexler");
     expect(String(meta.description)).toContain("Vaivén");
-    expect(meta.alternates?.canonical).toBe("/archivo/2026-10-02");
+    expect(meta.alternates?.canonical).toBe("/anteriores/2026-10-02");
     expect(meta.openGraph?.title).toBe(meta.title);
     // Next combina la metadata de forma superficial: lo que el sitio ya decía (nombre, idioma) se repite acá.
-    expect(meta.openGraph).toMatchObject({ siteName: "Banda Oriental", locale: "es_UY", url: "/archivo/2026-10-02" });
+    expect(meta.openGraph).toMatchObject({ siteName: "Banda Oriental", locale: "es_UY", url: "/anteriores/2026-10-02" });
     expect(meta.twitter).toMatchObject({ title: meta.title, description: meta.description });
     expect(meta.robots).toBeUndefined();
   });

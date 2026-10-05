@@ -1,16 +1,16 @@
 /**
- * El archivo público: los días que ya vencieron, con su canción revelada. Se lee en el servidor (la página tiene que
+ * Los juegos anteriores: los días que ya vencieron, con su canción revelada. Se lee en el servidor (la página tiene que
  * llegar con el contenido en el HTML para que los buscadores y las vistas previas de los links lo vean) y se deja en
  * caché diez minutos (poco: si la API no respondía justo cuando se armó la página, el aviso de error no se queda mucho). Si la API no responde se devuelve `null` y la página lo explica en vez de romper.
  */
 
-export interface DiaDelArchivo {
+export interface DiaAnterior {
   date: string;
   song_title: string;
   artist: string;
 }
 
-export interface DetalleDelDia extends DiaDelArchivo {
+export interface DetalleDelDia extends DiaAnterior {
   album: string;
   /** Usuario de Instagram del artista, si se cargó. */
   artist_instagram_handle: string;
@@ -38,12 +38,12 @@ async function pedirAlArchivo(ruta: string): Promise<Response | null> {
 }
 
 /** Todos los días vencidos, del más nuevo al más viejo; `null` si no se pudo consultar. */
-export async function obtenerDias(): Promise<DiaDelArchivo[] | null> {
+export async function obtenerDias(): Promise<DiaAnterior[] | null> {
   const respuesta = await pedirAlArchivo("/api/archive/");
   if (!respuesta?.ok) return null;
   try {
     const dias = (await respuesta.json()).days;
-    return Array.isArray(dias) ? (dias as DiaDelArchivo[]) : null;
+    return Array.isArray(dias) ? (dias as DiaAnterior[]) : null;
   } catch {
     return null;
   }

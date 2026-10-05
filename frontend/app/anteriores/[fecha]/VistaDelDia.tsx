@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { DetalleDelDia } from "../../lib/archivo";
+import type { DetalleDelDia } from "../../lib/anteriores";
 import { fechaLarga } from "../../lib/fechas";
 
 /** El usuario de Instagram sin arroba, o `null` si falta o trae algo que no es un usuario (no se arma un enlace con eso). */
@@ -8,7 +8,7 @@ function usuarioDeInstagram(valor: string): string | null {
   return limpio ? limpio[1] : null;
 }
 
-/** Un día del archivo: la canción revelada, con su artista y disco, y el enlace al Instagram del artista si se cargó. */
+/** Un día anterior: la canción revelada, con su artista y disco, y el enlace al Instagram del artista si se cargó. */
 export function VistaDelDia({ dia }: { dia: DetalleDelDia }) {
   const instagram = usuarioDeInstagram(dia.artist_instagram_handle);
 
@@ -36,8 +36,8 @@ export function VistaDelDia({ dia }: { dia: DetalleDelDia }) {
       )}
 
       <div className="archivo-publico__acciones">
-        <Link href="/archivo" className="boton boton--violeta">
-          ← Volver al archivo
+        <Link href="/anteriores" className="boton boton--violeta">
+          ← Volver a los juegos anteriores
         </Link>
         <Link href="/jugar" className="boton boton--grande boton--violeta">
           Jugar el diario

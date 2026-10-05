@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import * as archivoDatos from "./lib/archivo";
+import * as archivoDatos from "./lib/anteriores";
+import * as archivoMusical from "./lib/archivo-musical";
 import Pagina, { generateMetadata, generateStaticParams } from "./[pagina]/page";
 import { PAGINAS, PAGINA_CUENTAS_PROXIMAMENTE, SLUGS, paginaPorSlug } from "./lib/paginas";
 import { SITIO_URL } from "./lib/seo";
@@ -236,7 +237,7 @@ describe("sitemap del archivo", () => {
 
     const urls = (await sitemap()).map((e) => e.url);
 
-    expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/archivo`, `${SITIO_URL}/archivo/2026-10-03`, `${SITIO_URL}/archivo/2026-10-02`]));
+    expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/anteriores`, `${SITIO_URL}/anteriores/2026-10-03`, `${SITIO_URL}/anteriores/2026-10-02`]));
   });
 
   it("si la API no responde, el sitemap sigue funcionando sin los días", async () => {
@@ -244,8 +245,8 @@ describe("sitemap del archivo", () => {
 
     const urls = (await sitemap()).map((e) => e.url);
 
-    expect(urls).toContain(`${SITIO_URL}/archivo`);
-    expect(urls.filter((u) => /\/archivo\/\d/.test(u))).toEqual([]);
+    expect(urls).toContain(`${SITIO_URL}/anteriores`);
+    expect(urls.filter((u) => /\/anteriores\/\d/.test(u))).toEqual([]);
   });
 });
 
@@ -275,3 +276,40 @@ describe("sitemap", () => {
     expect(entrada?.changeFrequency).toBe("daily");
   });
 });
+
+describe("sitemap del archivo de música", () => {
+  it("lista el archivo, sus listas y una entrada por cada artista y disco (con su dirección con nombre)", async () => {
+    vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([]);
+    vi.spyOn(archivoMusical, "listarArtistas").mockResolvedValue({ count: 1, page: 1, pages: 1, results: [{ id: 7, name: "Jorge Drexler", albums: 1, songs: 1, first_year: 1996, last_year: 1996 }] });
+    vi.spyOn(archivoMusical, "listarDiscos").mockResolvedValue({ count: 1, page: 1, pages: 1, results: [{ id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "", release_type: "album", songs: 1, cover_art_url: "" }] });
+
+    const urls = (await sitemap()).map((e) => e.url);
+
+    expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/archivo`, `${SITIO_URL}/archivo/artistas`, `${SITIO_URL}/archivo/artista/7-jorge-drexler`, `${SITIO_URL}/archivo/disco/12-vaiven`]));
+  });
+
+  it("recorre todas las páginas de la API, no solo la primera", async () => {
+    vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([]);
+    const artista = (id: number) => ({ id, name: `A${id}`, albums: 1, songs: 1, first_year: null, last_year: null });
+    const listar = vi.spyOn(archivoMusical, "listarArtistas").mockImplementation(async ({ pagina }) => ({ count: 3, page: pagina ?? 1, pages: 2, results: [artista(pagina === 2 ? 3 : 1), artista(pagina === 2 ? 4 : 2)] }));
+    vi.spyOn(archivoMusical, "listarDiscos").mockResolvedValue(null);
+
+    const urls = (await sitemap()).map((e) => e.url);
+
+    expect(listar).toHaveBeenCalledTimes(2);
+    expect(urls.filter((u) => u.includes("/archivo/artista/"))).toHaveLength(4);
+    expect(listar).toHaveBeenCalledWith({ pagina: 1, porPagina: 50 });
+  });
+
+  it("si la API no responde el sitemap sale igual, sin esas entradas", async () => {
+    vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue(null);
+    vi.spyOn(archivoMusical, "listarArtistas").mockResolvedValue(null);
+    vi.spyOn(archivoMusical, "listarDiscos").mockResolvedValue(null);
+
+    const urls = (await sitemap()).map((e) => e.url);
+
+    expect(urls).toContain(`${SITIO_URL}/archivo`);
+    expect(urls.some((u) => u.includes("/archivo/artista/"))).toBe(false);
+  });
+});
+

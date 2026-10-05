@@ -8,13 +8,14 @@ const columnas = () => [
     enlaces: [
       { href: "/jugar", etiqueta: "Modo diario" },
       ...(batallaActiva() ? [{ href: "/batalla", etiqueta: "Modo batalla" }] : []),
+      { href: "/anteriores", etiqueta: "Juegos anteriores" },
       { href: "/ranking", etiqueta: "Ranking" },
     ],
   },
   {
     titulo: "Explorar",
     enlaces: [
-      { href: "/archivo", etiqueta: "Archivo de canciones" },
+      { href: "/archivo", etiqueta: "Archivo de música" },
       { href: "/artistas", etiqueta: "Artistas" },
       { href: "/epocas", etiqueta: "Épocas" },
       { href: "/generos", etiqueta: "Géneros" },
