@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Footer } from "../ui/Footer";
 import { Navbar } from "../ui/Navbar";
-import { Ranking } from "./Ranking";
+import { VistaDelRanking } from "./VistaDelRanking";
 import "./ranking.css";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default function PaginaRanking() {
   return (
     <>
       <Navbar actual="/ranking" />
-      <Ranking />
+      <VistaDelRanking />
       <Footer variante="compacto" />
     </>
   );
