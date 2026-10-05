@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { archivoFalso, AudioContextFalso, contextoActual, instalarAudioFalso } from "./audio-falso";
+import { olvidarVelocidad } from "./calidad-de-audio";
 import { Mezcla, vaciarCache } from "./mezcla";
 
 const BATERIA = { clave: "dia:drums", url: "/drums.wav" };
@@ -14,27 +15,57 @@ function nueva(archivos: Record<string, ArrayBuffer>) {
   return { pedir, mezcla, contexto: contextoActual() };
 }
 
-describe("Mezcla: velocidad de descarga", () => {
-  it("avisa a qué velocidad bajó una pista, para elegir la calidad de las siguientes", async () => {
-    instalarAudioFalso({ "/drums.wav": new ArrayBuffer(400_000) });
-    const medidas: number[] = [];
-    const reloj = vi.spyOn(performance, "now").mockReturnValueOnce(1000).mockReturnValueOnce(3000);
-    const mezcla = new Mezcla(new AudioContextFalso() as unknown as AudioContext, (bytesPorSegundo) => medidas.push(bytesPorSegundo));
+describe("Mezcla: la calidad se elige al bajar, según la conexión", () => {
+  const CON_VERSIONES = { clave: "dia:drums", url: "/alta.m4a", variants: { high: "/alta.m4a", low: "/baja.m4a" } };
+  const archivos = { "/alta.m4a": archivoFalso(1, 1), "/baja.m4a": archivoFalso(1, 1), "/drums.wav": archivoFalso(1, 1) };
+
+  afterEach(() => olvidarVelocidad());
+
+  it("con buena conexión baja la versión buena", async () => {
+    const { mezcla, pedir } = nueva(archivos);
+
+    await mezcla.cargar([CON_VERSIONES]);
+
+    expect(pedir.mock.calls.map(([url]) => url)).toEqual(["/alta.m4a"]);
+  });
+
+  it("con una conexión lenta informada por el navegador baja la liviana", async () => {
+    vi.stubGlobal("navigator", { connection: { effectiveType: "3g" } });
+    const { mezcla, pedir } = nueva(archivos);
+
+    await mezcla.cargar([CON_VERSIONES]);
+
+    expect(pedir.mock.calls.map(([url]) => url)).toEqual(["/baja.m4a"]);
+  });
+
+  it("si la primera pista bajó lenta, la siguiente (otro intento) baja la liviana", async () => {
+    const { mezcla, pedir } = nueva({ ...archivos, "/alta.m4a": new ArrayBuffer(400_000) });
+    const reloj = vi.spyOn(performance, "now").mockReturnValueOnce(0).mockReturnValueOnce(4000); // 400 KB en 4 s = 100 KB/s
+    await mezcla.cargar([CON_VERSIONES]);
+    reloj.mockRestore();
+
+    await mezcla.cargar([CON_VERSIONES, { clave: "dia:bass", url: "/alta.m4a", variants: { high: "/alta.m4a", low: "/baja.m4a" } }]);
+
+    expect(pedir.mock.calls.map(([url]) => url)).toEqual(["/alta.m4a", "/baja.m4a"]);
+  });
+
+  it("una pista sin versiones baja su dirección de siempre, con cualquier conexión", async () => {
+    vi.stubGlobal("navigator", { connection: { saveData: true } });
+    const { mezcla, pedir } = nueva(archivos);
 
     await mezcla.cargar([BATERIA]);
 
-    expect(medidas).toEqual([200_000]); // 400 KB en 2 s
-    reloj.mockRestore();
+    expect(pedir.mock.calls.map(([url]) => url)).toEqual(["/drums.wav"]);
   });
 
   it("no mide archivos diminutos (no dicen nada de la conexión)", async () => {
-    instalarAudioFalso({ "/drums.wav": archivoFalso(1, 1) });
-    const medidas: number[] = [];
-    const mezcla = new Mezcla(new AudioContextFalso() as unknown as AudioContext, (b) => medidas.push(b));
+    const { mezcla } = nueva(archivos);
 
-    await mezcla.cargar([BATERIA]);
+    await mezcla.cargar([CON_VERSIONES]);
+    const { mezcla: otra, pedir } = nueva(archivos);
+    await otra.cargar([{ clave: "dia:otra", url: "/alta.m4a", variants: { high: "/alta.m4a", low: "/baja.m4a" } }]);
 
-    expect(medidas).toEqual([]);
+    expect(pedir.mock.calls.map(([url]) => url)).toEqual(["/alta.m4a"]); // la medición de un archivo chico no la empujó a la liviana
   });
 });
 
