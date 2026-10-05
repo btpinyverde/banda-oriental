@@ -1,93 +1,119 @@
-/* ---------- Página "Ranking" ---------- */
+/* ---------- Ranking (funcional; el diseño se afina después) ---------- */
+@font-face { font-family: "Caveat Brush"; src: url("/fonts/CaveatBrush-subset.ttf") format("truetype"); font-display: swap; }
 
-.ranking {
-  max-width: 820px;
-  margin: 0 auto;
-  padding: 36px var(--gutter) 56px;
+.ranking { max-width: 1240px; margin: 0 auto; padding: 24px var(--gutter) 64px; display: grid; gap: 26px; }
+.ranking h2 { margin: 0; font-size: 22px; font-weight: 800; }
+
+/* Encabezado y collage */
+.ranking-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 24px; align-items: center; padding: 8px 0; }
+.ranking-hero__etiqueta { margin: 0 0 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tinta-suave); }
+.ranking-hero h1 { margin: 0; font-size: clamp(40px, 5.2vw, 70px); font-weight: 900; line-height: 0.98; letter-spacing: -0.045em; }
+.ranking-hero__resaltado { background: linear-gradient(transparent 66%, var(--amarillo) 66%, var(--amarillo) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
+.ranking-hero__bajada { margin: 22px 0 0; max-width: 430px; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.4; color: var(--tinta-suave); }
+.ranking-colage { position: relative; min-height: 290px; }
+.ranking-colage__mancha { position: absolute; left: 8%; top: 6%; width: 52%; }
+.ranking-colage__foto { position: absolute; right: 2%; top: 4%; width: 56%; margin: 0; padding: 9px 9px 13px; background: #fff; box-shadow: 0 10px 28px rgba(60, 40, 20, 0.2); transform: rotate(2deg); }
+.ranking-colage__foto img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 35%; filter: grayscale(1) contrast(1.05); }
+.ranking-colage__copa { position: absolute; left: 16%; top: 4%; width: 210px; }
+.ranking-colage__copa img { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 10px rgba(60, 40, 20, 0.25)); }
+.ranking-colage__copa span { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%) rotate(-5deg); padding: 3px 18px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-family: "Caveat Brush", cursive; font-size: 30px; }
+.ranking-colage__nota { position: absolute; right: 8%; top: -2%; display: grid; padding: 14px 20px 16px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(-9deg); font-family: "Caveat Brush", cursive; font-size: clamp(17px, 1.8vw, 24px); line-height: 1.12; text-transform: uppercase; }
+.ranking-colage__estrella { position: absolute; right: 0; bottom: 6%; width: 64px; color: var(--violeta); }
+
+/* Controles */
+.ranking__controles { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.ranking__periodo select { height: 48px; padding: 0 44px 0 22px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 15px; font-weight: 600; color: var(--tinta); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 18px center; cursor: pointer; }
+.ranking__rotulo { margin: 0; font-size: 14px; color: var(--tinta-suave); }
+
+/* Cuerpo: tabla + lateral */
+.ranking__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 22px; align-items: start; }
+.ranking__principal { display: grid; gap: 18px; min-width: 0; }
+.ranking__lateral { display: grid; gap: 18px; }
+.ranking__mensaje, .ranking__vacio { padding: 36px 20px; border-radius: 24px; background: var(--violeta-claro); text-align: center; font-weight: 600; }
+.ranking__mensaje p, .ranking__vacio p { margin: 0 0 10px; }
+.ranking__espera { font-weight: 500; color: var(--tinta-suave); }
+
+/* Tabla */
+.ranking__tabla { width: 100%; border-collapse: separate; border-spacing: 0 6px; padding: 8px 14px 14px; border-radius: 24px; background: #fff; box-shadow: 0 8px 24px rgba(60, 40, 20, 0.07); }
+.ranking__tabla th { padding: 10px 8px; text-align: left; font-size: 13px; font-weight: 600; color: var(--tinta-suave); }
+.ranking__tabla th:nth-child(n + 3), .ranking__tabla td:nth-child(n + 3) { text-align: center; }
+.ranking__tabla td { padding: 10px 8px; font-size: 15px; font-variant-numeric: tabular-nums; border-bottom: 1px solid #f0ede7; }
+.ranking__fila--top1 td, .ranking__fila--top2 td, .ranking__fila--top3 td { border-bottom: 0; }
+.ranking__fila--top1 td { background: #fdf0b4; }
+.ranking__fila--top2 td { background: #e8e4fb; }
+.ranking__fila--top3 td { background: #ffd9e4; }
+.ranking__fila--top1 td:first-child, .ranking__fila--top2 td:first-child, .ranking__fila--top3 td:first-child { border-radius: 14px 0 0 14px; }
+.ranking__fila--top1 td:last-child, .ranking__fila--top2 td:last-child, .ranking__fila--top3 td:last-child { border-radius: 0 14px 14px 0; }
+.ranking__fila--mia td { background: var(--violeta-claro); }
+.ranking__puesto { width: 54px; font-weight: 700; color: var(--tinta-suave); }
+.ranking__corona { display: block; }
+.ranking__corona--1 { color: #f2b705; }
+.ranking__corona--2 { color: #a9a4c7; }
+.ranking__corona--3 { color: #e7885f; }
+.ranking__jugador { display: flex; align-items: center; gap: 12px; }
+.ranking__nombre { font-weight: 700; overflow-wrap: anywhere; }
+.ranking__vos { padding: 2px 9px; border-radius: 999px; background: var(--violeta); color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.ranking__puntaje { font-weight: 800; }
+.ranking__racha img { vertical-align: -3px; }
+.ranking__tu-puesto { display: grid; gap: 8px; }
+
+/* Avatares (los jugadores no tienen foto: la inicial sobre un color de la marca) */
+.avatar { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; font-weight: 800; font-size: 16px; color: var(--tinta); }
+.avatar--tono-0 { background: var(--rosa); }
+.avatar--tono-1 { background: #bff0d3; }
+.avatar--tono-2 { background: var(--amarillo); }
+.avatar--tono-3 { background: #d6d0f7; }
+.avatar--tono-4 { background: #ffc6bf; }
+
+/* Tu posición */
+.posicion { display: grid; gap: 14px; padding: 20px 22px; border-radius: 24px; background: #c9f4de; }
+.posicion p { margin: 0; font-weight: 600; }
+.posicion__puesto { display: flex; align-items: center; gap: 14px; }
+.posicion__puesto .avatar { width: 56px; height: 56px; font-size: 24px; }
+.posicion__puesto strong { display: block; font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+.posicion__puesto span { font-size: 13px; color: var(--tinta-suave); }
+.posicion__numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 12px 6px; border-radius: 16px; background: rgba(255, 255, 255, 0.7); text-align: center; }
+.posicion__numeros dd { margin: 0; font-size: 18px; font-weight: 800; }
+.posicion__numeros dt { font-size: 11px; color: var(--tinta-suave); order: 2; }
+.posicion__numeros div { display: flex; flex-direction: column; }
+
+/* Mejores rachas y más canciones */
+.destacada { display: grid; gap: 12px; padding: 20px 22px; border-radius: 24px; }
+.destacada--racha { background: #ebe8fb; }
+.destacada--canciones { background: #fdeeb0; }
+.destacada ol { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.destacada li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.destacada .avatar { width: 30px; height: 30px; font-size: 13px; }
+.destacada__puesto { width: 14px; font-weight: 700; }
+.destacada__nombre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.destacada__vacia { margin: 0; font-size: 14px; color: var(--tinta-suave); }
+
+/* Estadísticas globales */
+.globales { display: grid; gap: 14px; }
+.globales ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.globales li { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 20px; background: #fff; box-shadow: 0 6px 20px rgba(60, 40, 20, 0.07); }
+.globales strong { display: block; font-size: 30px; font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; }
+.globales span { font-size: 14px; color: var(--tinta-suave); }
+
+/* Llamado a crear una cuenta */
+.llamado { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 190px; padding: 26px 30px; border-radius: 28px; background: var(--violeta-claro); overflow: hidden; }
+.llamado__texto { display: flex; gap: 18px; align-items: flex-start; max-width: 520px; }
+.llamado h2 { font-size: 24px; }
+.llamado p { margin: 6px 0 14px; color: var(--tinta-suave); line-height: 1.45; }
+.llamado__flan { position: absolute; right: 190px; bottom: -6px; width: 210px; height: auto; }
+.llamado__nota { position: relative; margin: 0 8px 0 auto; padding: 14px 20px; max-width: 190px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(-7deg); font-family: "Caveat Brush", cursive; font-size: 22px; line-height: 1.15; text-transform: uppercase; color: var(--tinta); }
+
+@media (max-width: 1000px) {
+  .ranking-hero { grid-template-columns: 1fr; }
+  .ranking__cuerpo { grid-template-columns: 1fr; }
+  .llamado { flex-direction: column; align-items: flex-start; }
+  .llamado__flan { display: none; }
+  .llamado__nota { margin: 0; transform: rotate(-3deg); }
+}
+@media (max-width: 640px) {
+  .ranking__tabla th:nth-child(4), .ranking__tabla td:nth-child(4), .ranking__tabla th:nth-child(6), .ranking__tabla td:nth-child(6) { display: none; }
+  .ranking-colage { min-height: 240px; }
 }
 
-.ranking__cabecera h1 { margin: 0 0 8px; font-size: clamp(34px, 5vw, 52px); font-weight: 900; letter-spacing: -0.03em; }
-.ranking__cabecera p { margin: 0 0 24px; font-size: 16px; color: var(--tinta-suave); }
-
-.ranking__pestanias {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 22px;
-}
-.ranking__pestania {
-  padding: 10px 18px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--violeta-claro);
-  color: var(--violeta);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.ranking__pestania:hover { background: #e3dffb; }
-.ranking__pestania--activa,
-.ranking__pestania--activa:hover { background: var(--violeta); color: #fff; }
-.ranking__pestania:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
-
-.ranking__rotulo { margin: 0 0 14px; font-size: 14px; font-weight: 600; color: var(--tinta-suave); }
-.ranking__rotulo::first-letter { text-transform: uppercase; }
-
-.ranking__lista { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-
-.ranking__fila {
-  display: grid;
-  grid-template-columns: 44px 1fr auto;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(60, 40, 120, 0.08);
-}
-.ranking__fila--mia { background: var(--violeta-claro); box-shadow: inset 0 0 0 2px var(--violeta); }
-
-.ranking__puesto {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #efeef2;
-  font-size: 16px;
-  font-weight: 800;
-}
-.ranking__fila--top1 .ranking__puesto { background: var(--amarillo); }
-.ranking__fila--top2 .ranking__puesto { background: #dcd9e4; }
-.ranking__fila--top3 .ranking__puesto { background: var(--coral); color: #fff; }
-
-.ranking__nombre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
-.ranking__vos { padding: 3px 10px; border-radius: 999px; background: var(--violeta); color: #fff; font-size: 12px; font-weight: 700; }
-
-.ranking__datos { display: grid; justify-items: end; font-size: 14px; color: var(--tinta-suave); white-space: nowrap; }
-.ranking__datos strong { font-size: 18px; color: var(--tinta); }
-.ranking__datos small { font-size: 12px; }
-
-.ranking__tu-puesto { margin-top: 26px; }
-.ranking__tu-puesto h2 { margin: 0 0 10px; font-size: 18px; font-weight: 800; }
-
-.ranking__vacio,
-.ranking__mensaje {
-  display: grid;
-  justify-items: center;
-  gap: 16px;
-  padding: 44px 20px;
-  border-radius: 24px;
-  background: var(--violeta-claro);
-  text-align: center;
-  font-size: 17px;
-  font-weight: 600;
-}
-.ranking__vacio p, .ranking__mensaje p { margin: 0; }
-.ranking__espera { font-size: 14px; font-weight: 500; color: var(--tinta-suave); }
-
-@media (max-width: 520px) {
-  .ranking__fila { grid-template-columns: 38px 1fr auto; gap: 10px; padding: 12px 14px; }
-  .ranking__puesto { width: 36px; height: 36px; }
-}
+/* Solo para lectores de pantalla (esta hoja puede cargarse sin la de /jugar, donde está definida la clase general). */
+.ranking .solo-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

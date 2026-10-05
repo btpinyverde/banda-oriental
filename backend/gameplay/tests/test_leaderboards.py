@@ -154,7 +154,8 @@ class TestWhoIsIn:
 
         entry = board(client, "day").json()["entries"][0]
 
-        assert set(entry) == {"rank", "display_name", "score", "games"}
+        # Only what the page shows: never a device id, an account or an email.
+        assert set(entry) == {"rank", "display_name", "score", "games", "current_streak", "win_percentage", "played"}
 
 
 class TestOwnPosition:
@@ -167,7 +168,7 @@ class TestOwnPosition:
         body = board(client, "day", device=D3).json()
 
         assert [e["display_name"] for e in body["entries"]] == ["Ana", "Beto"]
-        assert body["me"] == {"rank": 3, "display_name": "Caro", "score": 100, "games": 1}
+        assert body["me"] == {"rank": 3, "display_name": "Caro", "score": 100, "games": 1, "current_streak": 0, "win_percentage": None, "played": 1}
 
     def test_without_identifying_there_is_no_me(self, client, song):
         score(song, TODAY, 100, "Ana", D1)

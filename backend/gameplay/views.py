@@ -7,6 +7,8 @@ import logging
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
+from django.db.models.functions import Lower
 from django.conf import settings
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -495,3 +497,41 @@ class PublicNameView(APIView):
         except IntegrityError:
             return Response({"detail": "Ese nombre ya está en uso. Elegí otro."}, status=400)
         return Response(serialize(row))
+
+
+class LeaderboardHighlightsView(APIView):
+    """The side lists of the ranking page: the best current streaks and who has played the most songs, top five of each.
+    Public and read-only; only players with a public name and at least one game."""
+
+    http_method_names = ["get", "head", "options"]
+    throttle_scope = "songs"
+
+    def get(self, request):
+        named = PlayerStats.objects.filter(public_name__isnull=False, played__gt=0)
+
+        def top(field):
+            rows = named.filter(**{f"{field}__gt": 0}).order_by(f"-{field}", Lower("public_name"))[:5]
+            return [{"display_name": row.public_name, "value": getattr(row, field)} for row in rows]
+
+        response = Response({"streaks": top("current_streak"), "songs": top("played")})
+        response["Cache-Control"] = "public, max-age=60"
+        return response
+
+
+class GlobalStatsView(APIView):
+    """Numbers of the whole game for the ranking page: players, games finished and days the game has had."""
+
+    http_method_names = ["get", "head", "options"]
+    throttle_scope = "songs"
+
+    def get(self, request):
+        players = PlayerStats.objects.filter(played__gt=0)
+        response = Response(
+            {
+                "players": players.count(),
+                "games": players.aggregate(total=Sum("played"))["total"] or 0,
+                "days": DailySong.objects.filter(state=DailySong.PUBLISHED, date__lte=timezone.localdate()).count(),
+            }
+        )
+        response["Cache-Control"] = "public, max-age=60"
+        return response

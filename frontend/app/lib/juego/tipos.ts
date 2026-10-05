@@ -128,6 +128,25 @@ export interface FilaRanking {
   display_name: string;
   score: number;
   games: number;
+  /** Racha actual de días. Falta si el servidor es anterior a la página nueva. */
+  current_streak?: number;
+  /** Porcentaje de partidas ganadas; `null` si todavía no hay estadísticas. */
+  win_percentage?: number | null;
+  /** Partidas terminadas en total. */
+  played?: number;
+}
+
+/** `GET /api/leaderboard/highlights/`: las listas laterales del ranking. */
+export interface Destacados {
+  streaks: { display_name: string; value: number }[];
+  songs: { display_name: string; value: number }[];
+}
+
+/** `GET /api/stats/global/`: cifras de todo el juego. */
+export interface EstadisticasGlobales {
+  players: number;
+  games: number;
+  days: number;
 }
 
 /** `GET /api/leaderboard/?period=...`. `me` es el puesto de quien pregunta, aunque esté fuera del top. */
