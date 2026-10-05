@@ -9,7 +9,10 @@ export type TipoStem = "drums" | "bass" | "other" | "vocals";
 export interface StemInfo {
   stem_type: TipoStem;
   unlock_order: number;
+  /** La versión buena (o el original, si la pista es anterior a la conversión). */
   url: string;
+  /** Las versiones que existen, por calidad: `high` y `low`. Vacío en las pistas sin convertir. */
+  variants?: Partial<Record<"high" | "low", string>>;
 }
 
 export type EjeFeedback = "year" | "genre" | "artist" | "album";

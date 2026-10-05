@@ -14,6 +14,30 @@ function nueva(archivos: Record<string, ArrayBuffer>) {
   return { pedir, mezcla, contexto: contextoActual() };
 }
 
+describe("Mezcla: velocidad de descarga", () => {
+  it("avisa a qué velocidad bajó una pista, para elegir la calidad de las siguientes", async () => {
+    instalarAudioFalso({ "/drums.wav": new ArrayBuffer(400_000) });
+    const medidas: number[] = [];
+    const reloj = vi.spyOn(performance, "now").mockReturnValueOnce(1000).mockReturnValueOnce(3000);
+    const mezcla = new Mezcla(new AudioContextFalso() as unknown as AudioContext, (bytesPorSegundo) => medidas.push(bytesPorSegundo));
+
+    await mezcla.cargar([BATERIA]);
+
+    expect(medidas).toEqual([200_000]); // 400 KB en 2 s
+    reloj.mockRestore();
+  });
+
+  it("no mide archivos diminutos (no dicen nada de la conexión)", async () => {
+    instalarAudioFalso({ "/drums.wav": archivoFalso(1, 1) });
+    const medidas: number[] = [];
+    const mezcla = new Mezcla(new AudioContextFalso() as unknown as AudioContext, (b) => medidas.push(b));
+
+    await mezcla.cargar([BATERIA]);
+
+    expect(medidas).toEqual([]);
+  });
+});
+
 describe("Mezcla: carga", () => {
   it("carga todas las pistas y mide la duración de la más larga", async () => {
     const { mezcla } = nueva({ "/drums.wav": archivoFalso(...Array(200).fill(0.1)), "/bass.wav": archivoFalso(...Array(300).fill(0.1)) });

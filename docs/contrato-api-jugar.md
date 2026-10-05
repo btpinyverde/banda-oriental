@@ -145,3 +145,21 @@ Hecho: ranking diario, semanal, mensual y global (todos los jugadores) y borrado
 El front ya los usa: el panel de /jugar muestra las estadísticas del servidor (si no responde, cae a lo guardado en
 el dispositivo), el nombre público se pide una sola vez, /ranking tiene las cuatro pestañas con el puesto propio
 (`me`), y quien juega sin cuenta ve el aviso de que a los 7 días sin jugar su historial se borra.
+
+## Audio: versiones de cada pista
+
+El admin recibe el audio original (normalmente un WAV) y al guardarlo el backend lo convierte a **AAC (.m4a)** en dos
+versiones, sin las etiquetas del original (un título en una etiqueta daría la respuesta): `high` (128 kbps) y `low` (64 kbps).
+El original queda guardado (privado) para poder volver a convertir. Un WAV de 30 s (5,3 MB) pasa a ~490 KB y ~250 KB.
+
+En `unlocked_stems` cada pista trae `url` (la versión buena; el original si la pista es anterior a la conversión) y
+`variants`: `{"high": url, "low": url}` con las que existan (`{}` si no se convirtió). Las direcciones son firmadas y vencen.
+
+El front elige la versión una vez por intento: la liviana si la persona activó "Ahorrar datos", si el navegador informa una
+conexión lenta (`2g`/`3g` o `saveData`) o si la última pista bajó a menos de 250 KB/s (Safari no informa la conexión, así
+que se mide); si no, la buena.
+
+Operación: `manage.py encode_stems` convierte las pistas subidas antes (o las que no se pudieron convertir); se puede correr
+más de una vez. Si un audio no se puede convertir, el admin igual lo guarda, se sirve el original y se avisa en el log. Usa el
+ffmpeg del sistema o, si no hay, el que trae el paquete `imageio-ffmpeg` (ajuste `FFMPEG_BINARY` para forzar otro).
+

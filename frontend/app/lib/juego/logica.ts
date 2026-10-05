@@ -1,3 +1,4 @@
+import type { Calidad } from "./calidad-de-audio";
 import type { EjeFeedback, Feedback, StemInfo, TipoStem } from "./tipos";
 
 export type ClaseCelda = "acierto" | "cerca" | "error" | "desconocido";
@@ -46,8 +47,12 @@ export function etapasDeStems(desbloqueadas: StemInfo[]): EtapaStem[] {
  * Las pistas que suenan: todas las desbloqueadas, juntas (cada una es un instrumento suelto). Se identifican por
  * día y tipo y no por la dirección, que está firmada y cambia en cada pedido.
  */
-export function pistasParaMezclar(dia: string, desbloqueadas: StemInfo[]): { clave: string; url: string }[] {
-  return desbloqueadas.map((stem) => ({ clave: `${dia}:${stem.stem_type}`, url: stem.url }));
+export function pistasParaMezclar(
+  dia: string,
+  desbloqueadas: StemInfo[],
+  calidad: Calidad = "high",
+): { clave: string; url: string }[] {
+  return desbloqueadas.map((stem) => ({ clave: `${dia}:${stem.stem_type}`, url: stem.variants?.[calidad] ?? stem.url }));
 }
 
 const ZONA = "America/Montevideo";

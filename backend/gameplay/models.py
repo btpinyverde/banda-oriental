@@ -1,12 +1,19 @@
 import uuid
 
+import logging
+
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.files.storage import storages
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.functions import Lower
 
 from catalog.models import Song
+
+from . import audio
+
+logger = logging.getLogger(__name__)
 
 
 class DailySong(models.Model):
@@ -65,7 +72,11 @@ class Stem(models.Model):
     unlock_order = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(4)]
     )
+    # What was uploaded (usually a WAV). Kept to be able to convert again, and served only while there are no versions.
     audio_file = models.FileField(upload_to=stem_upload_path, storage=get_stems_storage)
+    # What the players download, made when the original is uploaded (gameplay/audio.py): AAC, good and light.
+    audio_high = models.FileField(upload_to=stem_upload_path, storage=get_stems_storage, blank=True)
+    audio_low = models.FileField(upload_to=stem_upload_path, storage=get_stems_storage, blank=True)
 
     class Meta:
         constraints = [
@@ -84,6 +95,41 @@ class Stem(models.Model):
 
     def __str__(self):
         return f"{self.daily_song} — {self.get_stem_type_display()} (#{self.unlock_order})"
+
+    def save(self, *args, **kwargs):
+        if self.audio_file and not self.audio_file._committed:  # a new upload (not a stem that was already stored)
+            self.make_versions()
+        super().save(*args, **kwargs)
+
+    def make_versions(self, data: bytes | None = None) -> bool:
+        """Converts the original into the versions the players download. If it cannot be converted the stem is still
+        saved and served as it was uploaded, and the versions of any previous audio are dropped (they would play the
+        old song). Returns whether the versions were made."""
+        if data is None:
+            file = self.audio_file.file
+            file.seek(0)
+            data = file.read()
+            file.seek(0)
+        try:
+            versions = audio.encode_variants(data)
+        except audio.AudioError as error:
+            logger.warning("No se pudo convertir el audio de %s: %s. Se usa el original.", self, error)
+            self.audio_high = ""
+            self.audio_low = ""
+            return False
+        self.audio_high.save("high.m4a", ContentFile(versions["high"]), save=False)
+        self.audio_low.save("low.m4a", ContentFile(versions["low"]), save=False)
+        return True
+
+    def versions(self) -> dict[str, str]:
+        """The URL of each version that exists (empty if the stem was never converted)."""
+        found = {"high": self.audio_high, "low": self.audio_low}
+        return {name: field.url for name, field in found.items() if field}
+
+    @property
+    def playable_url(self) -> str:
+        """What a player downloads by default: the good version, or the original if there are none."""
+        return (self.audio_high or self.audio_file).url
 
 
 class GuessAttempt(models.Model):
