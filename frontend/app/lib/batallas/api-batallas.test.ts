@@ -51,6 +51,35 @@ describe("crearApiBatallas", () => {
     expect(ultima(mock).cuerpo).toEqual({ audio_mode: "host", join_mode: "approval" });
   });
 
+  it("crear manda cómo se eligen las canciones: filtros o lista", async () => {
+    const mock = simular(respuesta({ code: "ABC234", host_token: "t" }, 201), respuesta({ code: "ABC234", host_token: "t" }, 201));
+    const api = crearApiBatallas();
+    const filtros = { include: { genres: ["Rock"] }, exclude: { songs: [3] } };
+
+    await api.crear({ filtros });
+    expect(ultima(mock).cuerpo).toEqual({ filters: filtros });
+
+    const lista = [{ song_id: 5, source: "youtube" as const, youtube_id: "dQw4w9WgXcQ", start_seconds: 12 }];
+    await api.crear({ modoDeCanciones: "list", lista });
+    expect(ultima(mock).cuerpo).toEqual({ songs_mode: "list", playlist: lista });
+  });
+
+  it("pool cuenta las canciones de un segmento", async () => {
+    const mock = simular(respuesta({ count: 42 }));
+    const n = await crearApiBatallas().pool({ include: { year_from: 2000 }, exclude: {} });
+    expect(ultima(mock).url).toBe("https://api.example/api/battles/pool/");
+    expect(ultima(mock).cuerpo).toEqual({ filters: { include: { year_from: 2000 }, exclude: {} } });
+    expect(n).toBe(42);
+  });
+
+  it("youtube lee un enlace y devuelve el video, el título y las canciones posibles", async () => {
+    const mock = simular(respuesta({ youtube_id: "dQw4w9WgXcQ", title: "T", author: "A", suggestions: [{ id: 1, title: "Zafar" }] }));
+    const r = await crearApiBatallas().youtube("https://youtu.be/dQw4w9WgXcQ");
+    expect(ultima(mock).url).toBe("https://api.example/api/battles/youtube/");
+    expect(ultima(mock).cuerpo).toEqual({ url: "https://youtu.be/dQw4w9WgXcQ" });
+    expect(r.suggestions[0].title).toBe("Zafar");
+  });
+
   it("revisar acepta o rechaza a una persona con la clave del organizador", async () => {
     const mock = simular(respuesta({ ok: true }));
     await crearApiBatallas().revisar("abc234", 7, true, "secreto");

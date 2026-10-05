@@ -14,10 +14,12 @@ interface Props {
   puedeEnviar: boolean;
   enviando?: boolean;
   alEnviar: (cancion: CancionCatalogo) => void;
+  /** Cómo se llama el botón de enviar para quien usa un lector de pantalla (por ejemplo "Agregar a la lista"). */
+  etiquetaDeEnviar?: string;
 }
 
 /** Buscador de canciones con lista de opciones (combobox accesible) y botón para enviar el intento. */
-export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, alEnviar }: Props) {
+export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, alEnviar, etiquetaDeEnviar = "Enviar intento" }: Props) {
   const idBase = useId();
   const idLista = `${idBase}-lista`;
   const [texto, setTexto] = useState("");
@@ -150,7 +152,7 @@ export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, al
           }}
           onKeyDown={alTeclear}
         />
-        <button type="submit" className="buscador__enviar" aria-label="Enviar intento" disabled={!puedeMandar}>
+        <button type="submit" className="buscador__enviar" aria-label={etiquetaDeEnviar} disabled={!puedeMandar}>
           <svg width="20" height="20" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M7 24h33M28 11l13 13-13 13" />
           </svg>

@@ -35,6 +35,12 @@ class Battle(models.Model):
     title = models.CharField(max_length=60, blank=True)
     audio_mode = models.CharField(max_length=10, choices=AUDIO_MODES, default=EACH)
     join_mode = models.CharField(max_length=10, choices=JOIN_MODES, default=OPEN)
+    # How the songs are chosen: at random inside a segment (`filters`, see filters.py) or from an ordered list (`playlist`).
+    RANDOM, LIST = "random", "list"
+    SONGS_MODES = [(RANDOM, "Al azar"), (LIST, "Lista elegida")]
+    songs_mode = models.CharField(max_length=10, choices=SONGS_MODES, default=RANDOM)
+    filters = models.JSONField(default=dict, blank=True)
+    playlist = models.JSONField(default=list, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=LOBBY, db_index=True)
     round_count = models.PositiveSmallIntegerField()
     round_seconds = models.PositiveSmallIntegerField()
@@ -53,6 +59,10 @@ class BattleRound(models.Model):
     song = models.ForeignKey("catalog.Song", on_delete=models.PROTECT, related_name="+")
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
+    # Where the audio of the round comes from: the song's Deezer preview or a YouTube video (from `start_seconds`).
+    source = models.CharField(max_length=10, default="deezer")
+    youtube_id = models.CharField(max_length=16, blank=True)
+    start_seconds = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ["index"]

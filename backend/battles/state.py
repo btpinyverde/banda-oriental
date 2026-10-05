@@ -115,7 +115,11 @@ def build_state(battle, caller, token, since, now):
             data["round"] = {"index": shown.index, "starts_at": shown.starts_at.isoformat(), "ends_at": shown.ends_at.isoformat()}
             # The music reaches whoever is meant to play it: every player, or only the organizer when he is the host.
             if (host and battle.audio_mode == Battle.HOST) or (player is not None and battle.audio_mode == Battle.EACH):
-                data["round"]["preview_url"] = preview_url(shown.song)
+                data["round"]["preview_url"] = preview_url(shown.song)  # for a YouTube round it is the fallback
+                data["round"]["source"] = shown.source
+                if shown.source == "youtube":
+                    data["round"]["youtube_id"] = shown.youtube_id
+                    data["round"]["start_seconds"] = shown.start_seconds
             if player is not None:
                 data["round"]["answered"] = BattleAnswer.objects.filter(round=shown, player=player).exists()
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import type { ApiBatallas, EstadoSala } from "../lib/batallas/api-batallas";
 import type { CancionCatalogo } from "../lib/juego/tipos";
 import { BuscadorCanciones } from "../jugar/BuscadorCanciones";
+import { ReproductorYoutube } from "./ReproductorYoutube";
 
 interface Props {
   sala: EstadoSala;
@@ -31,6 +32,8 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [necesitaToque, setNecesitaToque] = useState(false);
+  // La ronda (por su número) cuyo video de YouTube no se pudo reproducir: ahí suena el preview de Deezer de reserva.
+  const [videoFallo, setVideoFallo] = useState<number | null>(null);
   const avisoDeCierre = useRef<number | null>(null);
 
   // Repinta cada cuarto de segundo para que la cuenta regresiva y el cierre de la ronda no dependan de la próxima consulta.
@@ -44,27 +47,30 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
   const termino = !!ronda && ahoraMs >= Date.parse(ronda.ends_at);
   const url = ronda?.preview_url ?? null;
   const indice = ronda?.index ?? -1;
+  const conVideo = suena && ronda?.source === "youtube" && !!ronda.youtube_id && videoFallo !== indice;
+  // El <audio> suena con el preview de Deezer, salvo que la ronda se oiga con el video de YouTube.
+  const usaAudio = suena && !conVideo;
 
   // Va cargando el audio de la ronda (la que viene o la actual) para que suene apenas abra.
   useEffect(() => {
     const el = audio.current;
-    if (!el || !suena || !url || el.dataset.url === url) return;
+    if (!el || !usaAudio || !url || el.dataset.url === url) return;
     el.dataset.url = url;
     el.src = url;
     el.load();
-  }, [audio, suena, url]);
+  }, [audio, usaAudio, url]);
 
   // Suena apenas abre la ronda y se corta cuando cierra.
   useEffect(() => {
     const el = audio.current;
-    if (!el || !suena || !url) return;
+    if (!el || !usaAudio || !url) return;
     if (empezo && !termino) {
       setNecesitaToque(false);
       Promise.resolve(el.play()).catch(() => setNecesitaToque(true));
     } else if (termino) {
       el.pause();
     }
-  }, [audio, suena, url, indice, empezo, termino]);
+  }, [audio, usaAudio, url, indice, empezo, termino]);
 
   // Cuando se cumple el tiempo, no espera a la consulta de turno: pide el estado ya (una vez por ronda).
   useEffect(() => {
@@ -99,6 +105,11 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
         Ronda {ronda.index + 1} de {sala.round_count}
       </p>
 
+      {conVideo && ronda.youtube_id && (
+        <ReproductorYoutube key={ronda.index} videoId={ronda.youtube_id} inicio={ronda.start_seconds ?? 0} activo={empezo && !termino} alFallar={() => setVideoFallo(indice)} />
+      )}
+      {suena && ronda.source === "youtube" && videoFallo === indice && <p className="batalla__nota">El video no se pudo reproducir: suena el audio de reserva.</p>}
+
       {!empezo && (
         <>
           <p className="batalla__bajada">Se viene la canción…</p>
@@ -111,7 +122,7 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
       {empezo && !termino && (
         <>
           <p className="batalla__tiempo">{faltan(ronda.ends_at, ahoraMs)} s</p>
-          {suena && necesitaToque && (
+          {usaAudio && necesitaToque && (
             <button type="button" className="boton boton--violeta" onClick={() => audio.current && Promise.resolve(audio.current.play()).then(() => setNecesitaToque(false)).catch(() => {})}>
               Tocá para escuchar
             </button>

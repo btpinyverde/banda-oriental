@@ -27,6 +27,35 @@ export interface CancionResuelta {
   genre: string;
 }
 
+/** Cómo se acotan las canciones que salen al azar: lo que se incluye y lo que se excluye (todo opcional). */
+export interface FiltrosAzar {
+  include: {
+    year_from?: number;
+    year_to?: number;
+    genres?: string[];
+    artists?: number[];
+    release_types?: string[];
+    duration_min?: number;
+    duration_max?: number;
+  };
+  exclude: { genres?: string[]; artists?: number[]; release_types?: string[]; years?: [number, number][]; songs?: number[] };
+}
+
+/** Una canción de la lista que arma quien organiza: se oye con el preview de Deezer o con un video de YouTube. */
+export interface ItemDeLista {
+  song_id: number;
+  source: "deezer" | "youtube";
+  youtube_id?: string;
+  start_seconds?: number;
+}
+
+export interface LecturaDeYoutube {
+  youtube_id: string;
+  title: string;
+  author: string;
+  suggestions: CancionResuelta[];
+}
+
 export type NombreDeFase = "lobby" | "countdown" | "playing" | "reveal" | "finished";
 
 /** El estado de la sala para quien participa (jugador u organizador). Contrato: docs/contrato-api-batallas.md. */
@@ -41,7 +70,17 @@ export interface EstadoSala {
   round_count: number;
   round_seconds: number;
   phase: { name: NombreDeFase; index: number };
-  round: { index: number; starts_at: string; ends_at: string; preview_url?: string | null; answered?: boolean } | null;
+  round: {
+    index: number;
+    starts_at: string;
+    ends_at: string;
+    /** El audio de Deezer; en una ronda de YouTube, el de reserva por si el video no se puede reproducir. */
+    preview_url?: string | null;
+    source?: "deezer" | "youtube";
+    youtube_id?: string;
+    start_seconds?: number;
+    answered?: boolean;
+  } | null;
   /** Cuántos jugadores hacen falta para empezar (lo decide el servidor: 1 mientras se prueba el modo, 2 al abrirlo a todos). */
   min_players?: number;
   /** Dónde suena la música: en cada dispositivo o solo en el de quien organiza (el anfitrión). */
@@ -134,7 +173,16 @@ export function crearApiBatallas() {
 
   return {
     crear: async (
-      opciones: { rondas?: number; segundos?: number; titulo?: string; audioMode?: "each" | "host"; joinMode?: "open" | "approval" } = {},
+      opciones: {
+        rondas?: number;
+        segundos?: number;
+        titulo?: string;
+        audioMode?: "each" | "host";
+        joinMode?: "open" | "approval";
+        modoDeCanciones?: "random" | "list";
+        filtros?: FiltrosAzar;
+        lista?: ItemDeLista[];
+      } = {},
     ): Promise<SalaCreada> => {
       const cuerpo = {
         ...(opciones.rondas !== undefined && { round_count: opciones.rondas }),
@@ -142,6 +190,9 @@ export function crearApiBatallas() {
         ...(opciones.titulo?.trim() && { title: opciones.titulo.trim() }),
         ...(opciones.audioMode && { audio_mode: opciones.audioMode }),
         ...(opciones.joinMode && { join_mode: opciones.joinMode }),
+        ...(opciones.modoDeCanciones && { songs_mode: opciones.modoDeCanciones }),
+        ...(opciones.filtros && { filters: opciones.filtros }),
+        ...(opciones.lista && { playlist: opciones.lista }),
       };
       return comoJson(await enviar("/api/battles/", cuerpo, undefined, true));
     },
@@ -149,6 +200,14 @@ export function crearApiBatallas() {
     unirse: async (code: string, nombre: string, hostToken?: string): Promise<{ player: { name: string; status?: string } }> =>
       // Sin comprobación humana: un bar entero entra desde la misma dirección y el pase se entrega con tope por dirección.
     comoJson(await enviar(ruta(code, "join/"), { display_name: nombre }, hostToken)),
+
+    /** Cuántas canciones tiene un segmento, para ver si alcanza antes de crear la sala. */
+    pool: async (filtros: FiltrosAzar): Promise<number> =>
+      (await comoJson<{ count: number }>(await pedir("/api/battles/pool/", { method: "POST", headers: cabeceras(undefined, true), body: JSON.stringify({ filters: filtros }) }))).count,
+
+    /** Lee un enlace de YouTube: el video, su título y las canciones del catálogo que podría ser. */
+    youtube: async (url: string): Promise<LecturaDeYoutube> =>
+      comoJson(await pedir("/api/battles/youtube/", { method: "POST", headers: cabeceras(undefined, true), body: JSON.stringify({ url }) })),
 
     /** Quien organiza acepta o rechaza a alguien en el lobby (rechazar a quien ya entró lo saca). */
     revisar: async (code: string, playerId: number, aceptar: boolean, hostToken?: string): Promise<{ ok: boolean }> =>
