@@ -1,6 +1,6 @@
+import { filtrosDelArchivo, listarArtistas, listarCanciones, rutaDeArtista } from "./lib/archivo-musical";
 import { construirJsonLd, serializarJsonLd } from "./lib/seo";
 import { ArchivoArtistas } from "./ui/ArchivoArtistas";
-import { ARTISTAS_EJEMPLO, GENEROS_EJEMPLO, TOTAL_CANCIONES_EJEMPLO } from "./ui/archivo-ejemplo";
 import { ComoSeJuega } from "./ui/ComoSeJuega";
 import { Footer } from "./ui/Footer";
 import { Hero } from "./ui/Hero";
@@ -17,12 +17,23 @@ import { Navbar } from "./ui/Navbar";
  *   comprimido, sin revisar.
  * - Casi todos los enlaces ya llevan a una página real. Solo /batalla sigue siendo un "llega pronto". Los de redes
  *   sociales del footer apuntan a "#" hasta tener los perfiles.
- * - "Explorá el archivo" usa datos de ejemplo (ver ui/archivo-ejemplo.ts), no el catálogo real.
+ * - "Explorá el archivo" muestra artistas reales del catálogo (los de más canciones); si la API no responde sale vacío.
  * - La tarjeta del juego de la hero es una maqueta decorativa, no el juego.
  * - En celular, "Crear cuenta gratis" (ui/LlamadoMovil) enlaza a /login, que no existe: el diseño del
  *   proyecto todavía no tiene cuentas.
  */
-export default function Home() {
+// El catálogo cambia solo cuando se importa: la portada se vuelve a armar como mucho cada diez minutos.
+export const revalidate = 600;
+
+const ARTISTAS_EN_EL_CARRUSEL = 12;
+const GENEROS_EN_LOS_CHIPS = 8;
+
+export default async function Home() {
+  const [artistas, canciones, filtros] = await Promise.all([
+    listarArtistas({ orden: "songs", porPagina: ARTISTAS_EN_EL_CARRUSEL }),
+    listarCanciones({}),
+    filtrosDelArchivo(),
+  ]);
   return (
     <>
       <script
@@ -35,9 +46,9 @@ export default function Home() {
         <ModeCards />
         <ComoSeJuega />
         <ArchivoArtistas
-          artistas={ARTISTAS_EJEMPLO}
-          generos={GENEROS_EJEMPLO}
-          totalCanciones={TOTAL_CANCIONES_EJEMPLO}
+          artistas={(artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), tapa: a.cover_art_url || undefined }))}
+          generos={(filtros?.genres ?? []).slice(0, GENEROS_EN_LOS_CHIPS).map((g) => g.genre)}
+          totalCanciones={canciones?.count ?? 0}
         />
         <LlamadoMovil />
       </main>

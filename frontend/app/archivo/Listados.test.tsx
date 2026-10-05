@@ -47,7 +47,7 @@ describe("Paginacion", () => {
 
 describe("filas", () => {
   it("el artista dice cuántos discos y canciones tiene y de qué años", () => {
-    render(<FilaDeArtista artista={{ id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004 }} />);
+    render(<FilaDeArtista artista={{ id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "" }} />);
 
     const enlace = screen.getByRole("link", { name: /Jorge Drexler/ });
     expect(enlace).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
@@ -57,7 +57,7 @@ describe("filas", () => {
   });
 
   it("singular cuando es uno", () => {
-    render(<FilaDeArtista artista={{ id: 1, name: "Solo", albums: 1, songs: 1, first_year: 2000, last_year: 2000 }} />);
+    render(<FilaDeArtista artista={{ id: 1, name: "Solo", albums: 1, songs: 1, first_year: 2000, last_year: 2000, cover_art_url: "" }} />);
 
     expect(screen.getByRole("listitem")).toHaveTextContent("1 disco · 1 canción");
   });

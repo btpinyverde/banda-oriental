@@ -134,6 +134,30 @@ class TestArtists:
         assert [a["name"] for a in get(client, "/artists/", letter="j").json()["results"]] == ["Jorge Drexler"]
         assert [a["name"] for a in get(client, "/artists/", letter="L").json()["results"]] == ["Los Traidores"]
 
+    def test_it_can_be_ordered_by_how_many_songs_each_artist_has(self, client, data):
+        body = get(client, "/artists/", sort="songs").json()
+
+        assert [a["name"] for a in body["results"]] == ["Jorge Drexler", "Alfredo Zitarrosa", "Los Traidores"]
+
+    def test_an_unknown_order_is_a_clear_400(self, client, data):
+        assert get(client, "/artists/", sort="inventado").status_code == 400
+
+    def test_each_artist_comes_with_the_cover_of_its_latest_record_that_has_one(self, client, data):
+        Album.objects.filter(pk=data["vaiven"].pk).update(cover_art_url="https://img/vaiven.jpg")
+        Album.objects.filter(pk=data["eco"].pk).update(cover_art_url="https://img/eco.jpg")
+
+        rows = {a["name"]: a for a in get(client, "/artists/").json()["results"]}
+
+        assert rows["Jorge Drexler"]["cover_art_url"] == "https://img/eco.jpg"  # the latest one (2004)
+        assert rows["Los Traidores"]["cover_art_url"] == ""  # none has a cover: empty, never invented
+
+    def test_a_record_without_cover_does_not_hide_an_older_one_that_has_it(self, client, data):
+        Album.objects.filter(pk=data["vaiven"].pk).update(cover_art_url="https://img/vaiven.jpg")
+
+        rows = {a["name"]: a for a in get(client, "/artists/").json()["results"]}
+
+        assert rows["Jorge Drexler"]["cover_art_url"] == "https://img/vaiven.jpg"  # Eco (newer) has no cover
+
     def test_the_detail_has_the_albums_in_order_of_year(self, client, data):
         body = client.get(f"{BASE}/artists/{data['drexler'].id}/").json()
 

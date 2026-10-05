@@ -5,7 +5,7 @@ come); `played_on` lists days that are already over.
 """
 
 from django.core.paginator import Paginator
-from django.db.models import Case, Count, F, IntegerField, Max, Min, Q, Value, When
+from django.db.models import Case, CharField, Count, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Value, When
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
@@ -104,6 +104,7 @@ def _artist_row(artist):
         "songs": artist.songs_count,
         "first_year": artist.first_year,
         "last_year": artist.last_year,
+        "cover_art_url": artist.cover or "",
     }
 
 
@@ -132,6 +133,14 @@ def artists_queryset():
             albums_count=Count("albums", filter=_READABLE_ARTIST_SONG, distinct=True),
             first_year=Min("albums__year"),
             last_year=Max("albums__year"),
+            # The cover of its latest record that has one (a newer record without cover does not hide an older one that has it).
+            cover=Subquery(
+                Album.objects.filter(artist=OuterRef("pk"))
+                .exclude(cover_art_url="")
+                .order_by(F("year").desc(nulls_last=True), "-id")
+                .values("cover_art_url")[:1],
+                output_field=CharField(),
+            ),
         )
         .filter(songs_count__gt=0)
     )
@@ -202,12 +211,17 @@ def _decade_range(request):
 class ArtistListView(ArchiveView):
     def get(self, request):
         text = _text(request)
+        sort = request.query_params.get("sort", "name")
+        if sort not in ("name", "songs"):
+            raise ParseError("sort tiene que ser name o songs.")
         letter = request.query_params.get("letter", "").strip()
         if letter and not (len(letter) == 1 and letter.isalpha()):
             raise ParseError("letter tiene que ser una sola letra.")
         artists = artists_queryset()
         if text:
             artists = _best_first(filter_by_text(artists, text, ["name"]), text, "name")
+        elif sort == "songs":
+            artists = artists.annotate(_main=Unaccent("name")).order_by("-songs_count", "_main", "id")
         else:
             artists = artists.annotate(_main=Unaccent("name")).order_by("_main", "id")
         if letter:

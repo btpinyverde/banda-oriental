@@ -14,6 +14,8 @@ export interface ArtistaFila {
   songs: number;
   first_year: number | null;
   last_year: number | null;
+  /** La tapa de su disco más reciente que tenga; vacía si ninguno tiene (nunca se inventa una). */
+  cover_art_url: string;
 }
 
 export interface DiscoFila {
@@ -128,8 +130,8 @@ async function lista<T>(ruta: string): Promise<Pagina<T> | null> {
   return respuesta.estado === "ok" && esPagina(respuesta.cuerpo) ? (respuesta.cuerpo as Pagina<T>) : null;
 }
 
-export const listarArtistas = (f: { q?: string; letra?: string; pagina?: number; porPagina?: number }) =>
-  lista<ArtistaFila>(`/api/catalog/artists/${consulta({ q: f.q, letter: f.letra, page: f.pagina, page_size: f.porPagina })}`);
+export const listarArtistas = (f: { q?: string; letra?: string; orden?: "name" | "songs"; pagina?: number; porPagina?: number }) =>
+  lista<ArtistaFila>(`/api/catalog/artists/${consulta({ q: f.q, letter: f.letra, sort: f.orden, page: f.pagina, page_size: f.porPagina })}`);
 
 export const listarDiscos = (f: { q?: string; decada?: number; anio?: number; genero?: string; artista?: number; orden?: "name" | "year"; pagina?: number; porPagina?: number }) =>
   lista<DiscoFila>(`/api/catalog/albums/${consulta({ q: f.q, decade: f.decada, year: f.anio, genre: f.genero, artist: f.artista, sort: f.orden, page: f.pagina, page_size: f.porPagina })}`);

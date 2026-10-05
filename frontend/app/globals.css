@@ -1264,6 +1264,8 @@ button {
   display: none;
 }
 
+.artista__enlace { display: block; color: inherit; text-decoration: none; }
+.artista__enlace:focus-visible { outline: 3px solid var(--violeta); outline-offset: 4px; border-radius: 16px; }
 .artista {
   flex: 0 0 calc((100% - 80px) / 5);
   min-width: 0;

@@ -40,9 +40,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITIO_URL}/archivo/discos`, changeFrequency: "weekly", priority: 0.6 },
     ...artistas.map((a) => ({ url: `${SITIO_URL}${rutaDeArtista(a)}`, changeFrequency: "monthly" as const, priority: 0.5 })),
     ...discos.map((d) => ({ url: `${SITIO_URL}${rutaDeDisco(d)}`, changeFrequency: "monthly" as const, priority: 0.4 })),
-    { url: `${SITIO_URL}/artistas`, changeFrequency: "weekly", priority: 0.5 },
-    { url: `${SITIO_URL}/epocas`, changeFrequency: "weekly", priority: 0.4 },
-    { url: `${SITIO_URL}/generos`, changeFrequency: "weekly", priority: 0.4 },
     ...dias.map((dia) => ({ url: `${SITIO_URL}/anteriores/${dia.date}`, changeFrequency: "yearly" as const, priority: 0.5 })),
     ...PAGINAS_DE_TEXTO.map((pagina) => ({ url: `${SITIO_URL}/${pagina.slug}`, changeFrequency: "monthly" as const, priority: 0.5 })),
   ];

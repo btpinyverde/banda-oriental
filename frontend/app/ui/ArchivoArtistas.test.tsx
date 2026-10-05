@@ -1,21 +1,21 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ArchivoArtistas, textoCatalogo, type ArtistaArchivo } from "./ArchivoArtistas";
 
 afterEach(cleanup);
 
-const artista = (nombre: string, canciones: number, generos: string[], tapa?: string): ArtistaArchivo => ({
-  id: nombre,
+const artista = (nombre: string, canciones: number, tapa?: string, id = nombre.length): ArtistaArchivo => ({
+  id,
   nombre,
   canciones,
-  generos,
+  href: `/archivo/artista/${id}-${nombre.toLowerCase().replace(/\s+/g, "-")}`,
   tapa,
 });
 
 const ARTISTAS = [
-  artista("No Te Va Gustar", 28, ["Rock"], "https://img.example/ntvg.jpg"),
-  artista("Jorge Drexler", 16, ["Pop", "Folklore"], "https://img.example/drexler.jpg"),
-  artista("Rada", 6, ["Candombe"]),
+  artista("No Te Va Gustar", 28, "https://img.example/ntvg.jpg", 1),
+  artista("Jorge Drexler", 16, "https://img.example/drexler.jpg", 2),
+  artista("Rada", 6, undefined, 3),
 ];
 
 const GENEROS = ["Rock", "Pop", "Candombe", "Folklore"];
@@ -26,7 +26,7 @@ const renderizar = (props: Partial<Parameters<typeof ArchivoArtistas>[0]> = {}) 
 describe("textoCatalogo", () => {
   it("redondea hacia abajo a la centena cuando hay 100 canciones o más", () => {
     expect(textoCatalogo(137)).toBe("Más de 100 canciones de todas las épocas, géneros y rincones del Uruguay.");
-    expect(textoCatalogo(250)).toBe("Más de 200 canciones de todas las épocas, géneros y rincones del Uruguay.");
+    expect(textoCatalogo(16316)).toBe("Más de 16.300 canciones de todas las épocas, géneros y rincones del Uruguay.");
   });
 
   it("dice la cantidad exacta cuando hay menos de 100", () => {
@@ -40,16 +40,17 @@ describe("textoCatalogo", () => {
 });
 
 describe("ArchivoArtistas", () => {
-  it("muestra cada artista con su nombre, sus canciones y su tapa", () => {
+  it("muestra cada artista con su nombre, sus canciones y su tapa, y lleva a su ficha", () => {
     renderizar();
 
     const tarjeta = screen.getByText("No Te Va Gustar").closest("li") as HTMLElement;
     expect(within(tarjeta).getByText("28 canciones")).toBeInTheDocument();
     expect(within(tarjeta).getByRole("img")).toHaveAttribute("src", "https://img.example/ntvg.jpg");
+    expect(within(tarjeta).getByRole("link", { name: /No Te Va Gustar/ })).toHaveAttribute("href", "/archivo/artista/1-no-te-va-gustar");
   });
 
   it("escribe en singular cuando el artista tiene una sola canción", () => {
-    renderizar({ artistas: [artista("Solista", 1, ["Rock"])] });
+    renderizar({ artistas: [artista("Solista", 1)] });
     expect(screen.getByText("1 canción")).toBeInTheDocument();
   });
 
@@ -65,60 +66,31 @@ describe("ArchivoArtistas", () => {
     expect(screen.getByText(/Más de 200 canciones/)).toBeInTheDocument();
   });
 
-  it("ofrece Todos más los géneros recibidos, con Todos activo al inicio", () => {
+  it("los géneros llevan a los discos de ese género del archivo, y 'Todos' al archivo", () => {
     renderizar();
 
-    expect(screen.getByRole("button", { name: "Todos" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Rock" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Candombe" })).toBeInTheDocument();
+    const generos = screen.getByRole("list", { name: "Explorar por género" });
+    expect(within(generos).getByRole("link", { name: "Todos" })).toHaveAttribute("href", "/archivo");
+    expect(within(generos).getByRole("link", { name: "Rock" })).toHaveAttribute("href", "/archivo/discos?genero=Rock");
+    expect(within(generos).getByRole("link", { name: "Candombe" })).toHaveAttribute("href", "/archivo/discos?genero=Candombe");
   });
 
-  it("filtra los artistas al elegir un género", () => {
-    renderizar();
+  it("el nombre de un género con caracteres especiales se escapa en la dirección", () => {
+    renderizar({ generos: ["R&B / Soul"] });
 
-    fireEvent.click(screen.getByRole("button", { name: "Candombe" }));
-
-    expect(screen.getByText("Rada")).toBeInTheDocument();
-    expect(screen.queryByText("No Te Va Gustar")).toBeNull();
-    expect(screen.getByRole("button", { name: "Candombe" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("link", { name: "R&B / Soul" })).toHaveAttribute("href", "/archivo/discos?genero=R%26B+%2F+Soul");
   });
 
-  it("incluye a un artista en cada uno de sus géneros", () => {
-    renderizar();
-
-    fireEvent.click(screen.getByRole("button", { name: "Folklore" }));
-
-    expect(screen.getByText("Jorge Drexler")).toBeInTheDocument();
-  });
-
-  it("vuelve a mostrar todos al elegir Todos", () => {
-    renderizar();
-
-    fireEvent.click(screen.getByRole("button", { name: "Candombe" }));
-    fireEvent.click(screen.getByRole("button", { name: "Todos" }));
-
-    expect(screen.getByText("No Te Va Gustar")).toBeInTheDocument();
-    expect(screen.getByText("Rada")).toBeInTheDocument();
-  });
-
-  it("avisa cuando un género no tiene artistas", () => {
-    renderizar({ generos: [...GENEROS, "Tango"] });
-
-    fireEvent.click(screen.getByRole("button", { name: "Tango" }));
-
-    expect(screen.getByText("Todavía no hay artistas de este género.")).toBeInTheDocument();
-  });
-
-  it("no muestra géneros ni flechas cuando el archivo está vacío", () => {
+  it("no muestra géneros ni flechas cuando el archivo está vacío, y lo dice", () => {
     renderizar({ artistas: [], generos: [], totalCanciones: 0 });
 
     expect(screen.getByText("Todavía no hay artistas en el archivo.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Todos" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Explorar por género" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
   });
 
-  it("enlaza a la página del archivo completo", () => {
+  it("enlaza a la lista completa de artistas del archivo", () => {
     renderizar();
-    expect(screen.getByRole("link", { name: /Ver todos los artistas/ })).toHaveAttribute("href", "/artistas");
+    expect(screen.getByRole("link", { name: /Ver todos los artistas/ })).toHaveAttribute("href", "/archivo/artistas");
   });
 });

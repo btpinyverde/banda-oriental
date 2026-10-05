@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buscarEnElArchivo, fichaDeArtista, filtrosDelArchivo, idDeFicha, listarArtistas, listarCanciones, listarDiscos, rutaDeArtista, rutaDeCancion, rutaDeDisco, slug } from "./archivo-musical";
 
-const ARTISTA = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004 };
+const ARTISTA = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "" };
 const respuesta = (cuerpo: unknown, estado = 200) => ({ ok: estado >= 200 && estado < 300, status: estado, json: async () => cuerpo });
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -50,6 +50,12 @@ describe("pedidos a la API del archivo", () => {
     expect(url.searchParams.get("letter")).toBe("L");
     expect(url.searchParams.get("page")).toBe("2");
     expect(lista?.results[0].name).toBe("Jorge Drexler");
+  });
+
+  it("los artistas se pueden pedir por cantidad de canciones", async () => {
+    await listarArtistas({ orden: "songs" });
+
+    expect(urlPedida().searchParams.get("sort")).toBe("songs");
   });
 
   it("el tamaño de página se puede pedir", async () => {

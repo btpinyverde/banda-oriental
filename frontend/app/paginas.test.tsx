@@ -250,13 +250,13 @@ describe("sitemap del archivo", () => {
   });
 });
 
-describe("sitemap de explorar el catálogo", () => {
-  it("lista artistas, épocas y géneros, que ya tienen contenido", async () => {
+describe("sitemap: las páginas viejas de explorar ya no están", () => {
+  it("no lista /artistas, /epocas ni /generos (redirigen al archivo)", async () => {
     vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([]);
 
     const urls = (await sitemap()).map((e) => e.url);
 
-    expect(urls).toEqual(expect.arrayContaining([`${SITIO_URL}/artistas`, `${SITIO_URL}/epocas`, `${SITIO_URL}/generos`]));
+    for (const vieja of ["/artistas", "/epocas", "/generos"]) expect(urls).not.toContain(`${SITIO_URL}${vieja}`);
   });
 });
 
@@ -280,7 +280,7 @@ describe("sitemap", () => {
 describe("sitemap del archivo de música", () => {
   it("lista el archivo, sus listas y una entrada por cada artista y disco (con su dirección con nombre)", async () => {
     vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([]);
-    vi.spyOn(archivoMusical, "listarArtistas").mockResolvedValue({ count: 1, page: 1, pages: 1, results: [{ id: 7, name: "Jorge Drexler", albums: 1, songs: 1, first_year: 1996, last_year: 1996 }] });
+    vi.spyOn(archivoMusical, "listarArtistas").mockResolvedValue({ count: 1, page: 1, pages: 1, results: [{ id: 7, name: "Jorge Drexler", albums: 1, songs: 1, first_year: 1996, last_year: 1996, cover_art_url: "" }] });
     vi.spyOn(archivoMusical, "listarDiscos").mockResolvedValue({ count: 1, page: 1, pages: 1, results: [{ id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "", release_type: "album", songs: 1, cover_art_url: "" }] });
 
     const urls = (await sitemap()).map((e) => e.url);
@@ -290,7 +290,7 @@ describe("sitemap del archivo de música", () => {
 
   it("recorre todas las páginas de la API, no solo la primera", async () => {
     vi.spyOn(archivoDatos, "obtenerDias").mockResolvedValue([]);
-    const artista = (id: number) => ({ id, name: `A${id}`, albums: 1, songs: 1, first_year: null, last_year: null });
+    const artista = (id: number) => ({ id, name: `A${id}`, albums: 1, songs: 1, first_year: null, last_year: null, cover_art_url: "" });
     const listar = vi.spyOn(archivoMusical, "listarArtistas").mockImplementation(async ({ pagina }) => ({ count: 3, page: pagina ?? 1, pages: 2, results: [artista(pagina === 2 ? 3 : 1), artista(pagina === 2 ? 4 : 2)] }));
     vi.spyOn(archivoMusical, "listarDiscos").mockResolvedValue(null);
 
