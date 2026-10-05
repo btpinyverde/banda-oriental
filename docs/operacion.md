@@ -55,3 +55,19 @@ nunca van al chat, al repositorio ni a una captura.
 El plan gratuito de Neon conserva poco historial de restauración. Antes de abrir al público conviene un respaldo
 periódico (por ejemplo, un `pg_dump` semanal guardado fuera de Neon). Necesita la `DATABASE_URL`, que la tiene que
 cargar el dueño.
+
+## Ver y probar los rankings en producción
+
+`manage.py ranking_prueba` mira lo que hay (puntajes guardados, días publicados y cada ranking como lo arma la API). Con
+`--crear` agrega puntajes de prueba marcados (`[prueba] Ana`...) a los últimos días publicados, y con `--borrar` quita
+exactamente esos (se reconocen por un identificador fijo de dispositivo, no por el nombre: nunca toca los de verdad). Se
+corre desde tu compu contra la base de producción, como el cargador del catálogo:
+
+    cd backend
+    export DATABASE_URL='postgres://...'   # la URL de Neon
+    export DJANGO_SETTINGS_MODULE=config.settings.prod SECRET_KEY=local ALLOWED_HOSTS=localhost \
+      CORS_ALLOWED_ORIGINS=https://bandaoriental.xami.uy R2_ACCESS_KEY_ID=x R2_SECRET_ACCESS_KEY=x R2_BUCKET_NAME=x R2_ENDPOINT_URL=https://x.example.com
+    .venv/bin/python manage.py ranking_prueba            # solo mirar
+    .venv/bin/python manage.py ranking_prueba --crear    # agrega datos de prueba
+    .venv/bin/python manage.py ranking_prueba --borrar   # los quita
+
