@@ -35,3 +35,30 @@ def unaccent_available() -> bool:
 def register_sqlite_unaccent(sender, connection, **kwargs):
     if connection.vendor == "sqlite":
         connection.connection.create_function("unaccent", 1, lambda value: strip_accents(value) if value else value)
+
+
+def filter_by_text(queryset, text: str, fields: list[str]):
+    """Keeps the rows where EVERY word of `text` appears (in any order) in at least one of `fields` (ORM paths such as
+    "title" or "album__artist__name"), ignoring accents and case. Without the unaccent extension it still works, but
+    matching accents."""
+    from django.db.models import Q
+
+    terms = text.split()
+    if not terms:
+        return queryset
+    if not unaccent_available():
+        for term in terms:
+            query = Q()
+            for path in fields:
+                query |= Q(**{f"{path}__icontains": term})
+            queryset = queryset.filter(query)
+        return queryset
+    names = {f"_text{i}": path for i, path in enumerate(fields)}
+    queryset = queryset.annotate(**{name: Unaccent(path) for name, path in names.items()})
+    for term in terms:
+        plain = strip_accents(term)
+        query = Q()
+        for name in names:
+            query |= Q(**{f"{name}__icontains": plain})
+        queryset = queryset.filter(query)
+    return queryset
