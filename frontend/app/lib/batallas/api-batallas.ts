@@ -130,7 +130,8 @@ export function crearApiBatallas() {
     },
 
     unirse: async (code: string, nombre: string, hostToken?: string): Promise<{ player: { name: string } }> =>
-      comoJson(await enviar(ruta(code, "join/"), { display_name: nombre }, hostToken, true)),
+      // Sin comprobación humana: un bar entero entra desde la misma dirección y el pase se entrega con tope por dirección.
+    comoJson(await enviar(ruta(code, "join/"), { display_name: nombre }, hostToken)),
 
     empezar: async (code: string, hostToken?: string): Promise<{ status: string }> =>
       comoJson(await enviar(ruta(code, "start/"), {}, hostToken, true)),

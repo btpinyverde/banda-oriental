@@ -38,7 +38,10 @@ class CreateView(APIView):
 
 class JoinView(APIView):
     throttle_scope = "battle-join"
-    permission_classes = [HasHumanPass]
+    # No human check and no global limit: a whole bar joins from one address, and the human pass is capped at 30 an hour per
+    # address. What protects a room is its secret code, the cap of players and the scoped rate.
+    skip_global_throttle = True
+    permission_classes = []
     authentication_classes = [BearerTokenAuthentication]
 
     def post(self, request, code):
@@ -80,6 +83,7 @@ class DetailView(APIView):
 
 class AnswerView(APIView):
     throttle_scope = "battle-answer"
+    skip_global_throttle = True  # every phone in the room answers from the same address
     authentication_classes = [BearerTokenAuthentication]
 
     def post(self, request, code):

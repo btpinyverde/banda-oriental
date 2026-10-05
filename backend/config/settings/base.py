@@ -136,8 +136,8 @@ REST_FRAMEWORK = {
         "catalog": "60/min",  # the music archive: search and browse artists, albums and songs
         "human": "30/hour",
         "battle-create": "20/hour",
-        "battle-join": "120/hour",
-        "battle-answer": "240/min",
+        "battle-join": "600/hour",  # joining and starting; a bar joins in bursts from one address
+        "battle-answer": "1500/min",
         "battle-state": "3000/min",  # polling: a bar's phones share one address
     },
     "EXCEPTION_HANDLER": "core.throttling.exception_handler",

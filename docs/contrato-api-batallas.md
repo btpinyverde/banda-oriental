@@ -42,4 +42,7 @@ Acierto: `100 + round(50 · (1 − transcurrido/round_seconds))`; fallo o sin re
 
 ## Límites
 
-`battle-create` 20/hora, `battle-join` 120/hora (también `start`), `battle-answer` 240/min, `battle-state` 3000/min por IP. La consulta de estado y `mine` **no cuentan** contra el límite global de 240/min: un bar entero comparte una dirección.
+`battle-create` 20/hora (con comprobación humana), `battle-join` 600/hora (entrar y empezar), `battle-answer` 1500/min, `battle-state` 3000/min, todos por IP.
+Un bar entero comparte una dirección, así que **consultar el estado, `mine`, entrar y responder no cuentan contra el límite global de 240/min**, y
+**entrar no pide la comprobación humana** (el pase tiene un tope de 30 por hora por dirección). Una sala se protege con su código secreto, el
+máximo de 60 jugadores y esos límites por ruta. Crear y empezar sí cuentan contra el límite global.
