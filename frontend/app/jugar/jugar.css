@@ -223,7 +223,7 @@
 
 /* ---------- Buscador ---------- */
 
-.buscador { position: relative; }
+.buscador { position: relative; min-width: 0; }
 
 .buscador__campo {
   display: flex;
@@ -662,11 +662,14 @@
   .jugar__escenario { gap: 20px; }
 
   /* Sin tarjeta blanca: el contenido va directo sobre el fondo, como en el diseño. */
-  .jugar__tarjeta { position: relative; z-index: 1; padding: 0; border-radius: 0; background: none; box-shadow: none; gap: 16px; }
+  /* Una sola columna que se achica: con la columna "auto" de la grilla, cualquier cosa más ancha que la pantalla (el título
+     sin partir, una tabla) estira todo, y el botón de enviar del buscador quedaba fuera de pantalla. */
+  .jugar__tarjeta { position: relative; z-index: 1; padding: 0; border-radius: 0; background: none; box-shadow: none; gap: 16px; grid-template-columns: minmax(0, 1fr); }
   .jugar__cabecera { justify-content: flex-start; }
   .jugar__cuenta { order: 3; margin: 4px auto 0; width: auto; }
   .jugar__titulo { font-size: clamp(30px, 9.2vw, 42px); line-height: 1.05; white-space: nowrap; }
-  .jugar__titulo-fila { align-items: center; justify-content: space-between; gap: 8px; }
+  .jugar__titulo-fila { align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .jugar__titulo-fila .tutorial__reabrir { flex-basis: 100%; margin-left: 0; }
 
   .ayuda { left: 0; right: 0; width: auto; top: 206px; }
 
