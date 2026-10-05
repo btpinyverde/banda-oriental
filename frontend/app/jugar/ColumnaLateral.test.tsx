@@ -117,12 +117,20 @@ describe("ColumnaLateral: enlaces y colores", () => {
     expect(container.querySelectorAll(".lateral__dato--destacado")).toHaveLength(1);
   });
 
-  it("no muestra el ranking de ejemplo salvo que se pida", () => {
+  it("muestra el ranking real del día; el de ejemplo (con su aviso) solo en el modo demo", async () => {
+    vi.spyOn(servidor, "pedirRanking").mockResolvedValue({
+      period: "day",
+      from: HOY,
+      to: HOY,
+      entries: [{ rank: 1, display_name: "lucas", score: 1240, games: 1 }],
+      me: null,
+    });
     const { rerender } = render(<ColumnaLateral />);
-    expect(screen.queryByRole("region", { name: "Ranking del día" })).toBeNull();
+
+    expect(await screen.findByText("lucas")).toBeInTheDocument();
+    expect(screen.queryByText("Datos de ejemplo")).toBeNull();
 
     rerender(<ColumnaLateral conRankingEjemplo />);
-    expect(screen.getByRole("region", { name: "Ranking del día" })).toBeInTheDocument();
     expect(screen.getByText("Datos de ejemplo")).toBeInTheDocument();
   });
 });
