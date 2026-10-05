@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { batallaActiva } from "../../lib/funciones";
 import { Footer } from "../../ui/Footer";
 import { Navbar } from "../../ui/Navbar";
 import { Sala } from "../Sala";
@@ -14,11 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PaginaSala({ params }: { params: Promise<{ code: string }> }) {
-  if (!batallaActiva()) notFound();
   const { code } = await params;
   return (
     <>
-      <Navbar actual="/batalla" />
+      <Navbar />
       <Sala code={code} />
       <Footer variante="compacto" />
     </>

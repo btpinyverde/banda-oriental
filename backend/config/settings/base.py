@@ -157,6 +157,9 @@ CORS_ALLOWED_ORIGINS = [
 # the frontend, so they can be tuned without a frontend deploy.
 GAMEPLAY_BASE_SCORES = {1: 100, 2: 85, 3: 70, 4: 55, 5: 40, 6: 20}
 BATTLES = {
+    # Who may create battles while the mode is being tried out (env BATTLE_CREATOR_EMAILS, comma separated, lowercase compare).
+    # "*" opens it to everybody, anonymous visitors included: the switch for the public launch. Joining is always open.
+    "CREATOR_EMAILS": [e.strip().lower() for e in os.environ.get("BATTLE_CREATOR_EMAILS", "btpinyverde@gmail.com").split(",") if e.strip()],
     "MAX_PLAYERS": 60,
     "MIN_ROUNDS": 3,
     "MAX_ROUNDS": 30,

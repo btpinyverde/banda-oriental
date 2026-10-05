@@ -6,6 +6,12 @@ from battles.models import Battle
 D1 = "11111111-1111-1111-1111-111111111111"
 
 
+@pytest.fixture(autouse=True)
+def anybody_can_create(settings):
+    # These tests are about what a creation does; who may create is tested in test_access.py.
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["*"]}
+
+
 def create(client, **body):
     return client.post(reverse("battles:create"), data=body, content_type="application/json", HTTP_X_DEVICE_ID=D1)
 

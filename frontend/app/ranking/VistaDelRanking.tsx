@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { batallaActiva } from "../lib/funciones";
+import { usePuedeCrearBatallas } from "../lib/batallas/usePuedeCrearBatallas";
 import { MisBatallas } from "./MisBatallas";
 import { Ranking } from "./Ranking";
 
@@ -9,10 +9,11 @@ type Vista = "diario" | "batallas";
 
 /**
  * La pantalla del ranking con dos vistas: el ranking del juego diario y "Mis batallas" (el ranking de cada batalla en la
- * que jugaste o que organizaste, privado). El selector aparece solo con el modo batalla encendido; si no, es el ranking de siempre.
+ * que jugaste o que organizaste, privado). El selector aparece solo para quien puede usar el modo batalla; para el resto es el ranking de siempre.
  */
 export function VistaDelRanking() {
-  const habilitada = batallaActiva();
+  // Con el modo apagado para todos, solo lo ven las cuentas autorizadas a crear batallas.
+  const { puede: habilitada } = usePuedeCrearBatallas();
   const [vista, setVista] = useState<Vista>("diario");
 
   useEffect(() => {

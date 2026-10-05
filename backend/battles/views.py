@@ -8,6 +8,7 @@ from accounts.authentication import BearerTokenAuthentication
 from core.human import HasHumanPass
 
 from . import services, state
+from .access import can_create
 from .identity import get_caller, is_host, player_for
 from .models import Battle
 
@@ -23,6 +24,8 @@ class CreateView(APIView):
     authentication_classes = [BearerTokenAuthentication]
 
     def post(self, request):
+        if not can_create(request.user):
+            raise Http404  # not "forbidden": whoever may not create does not need to know the mode is there
         caller = get_caller(request)
         battle = services.create_battle(
             caller,

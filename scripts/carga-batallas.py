@@ -23,8 +23,10 @@ errores = {}
 t_inicio = time.time()
 
 
-def pedir(base, metodo, ruta, device, cuerpo=None, host_token="", tipo="other"):
+def pedir(base, metodo, ruta, device, cuerpo=None, host_token="", tipo="other", sesion=""):
     cabeceras = {"X-Device-Id": device, "Content-Type": "application/json"}
+    if sesion:
+        cabeceras["Authorization"] = f"Bearer {sesion}"
     if host_token:
         cabeceras["X-Host-Token"] = host_token
     datos = json.dumps(cuerpo).encode() if cuerpo is not None else None
@@ -83,6 +85,7 @@ def main():
     ap.add_argument("--players", type=int, default=50)
     ap.add_argument("--rounds", type=int, default=4)
     ap.add_argument("--seconds", type=int, default=8)
+    ap.add_argument("--token", default="", help="token de sesión de una cuenta autorizada a crear batallas (hace falta si el servidor no tiene BATTLE_CREATOR_EMAILS=*)")
     ap.add_argument("--songs", default="", help="ids de canciones del catálogo para responder, separados por coma (si no, se piden a /api/songs/)")
     a = ap.parse_args()
     base = a.base.rstrip("/")
@@ -93,7 +96,7 @@ def main():
     else:
         _, d = pedir(base, "GET", "/api/songs/", host_device)
         canciones = [s["id"] for s in d.get("songs", [])][:200] or [1]
-    estado, sala = pedir(base, "POST", "/api/battles/", host_device, {"round_count": a.rounds, "round_seconds": a.seconds, "title": "Prueba de carga"})
+    estado, sala = pedir(base, "POST", "/api/battles/", host_device, {"round_count": a.rounds, "round_seconds": a.seconds, "title": "Prueba de carga"}, sesion=a.token)
     assert estado == 201, f"no se pudo crear la sala: {estado} {sala}"
     code, host_token = sala["code"], sala["host_token"]
     print(f"Sala {code}: {a.players} jugadores, {a.rounds} rondas de {a.seconds} s")

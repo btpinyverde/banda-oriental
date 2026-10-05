@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as puerta from "../lib/batallas/usePuedeCrearBatallas";
 import { VistaDelRanking } from "./VistaDelRanking";
 
 vi.mock("./Ranking", () => ({ Ranking: ({ selector }: { selector?: React.ReactNode }) => <div>RANKING DIARIO{selector}</div> }));
@@ -8,6 +9,7 @@ vi.mock("./MisBatallas", () => ({ MisBatallas: ({ selector }: { selector?: React
 beforeEach(() => window.history.replaceState(null, "", "/ranking"));
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
 
@@ -28,6 +30,12 @@ describe("VistaDelRanking", () => {
     expect(screen.getByRole("button", { name: "Mis batallas" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Diario" }));
     expect(screen.getByText(/^RANKING DIARIO/)).toBeInTheDocument();
+  });
+
+  it("con el modo apagado para todos, una cuenta autorizada igual ve el selector", () => {
+    vi.spyOn(puerta, "usePuedeCrearBatallas").mockReturnValue({ puede: true, lista: true });
+    render(<VistaDelRanking />);
+    expect(screen.getByRole("button", { name: "Mis batallas" })).toBeInTheDocument();
   });
 
   it("?vista=batallas abre directo en Mis batallas", async () => {

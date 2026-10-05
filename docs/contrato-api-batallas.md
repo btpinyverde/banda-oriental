@@ -10,7 +10,7 @@ Principios: sin sockets; el servidor es la fuente de verdad del estado y del tie
 
 | Método y ruta | Quién | Qué hace |
 |---|---|---|
-| `POST /api/battles/` | cualquiera | Crea la sala. Cuerpo opcional: `round_count` (3–30, def. 10), `round_seconds` (5–60, def. 20), `title` (≤60). Devuelve `201 {code, host_token, round_count, round_seconds, title}`. |
+| `POST /api/battles/` | cuentas autorizadas | Crea la sala. Mientras el modo se prueba solo pueden las cuentas de `BATTLE_CREATOR_EMAILS` (por defecto, la de Brandon); el resto recibe **404**, como si la ruta no existiera. Con `BATTLE_CREATOR_EMAILS=*` puede cualquiera, también sin cuenta (el lanzamiento público). `GET /api/me/` trae `can_create_battles` para que el sitio sepa si mostrar el modo. Entrar y jugar siguen abiertos a quien tenga el código. Cuerpo opcional: `round_count` (3–30, def. 10), `round_seconds` (5–60, def. 20), `title` (≤60). Devuelve `201 {code, host_token, round_count, round_seconds, title}`. |
 | `POST /api/battles/<code>/join/` | cualquiera | Entra con `{display_name}` (1–50, único en la sala sin distinguir mayúsculas). `201 {player:{name}}`; si ya estaba, `200` con su nombre. Solo en el lobby (si no, 404). Quien organiza recibe 400. Sala llena: 400. |
 | `POST /api/battles/<code>/start/` | organizador | Sortea las canciones (con preview de Deezer), fija el cronograma y pasa a `playing`. Hacen falta ≥2 jugadores. `200 {status:"playing"}`. A cualquier otra persona: 404. |
 | `GET /api/battles/<code>/?since=<key>` | participantes | Estado de la sala (abajo). |
