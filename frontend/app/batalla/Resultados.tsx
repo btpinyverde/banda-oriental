@@ -35,6 +35,10 @@ export function Resultados({ sala, ahora }: { sala: EstadoSala; ahora: () => num
         </p>
       )}
 
+      {sala.role === "host" && sala.stats && <DatosDeLaRonda datos={sala.stats} />}
+
+      {termino && <Podio sala={sala} />}
+
       {sala.team_ranking && sala.team_ranking.length > 0 && (
         <table className="batalla__tabla" aria-label="Ranking por equipos">
           <thead>
@@ -100,5 +104,68 @@ export function Resultados({ sala, ahora }: { sala: EstadoSala; ahora: () => num
         </div>
       )}
     </section>
+  );
+}
+
+const segundos = (n: number) => n.toFixed(1).replace(".", ",");
+
+/** Para la pantalla grande: cuánta gente respondió, cuánta acertó, quién fue más rápida y qué fue lo más elegido. */
+function DatosDeLaRonda({ datos }: { datos: NonNullable<EstadoSala["stats"]> }) {
+  const porcentaje = datos.total > 0 ? Math.round((datos.correct / datos.total) * 100) : 0;
+  return (
+    <section className="batalla__datos" aria-label="Datos de la ronda">
+      <p>
+        Respondieron {datos.answered} de {datos.total}.
+      </p>
+      <p>
+        Acertaron {datos.correct} ({porcentaje} %).
+      </p>
+      {datos.fastest && (
+        <p>
+          La más rápida: {datos.fastest.name} ({segundos(datos.fastest.seconds)} s).
+        </p>
+      )}
+      {datos.top_guesses.length > 0 && (
+        <>
+          <p>Lo más elegido:</p>
+          <ul>
+            {datos.top_guesses.map((g) => (
+              <li key={`${g.title}-${g.artist}`}>
+                {g.title} — {g.artist} · {g.count} {g.count === 1 ? "voto" : "votos"}
+                {g.correct ? " ✓ la correcta" : ""}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Al terminar: los tres primeros puestos (y, si se jugó por equipos, los tres primeros equipos). */
+function Podio({ sala }: { sala: EstadoSala }) {
+  const personas = (sala.ranking ?? []).slice(0, 3);
+  const equipos = (sala.team_ranking ?? []).slice(0, 3);
+  return (
+    <div className="batalla__podios">
+      {personas.length > 0 && (
+        <ol className="batalla__podio" aria-label="Podio de jugadores">
+          {personas.map((fila) => (
+            <li key={fila.name} className={`batalla__puesto batalla__puesto--${fila.position}`}>
+              <strong>{fila.position}.º</strong> {fila.name} — {fila.points} puntos
+            </li>
+          ))}
+        </ol>
+      )}
+      {equipos.length > 0 && (
+        <ol className="batalla__podio" aria-label="Podio de equipos">
+          {equipos.map((fila) => (
+            <li key={fila.id} className={`batalla__puesto batalla__puesto--${fila.position}`} style={{ borderColor: fila.color }}>
+              <strong>{fila.position}.º</strong> {fila.name} — {fila.points} de promedio
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }

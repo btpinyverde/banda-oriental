@@ -448,3 +448,128 @@ describe("Sala: equipos", () => {
     expect(screen.queryByRole("table", { name: /equipos/i })).toBeNull();
   });
 });
+
+describe("Sala: modo presentación y datos para proyectar", () => {
+  const STATS = {
+    total: 5,
+    answered: 4,
+    correct: 3,
+    fastest: { name: "Ana", seconds: 3.2 },
+    top_guesses: [
+      { title: "Zafar", artist: "La Vela Puerca", count: 3, correct: true },
+      { title: "Chau", artist: "No Te Va Gustar", count: 1, correct: false },
+    ],
+  };
+
+  beforeEach(() => {
+    document.documentElement.requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    (document as unknown as { exitFullscreen: () => Promise<void> }).exitFullscreen = vi.fn().mockResolvedValue(undefined);
+  });
+
+  it.each([
+    ["el lobby", () => sala({ role: "host" })],
+    ["la ronda", () => enRonda({ role: "host", players: [{ id: 1, name: "Ana", answered: false }] })],
+    ["los resultados", () => enRevelacion({ role: "host" })],
+  ])("quien organiza tiene el botón de modo presentación en %s", (_nombre, hacer) => {
+    poner({ sala: hacer() }, T0 + 6000);
+    montar();
+    expect(screen.getByRole("button", { name: /modo presentación/i })).toBeInTheDocument();
+  });
+
+  it("los jugadores no lo tienen", () => {
+    poner({ sala: sala() });
+    montar();
+    expect(screen.queryByRole("button", { name: /modo presentación/i })).toBeNull();
+  });
+
+  it("al activarlo la pantalla pasa a pantalla completa y se puede salir", async () => {
+    poner({ sala: sala({ role: "host" }) });
+    montar();
+
+    fireEvent.click(screen.getByRole("button", { name: /modo presentación/i }));
+    const pantalla = screen.getByRole("dialog", { name: /pantalla de presentación/i });
+    expect(pantalla).toBeInTheDocument();
+    expect(document.documentElement.requestFullscreen).toHaveBeenCalled();
+    expect(within(pantalla).getByText("En la sala (2)")).toBeInTheDocument(); // el mismo contenido, en grande
+
+    fireEvent.click(screen.getByRole("button", { name: /salir de la presentación/i }));
+    expect(screen.queryByRole("dialog", { name: /pantalla de presentación/i })).toBeNull();
+  });
+
+  it("si el navegador no deja pantalla completa, igual funciona", () => {
+    document.documentElement.requestFullscreen = vi.fn().mockRejectedValue(new Error("no"));
+    poner({ sala: sala({ role: "host" }) });
+    montar();
+    fireEvent.click(screen.getByRole("button", { name: /modo presentación/i }));
+    expect(screen.getByRole("dialog", { name: /pantalla de presentación/i })).toBeInTheDocument();
+  });
+
+  it("quien organiza ve cómo respondió la sala entre rondas", () => {
+    poner({ sala: enRevelacion({ role: "host", stats: STATS }) });
+    montar();
+
+    const datos = within(screen.getByRole("region", { name: /datos de la ronda/i }));
+    expect(datos.getByText(/respondieron 4 de 5/i)).toBeInTheDocument();
+    expect(datos.getByText(/acertaron 3 \(60 ?%\)/i)).toBeInTheDocument();
+    expect(datos.getByText(/la más rápida: ana \(3,2 s\)/i)).toBeInTheDocument();
+    expect(datos.getByText(/zafar/i)).toBeInTheDocument();
+    expect(datos.getByText(/3 votos/i)).toBeInTheDocument();
+  });
+
+  it("sin nadie que haya acertado no hay 'la más rápida'", () => {
+    poner({ sala: enRevelacion({ role: "host", stats: { ...STATS, correct: 0, fastest: null } }) });
+    montar();
+    expect(screen.queryByText(/la más rápida/i)).toBeNull();
+    expect(screen.getByText(/acertaron 0 \(0 ?%\)/i)).toBeInTheDocument();
+  });
+
+  it("los jugadores no ven esos datos", () => {
+    poner({ sala: enRevelacion() });
+    montar();
+    expect(screen.queryByRole("region", { name: /datos de la ronda/i })).toBeNull();
+  });
+
+  it("al terminar hay un podio con los tres primeros", () => {
+    poner({
+      sala: terminada({
+        ranking: [
+          { position: 1, name: "Ana", points: 250, correct: 2 },
+          { position: 2, name: "Beto", points: 130, correct: 1 },
+          { position: 3, name: "Caro", points: 90, correct: 1 },
+          { position: 4, name: "Dani", points: 0, correct: 0 },
+        ],
+      }),
+    });
+    montar();
+
+    const podio = within(screen.getByRole("list", { name: /podio de jugadores/i }));
+    const filas = podio.getAllByRole("listitem");
+    expect(filas).toHaveLength(3);
+    expect(filas[0]).toHaveTextContent("Ana");
+    expect(filas[0]).toHaveTextContent("250");
+    expect(filas[2]).toHaveTextContent("Caro");
+    expect(within(screen.getByRole("list", { name: /podio de jugadores/i })).queryByText("Dani")).toBeNull();
+  });
+
+  it("con equipos el podio también muestra los equipos", () => {
+    poner({
+      sala: terminada({
+        team_mode: "random",
+        teams: [{ id: 1, name: "Rojos", color: "#e8508a" }, { id: 2, name: "Azules", color: "#3aa0e8" }],
+        team_ranking: [
+          { position: 1, id: 2, name: "Azules", color: "#3aa0e8", members: 2, points: 100, total: 200, correct: 2 },
+          { position: 2, id: 1, name: "Rojos", color: "#e8508a", members: 2, points: 75, total: 150, correct: 1 },
+        ],
+      }),
+    });
+    montar();
+    const podio = within(screen.getByRole("list", { name: /podio de equipos/i }));
+    expect(podio.getAllByRole("listitem")[0]).toHaveTextContent("Azules");
+  });
+
+  it("entre rondas no hay podio", () => {
+    poner({ sala: enRevelacion() });
+    montar();
+    expect(screen.queryByRole("list", { name: /podio/i })).toBeNull();
+  });
+});

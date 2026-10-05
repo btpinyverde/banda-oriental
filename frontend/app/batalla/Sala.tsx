@@ -27,6 +27,7 @@ export function Sala({ code, api, cargarCanciones = () => crearClienteHttp().lis
   // Un solo <audio> para todas las rondas: el navegador (sobre todo el iPhone) lo desbloquea con un toque y después lo deja sonar.
   const audio = useRef<HTMLAudioElement>(null);
   const [canciones, setCanciones] = useState<CancionCatalogo[]>([]);
+  const [presentacion, setPresentacion] = useState(false);
   const esJugador = !!sala && !("joinable" in sala) && sala.role === "player";
 
   useEffect(() => {
@@ -40,6 +41,26 @@ export function Sala({ code, api, cargarCanciones = () => crearClienteHttp().lis
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [esJugador]);
+
+  const esOrganizador = !!sala && !("joinable" in sala) && sala.role === "host";
+
+  // El modo presentación es la pantalla de quien organiza en grande, para proyectarla; intenta pasar a pantalla completa.
+  function presentar() {
+    setPresentacion(true);
+    try {
+      Promise.resolve(document.documentElement.requestFullscreen?.()).catch(() => {});
+    } catch {
+      // Sin pantalla completa: la presentación igual ocupa toda la ventana.
+    }
+  }
+  function dejarDePresentar() {
+    setPresentacion(false);
+    try {
+      if (document.fullscreenElement) Promise.resolve(document.exitFullscreen?.()).catch(() => {});
+    } catch {
+      // Ya no estaba en pantalla completa.
+    }
+  }
 
   const hostToken = leerHostToken(code) ?? undefined;
   let contenido;
@@ -85,7 +106,21 @@ export function Sala({ code, api, cargarCanciones = () => crearClienteHttp().lis
     <main className="batalla">
       <audio ref={audio} preload="auto" />
       {sala && error && <p className="batalla__aviso-red">Sin conexión, reintentando…</p>}
-      {contenido}
+      {esOrganizador && !presentacion && (
+        <button type="button" className="batalla__presentar" onClick={presentar}>
+          Modo presentación
+        </button>
+      )}
+      {presentacion ? (
+        <div className="presentacion" role="dialog" aria-modal="true" aria-label="Pantalla de presentación">
+          <button type="button" className="batalla__presentar" onClick={dejarDePresentar}>
+            Salir de la presentación
+          </button>
+          {contenido}
+        </div>
+      ) : (
+        contenido
+      )}
     </main>
   );
 }
