@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/juego/tipos";
 import type { ApiBatallas } from "../lib/batallas/api-batallas";
@@ -8,7 +8,13 @@ import { CrearBatalla } from "./CrearBatalla";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-const apiCon = (crear: ReturnType<typeof vi.fn>) => ({ crear }) as unknown as ApiBatallas;
+const CANCIONES = [
+  { id: 1, title: "Zafar", artist: "La Vela Puerca", album: "A contraluz", year: 2001, genre: "Rock" },
+  { id: 2, title: "Chau", artist: "No Te Va Gustar", album: "Por lo menos hoy", year: 2007, genre: "Rock" },
+];
+const apiCon = (crear: ReturnType<typeof vi.fn>, extra: Partial<Record<keyof ApiBatallas, ReturnType<typeof vi.fn>>> = {}) => ({ crear, ...extra }) as unknown as ApiBatallas;
+const montar = (api: ApiBatallas) =>
+  render(<CrearBatalla api={api} cargarCanciones={() => Promise.resolve(CANCIONES)} cargarGeneros={() => Promise.resolve(["Rock", "Pop"])} buscarArtistas={() => Promise.resolve([])} />);
 const campo = (nombre: RegExp) => screen.getByLabelText(nombre);
 
 afterEach(cleanup);
@@ -20,7 +26,7 @@ beforeEach(() => {
 describe("CrearBatalla", () => {
   it("crea la sala con los valores por defecto, guarda la clave del organizador y va a la sala", async () => {
     const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "secreto" });
-    render(<CrearBatalla api={apiCon(crear)} />);
+    montar(apiCon(crear));
 
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
@@ -31,11 +37,11 @@ describe("CrearBatalla", () => {
 
   it("manda lo que se escribió", async () => {
     const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
-    render(<CrearBatalla api={apiCon(crear)} />);
+    montar(apiCon(crear));
 
     fireEvent.change(campo(/título/i), { target: { value: "Cumple de Ana" } });
-    fireEvent.change(campo(/canciones/i), { target: { value: "5" } });
-    fireEvent.change(campo(/segundos/i), { target: { value: "15" } });
+    fireEvent.change(campo(/^canciones$/i), { target: { value: "5" } });
+    fireEvent.change(campo(/^segundos por ronda/i), { target: { value: "15" } });
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
     await waitFor(() => expect(crear).toHaveBeenCalledWith({ rondas: 5, segundos: 15, titulo: "Cumple de Ana", audioMode: "each", joinMode: "open" }));
@@ -43,7 +49,7 @@ describe("CrearBatalla", () => {
 
   it("deja elegir que la música suene solo en la pantalla del anfitrión y aceptar a cada persona", async () => {
     const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
-    render(<CrearBatalla api={apiCon(crear)} />);
+    montar(apiCon(crear));
 
     fireEvent.click(screen.getByLabelText(/solo en mi pantalla/i));
     fireEvent.click(screen.getByLabelText(/aceptar a cada persona/i));
@@ -59,9 +65,9 @@ describe("CrearBatalla", () => {
     ["segundos", "61", /entre 5 y 60/],
   ])("%s = %s se rechaza en pantalla, sin llamar a la API", (nombre, valor, mensaje) => {
     const crear = vi.fn();
-    render(<CrearBatalla api={apiCon(crear)} />);
+    montar(apiCon(crear));
 
-    fireEvent.change(campo(new RegExp(nombre, "i")), { target: { value: valor } });
+    fireEvent.change(campo(nombre === "canciones" ? /^canciones$/i : /^segundos por ronda/i), { target: { value: valor } });
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(mensaje);
@@ -70,7 +76,7 @@ describe("CrearBatalla", () => {
 
   it("muestra el error de la API", async () => {
     const crear = vi.fn().mockRejectedValue(new ApiError("Título inválido.", 400));
-    render(<CrearBatalla api={apiCon(crear)} />);
+    montar(apiCon(crear));
 
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
 
@@ -81,11 +87,84 @@ describe("CrearBatalla", () => {
   it("no deja apretar dos veces mientras crea", async () => {
     let resolver!: (v: unknown) => void;
     const crear = vi.fn().mockReturnValue(new Promise((r) => (resolver = r)));
-    render(<CrearBatalla api={apiCon(crear)} />);
+    montar(apiCon(crear));
 
     fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
     expect(screen.getByRole("button", { name: /creando/i })).toBeDisabled();
     resolver({ code: "ABC234", host_token: "t" });
     await waitFor(() => expect(push).toHaveBeenCalled());
+  });
+
+  describe("cómo se eligen las canciones", () => {
+    it("por defecto es al azar y no manda filtros si no se tocó nada", async () => {
+      const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+      montar(apiCon(crear));
+      expect(screen.getByLabelText(/al azar/i)).toBeChecked();
+
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+      await waitFor(() => expect(crear).toHaveBeenCalled());
+      expect(crear.mock.calls[0][0]).not.toHaveProperty("filtros");
+      expect(crear.mock.calls[0][0]).not.toHaveProperty("modoDeCanciones");
+    });
+
+    it("manda los filtros y cuenta cuántas canciones cumplen", async () => {
+      const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+      const pool = vi.fn().mockResolvedValue(57);
+      montar(apiCon(crear, { pool }));
+
+      fireEvent.change(screen.getByLabelText(/^años desde/i), { target: { value: "2000" } });
+      expect(await screen.findByText(/hay 57 canciones que cumplen/i)).toBeInTheDocument();
+      expect(pool).toHaveBeenLastCalledWith({ include: { year_from: 2000 }, exclude: {} });
+
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+      await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ filtros: { include: { year_from: 2000 }, exclude: {} } })));
+    });
+
+    it("no crea si los filtros dejan menos canciones que las pedidas", async () => {
+      const crear = vi.fn();
+      montar(apiCon(crear, { pool: vi.fn().mockResolvedValue(4) }));
+
+      fireEvent.change(screen.getByLabelText(/^años desde/i), { target: { value: "2000" } });
+      await screen.findByText(/hay 4 canciones que cumplen/i);
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+
+      expect(screen.getByRole("alert")).toHaveTextContent(/no alcanzan/i);
+      expect(crear).not.toHaveBeenCalled();
+    });
+
+    it("elegir la lista a mano esconde la cantidad de canciones y manda la lista en orden", async () => {
+      const crear = vi.fn().mockResolvedValue({ code: "ABC234", host_token: "t" });
+      montar(apiCon(crear));
+
+      fireEvent.click(screen.getByLabelText(/elegir yo/i));
+      expect(screen.queryByLabelText(/^canciones$/i)).toBeNull();
+      const catalogo = within(screen.getByRole("region", { name: /agregar del catálogo/i }));
+      for (const [busca, titulo] of [["chau", /chau/i], ["zafar", /zafar/i]] as const) {
+        fireEvent.change(await catalogo.findByRole("combobox"), { target: { value: busca } });
+        fireEvent.click(await catalogo.findByRole("option", { name: titulo }));
+        fireEvent.click(catalogo.getByRole("button", { name: /agregar a la lista/i }));
+      }
+      // Agregar canciones no crea la sala: el buscador trae su propio formulario y no debe disparar el de crear.
+      expect(crear).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+
+      await waitFor(() => expect(crear).toHaveBeenCalled());
+      expect(crear).toHaveBeenCalledTimes(1);
+      const pedido = crear.mock.calls[0][0];
+      expect(pedido.modoDeCanciones).toBe("list");
+      expect(pedido.lista).toEqual([{ song_id: 2, source: "deezer" }, { song_id: 1, source: "deezer" }]);
+      expect(pedido).not.toHaveProperty("rondas");
+    });
+
+    it("con la lista vacía no crea", () => {
+      const crear = vi.fn();
+      montar(apiCon(crear));
+
+      fireEvent.click(screen.getByLabelText(/elegir yo/i));
+      fireEvent.click(screen.getByRole("button", { name: "Crear sala" }));
+
+      expect(screen.getByRole("alert")).toHaveTextContent(/al menos una canción/i);
+      expect(crear).not.toHaveBeenCalled();
+    });
   });
 });

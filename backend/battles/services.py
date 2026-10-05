@@ -10,6 +10,8 @@ from catalog.models import Song
 from gameplay.moderation import contains_banned_word
 
 from .access import min_players
+from .filters import clean_filters, pool
+from .playlist import clean_playlist
 from .identity import is_host, player_for
 from .models import Battle, BattleAnswer, BattlePlayer, BattleRound
 from .previews import preview_url
@@ -37,7 +39,7 @@ def _choice(value, allowed, default, field):
     return value
 
 
-def create_battle(caller, round_count=None, round_seconds=None, title=None, audio_mode=None, join_mode=None):
+def create_battle(caller, round_count=None, round_seconds=None, title=None, audio_mode=None, join_mode=None, songs_mode=None, filters=None, playlist=None):
     cfg = settings.BATTLES
     round_count = _int_in_range(round_count, 10, cfg["MIN_ROUNDS"], cfg["MAX_ROUNDS"], "round_count")
     round_seconds = _int_in_range(round_seconds, 20, cfg["MIN_ROUND_SECONDS"], cfg["MAX_ROUND_SECONDS"], "round_seconds")
@@ -48,6 +50,12 @@ def create_battle(caller, round_count=None, round_seconds=None, title=None, audi
     title = title.strip()
     if len(title) > 60 or contains_banned_word(title):
         raise ValidationError({"title": "Título inválido."})
+    songs_mode = _choice(songs_mode, (Battle.RANDOM, Battle.LIST), Battle.RANDOM, "songs_mode")
+    filters = clean_filters(filters)
+    items = []
+    if songs_mode == Battle.LIST:
+        items = clean_playlist(playlist)
+        round_count = len(items)  # the list decides how many rounds there are
     audio_mode = _choice(audio_mode, (Battle.EACH, Battle.HOST), Battle.EACH, "audio_mode")
     join_mode = _choice(join_mode, (Battle.OPEN, Battle.APPROVAL), Battle.OPEN, "join_mode")
     for _ in range(5):  # a code collision is possible, if rare: try again with another
@@ -61,6 +69,9 @@ def create_battle(caller, round_count=None, round_seconds=None, title=None, audi
                     title=title,
                     audio_mode=audio_mode,
                     join_mode=join_mode,
+                    songs_mode=songs_mode,
+                    filters=filters,
+                    playlist=items,
                 )
         except IntegrityError:
             continue
@@ -101,16 +112,31 @@ def join_battle(battle, caller, display_name, host_token=""):
     return player, True
 
 
-def _pick_songs(count):
-    """`count` distinct songs that have a Deezer preview, at random; hidden ones (duplicates, classical) never play."""
-    ids = list(Song.objects.filter(hidden=False, deezer_id__isnull=False).order_by("?").values_list("pk", flat=True)[: count * 6])
+def _pick_songs(count, filters):
+    """`count` distinct songs inside the segment that have a Deezer preview, at random (hidden ones never play)."""
+    songs = pool(filters)
+    if songs.count() < count:
+        raise ValidationError({"detail": "No hay suficientes canciones que cumplan los filtros. Ampliá la selección o pedí menos canciones."})
+    ids = list(songs.order_by("?").values_list("pk", flat=True)[: count * 6])
     chosen = []
     for song in Song.objects.filter(pk__in=ids).order_by("?").select_related("album__artist")[: count * 3]:
         if preview_url(song):
-            chosen.append(song)
+            chosen.append({"song": song, "source": "deezer", "youtube_id": "", "start_seconds": 0})
         if len(chosen) == count:
             return chosen
     raise ValidationError({"detail": "No pudimos armar las canciones. Probá de nuevo."})
+
+
+def _list_songs(items):
+    """The organizer's list, in his order. A Deezer item needs its preview; a YouTube one does not (Deezer is only its fallback)."""
+    songs = Song.objects.select_related("album__artist").in_bulk([item["song_id"] for item in items])
+    chosen = []
+    for item in items:
+        song = songs[item["song_id"]]
+        if item["source"] == "deezer" and not preview_url(song):
+            raise ValidationError({"detail": f"No encontramos el audio de «{song.title}». Cambiá esa canción o usá un enlace de YouTube."})
+        chosen.append({"song": song, "source": item["source"], "youtube_id": item["youtube_id"], "start_seconds": item["start_seconds"]})
+    return chosen
 
 
 def start_battle(battle, now=None):
@@ -118,7 +144,7 @@ def start_battle(battle, now=None):
     accepted = battle.players.filter(status=BattlePlayer.ACCEPTED).count()
     if accepted < min_players():
         raise ValidationError({"detail": "Hace falta al menos otra persona para jugar." if min_players() > 1 else "Hace falta que entre alguien para jugar."})
-    songs = _pick_songs(battle.round_count)
+    songs = _list_songs(battle.playlist) if battle.songs_mode == Battle.LIST else _pick_songs(battle.round_count, battle.filters or clean_filters(None))
     cfg = settings.BATTLES
     schedule = build_schedule(now, battle.round_count, battle.round_seconds, cfg["COUNTDOWN_SECONDS"], cfg["REVEAL_SECONDS"])
     with transaction.atomic():
@@ -129,7 +155,19 @@ def start_battle(battle, now=None):
         # Whoever is still waiting when it starts does not get in.
         battle.players.filter(status=BattlePlayer.PENDING).update(status=BattlePlayer.REJECTED)
         BattleRound.objects.bulk_create(
-            [BattleRound(battle=battle, index=i, song=song, starts_at=a, ends_at=b) for i, (song, (a, b)) in enumerate(zip(songs, schedule))]
+            [
+                BattleRound(
+                    battle=battle,
+                    index=i,
+                    song=pick["song"],
+                    starts_at=a,
+                    ends_at=b,
+                    source=pick["source"],
+                    youtube_id=pick["youtube_id"],
+                    start_seconds=pick["start_seconds"],
+                )
+                for i, (pick, (a, b)) in enumerate(zip(songs, schedule))
+            ]
         )
     battle.refresh_from_db(fields=["status", "started_at", "version"])
 

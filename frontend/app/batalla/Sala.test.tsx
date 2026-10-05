@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../lib/juego/tipos";
 import type { ApiBatallas } from "../lib/batallas/api-batallas";
@@ -9,6 +9,19 @@ import { Sala } from "./Sala";
 import { T0, enRevelacion, enRonda, iso, sala, terminada, unible } from "./fixtures";
 
 vi.mock("../lib/batallas/useSala", () => ({ useSala: vi.fn() }));
+const youtube = vi.hoisted(() => ({
+  opciones: null as null | { videoId: string; events: { onReady?: () => void; onError?: (e: { data: number }) => void } },
+  jugador: { playVideo: vi.fn(), pauseVideo: vi.fn(), seekTo: vi.fn(), destroy: vi.fn(), getPlayerState: vi.fn().mockReturnValue(1) },
+}));
+vi.mock("../lib/batallas/youtube-iframe", () => ({
+  cargarYoutube: () =>
+    Promise.resolve({
+      Player: function (_el: unknown, opciones: NonNullable<typeof youtube.opciones>) {
+        youtube.opciones = opciones;
+        return youtube.jugador;
+      },
+    }),
+}));
 vi.mock("qrcode", () => ({ default: { toDataURL: vi.fn().mockResolvedValue("data:image/png;base64,QR") } }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
@@ -25,6 +38,8 @@ const apiCon = (metodos: Partial<Record<keyof ApiBatallas, ReturnType<typeof vi.
 const montar = (api: ApiBatallas = apiCon({})) => render(<Sala code="ABC234" api={api} cargarCanciones={cargarCanciones} />);
 
 beforeEach(() => {
+  youtube.opciones = null;
+  youtube.jugador.playVideo.mockClear();
   window.localStorage.clear();
   refrescar.mockReset();
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
@@ -304,5 +319,57 @@ describe("Sala: el anfitrión pone la música", () => {
     fireEvent.change(screen.getByLabelText(/tu nombre/i), { target: { value: "Zoe" } });
     fireEvent.click(screen.getByRole("button", { name: /entrar a la sala/i }));
     expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalled();
+  });
+});
+
+describe("Sala: rondas con un video de YouTube", () => {
+  const rondaDeYoutube = (extra: Record<string, unknown> = {}) => ({
+    index: 0,
+    starts_at: iso(5),
+    ends_at: iso(15),
+    preview_url: "https://cdn/reserva.mp3",
+    source: "youtube" as const,
+    youtube_id: "dQw4w9WgXcQ",
+    start_seconds: 12,
+    answered: false,
+    ...extra,
+  });
+
+  it("el jugador oye el video en el reproductor de YouTube y no con el audio de Deezer", async () => {
+    poner({ sala: enRonda({ round: rondaDeYoutube() }) }, T0 + 6000);
+    montar();
+
+    await waitFor(() => expect(youtube.opciones?.videoId).toBe("dQw4w9WgXcQ"));
+    await act(async () => youtube.opciones!.events.onReady!());
+    expect(youtube.jugador.playVideo).toHaveBeenCalled();
+    expect(window.HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    expect(await screen.findByRole("combobox")).toBeInTheDocument();
+  });
+
+  it("si el video no se puede reproducir, suena el preview de Deezer de reserva", async () => {
+    poner({ sala: enRonda({ round: rondaDeYoutube() }) }, T0 + 6000);
+    montar();
+
+    await waitFor(() => expect(youtube.opciones).not.toBeNull());
+    await act(async () => youtube.opciones!.events.onError!({ data: 150 }));
+
+    await waitFor(() => expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalled());
+    expect(screen.getByText(/video no se pudo reproducir/i)).toBeInTheDocument();
+  });
+
+  it("en modo anfitrión el video lo pone la pantalla de quien organiza y no la de los jugadores", async () => {
+    poner({ sala: enRonda({ audio_mode: "host", round: rondaDeYoutube({ preview_url: undefined, source: undefined, youtube_id: undefined, start_seconds: undefined }) }) }, T0 + 6000);
+    montar();
+
+    expect(await screen.findByText(/en la pantalla del anfitrión/i)).toBeInTheDocument();
+    expect(youtube.opciones).toBeNull();
+  });
+
+  it("en modo anfitrión quien organiza ve el reproductor", async () => {
+    poner({ sala: enRonda({ role: "host", audio_mode: "host", players: [{ id: 1, name: "Ana", answered: false }], round: rondaDeYoutube() }) }, T0 + 6000);
+    montar();
+
+    await waitFor(() => expect(youtube.opciones?.videoId).toBe("dQw4w9WgXcQ"));
+    expect(screen.getByText(/está sonando/i)).toBeInTheDocument();
   });
 });

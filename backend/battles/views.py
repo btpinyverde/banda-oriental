@@ -8,8 +8,12 @@ from accounts.authentication import BearerTokenAuthentication
 from core.human import HasHumanPass
 
 from . import services, state
+from . import youtube
 from .access import can_create
+from .filters import clean_filters, pool
 from .identity import get_caller, is_host, player_for
+from gameplay.views import song_payload
+
 from .models import Battle
 
 
@@ -34,6 +38,9 @@ class CreateView(APIView):
             title=request.data.get("title"),
             audio_mode=request.data.get("audio_mode"),
             join_mode=request.data.get("join_mode"),
+            songs_mode=request.data.get("songs_mode"),
+            filters=request.data.get("filters"),
+            playlist=request.data.get("playlist"),
         )
         return Response(
             {"code": battle.code, "host_token": battle.host_token, "round_count": battle.round_count, "round_seconds": battle.round_seconds, "title": battle.title},
@@ -123,3 +130,35 @@ class ReviewView(APIView):
             raise Http404
         services.review_player(battle, request.data.get("player_id"), request.data.get("accept"))
         return Response({"ok": True})
+
+
+class PoolView(APIView):
+    """How many songs a segment has, so the organizer sees whether it is enough before creating the room."""
+
+    throttle_scope = "catalog"
+    authentication_classes = [BearerTokenAuthentication]
+
+    def post(self, request):
+        if not can_create(request.user):
+            raise Http404
+        return Response({"count": pool(clean_filters(request.data.get("filters"))).count()})
+
+
+class YoutubeView(APIView):
+    """Reads a YouTube link: its id, its title and the catalog songs it could be (the answer is always a catalog song)."""
+
+    throttle_scope = "catalog"
+    authentication_classes = [BearerTokenAuthentication]
+
+    def post(self, request):
+        if not can_create(request.user):
+            raise Http404
+        found = youtube.lookup(request.data.get("url"))
+        return Response(
+            {
+                "youtube_id": found["youtube_id"],
+                "title": found["title"],
+                "author": found["author"],
+                "suggestions": [song_payload(s) for s in found["songs"]],
+            }
+        )

@@ -26,6 +26,15 @@ Al crear: `audio_mode` (`each` por defecto, o `host`: la música suena solo en e
 - El estado trae `audio_mode`, `join_mode` y, para jugadores, `my_status`. El organizador, en el lobby, ve `players:[{id,name}]` y `pending:[{id,name}]`.
 - `round.preview_url` llega solo a quien debe reproducir: a los jugadores en `each`, al organizador en `host`.
 
+## Etapa 3: cómo se eligen las canciones
+
+Al crear: `songs_mode` (`random` por defecto, o `list`).
+- **`random` con `filters`** (opcional): `{include: {year_from, year_to, genres[], artists[] (ids), release_types[] (album|ep|single), duration_min, duration_max}, exclude: {genres[], artists[], release_types[], years: [[desde, hasta]], songs[] (ids)}}`. Un filtro vacío no filtra; todo se combina con Y. Las canciones sin año no se pierden al excluir rangos de años. Siempre: canciones visibles y con id de Deezer. Si hay menos canciones que rondas, `start` responde 400 ("No hay suficientes canciones que cumplan los filtros…"). Los filtros se validan y se guardan en la sala.
+- **`list` con `playlist`**: `[{song_id, source: "deezer"|"youtube", youtube_id, start_seconds}]` en el orden en que van a salir; `round_count` pasa a ser el largo de la lista. Sin repetidas, solo canciones visibles. Un ítem `deezer` necesita su preview (si no, `start` falla nombrando la canción); uno `youtube` no (Deezer es solo su reserva).
+- `POST /api/battles/pool/` `{filters}` → `{count}`: cuántas canciones cumplen (misma autorización que crear: 404 para el resto).
+- `POST /api/battles/youtube/` `{url}` → `{youtube_id, title, author, suggestions: [canción del catálogo]}`: lee el enlace (watch, youtu.be, shorts, embed, music.youtube) con oEmbed. Un video que no permite embeberse (oEmbed 401) o que no existe se rechaza con 400 y el motivo. Las sugerencias son las canciones del catálogo que coinciden con el título.
+- `round` en el estado trae `source` y, para `youtube`, `youtube_id` y `start_seconds`, junto con `preview_url` (la reserva) y solo a quien debe reproducir (según `audio_mode`).
+
 ## Estado (`GET /api/battles/<code>/`)
 
 - **Quien no participó:** si la sala está en el lobby, `{joinable:true, code, title, round_count, round_seconds, players_count}`; en cualquier otro caso, **404** (igual que una sala inexistente). Los resultados de una batalla solo los ven quienes participaron o la crearon.
