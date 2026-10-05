@@ -29,7 +29,14 @@ export function ColageDelAcceso({ modo }: { modo: Modo }) {
     <div className={`colage-acceso colage-acceso--${modo}`} aria-hidden="true">
       <img className="colage-acceso__mancha-amarilla" src="/assets/hero-blob-yellow.svg" alt="" />
       <img className="colage-acceso__mancha-lila" src="/assets/hero-blob-purple.svg" alt="" />
-      {crear ? <img className="colage-acceso__mancha-rosa" src="/assets/hero-blob-pink.svg" alt="" /> : null}
+      {crear ? (
+        <img className="colage-acceso__mancha-rosa" src="/assets/hero-blob-pink.svg" alt="" />
+      ) : (
+        <>
+          <img className="colage-acceso__mancha-amarilla-baja" src="/assets/hero-blob-yellow.svg" alt="" />
+          <img className="colage-acceso__borde-lila" src="/assets/hero-edge-purple.svg" alt="" />
+        </>
+      )}
 
       {crear ? (
         <>
@@ -78,6 +85,8 @@ export function ColageDelAcceso({ modo }: { modo: Modo }) {
       <img className="colage-acceso__flan" src="/assets/flan_footer.webp" alt="" width={420} height={420} />
       <img className="colage-acceso__rayas colage-acceso__rayas--a" src="/assets/hero-rays-top.svg" alt="" />
       <img className="colage-acceso__rayas colage-acceso__rayas--b" src="/assets/hero-rays-left.svg" alt="" />
+      <img className="colage-acceso__rayas colage-acceso__rayas--c" src="/assets/hero-rays-claim.svg" alt="" />
+      <img className="colage-acceso__rayas colage-acceso__rayas--d" src="/assets/hero-rays-pair.svg" alt="" />
     </div>
   );
 }
