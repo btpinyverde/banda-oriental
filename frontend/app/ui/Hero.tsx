@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { batallaActiva } from "../lib/funciones";
 import { GameCard } from "./GameCard";
 
 const BENEFICIOS = [
@@ -37,11 +38,13 @@ export function Hero() {
               </svg>
               Jugar el diario
             </Link>
-            <Link href="/batalla" className="boton boton--grande boton--claro boton--con-etiqueta">
-              <img src="/assets/icon-swords-solid.svg" alt="" width={34} height={34} />
-              Modo batalla
-              <span className="etiqueta-nuevo">Nuevo</span>
-            </Link>
+            {batallaActiva() && (
+              <Link href="/batalla" className="boton boton--grande boton--claro boton--con-etiqueta">
+                <img src="/assets/icon-swords-solid.svg" alt="" width={34} height={34} />
+                Modo batalla
+                <span className="etiqueta-nuevo">Nuevo</span>
+              </Link>
+            )}
           </div>
 
           <ul className="hero__beneficios">
