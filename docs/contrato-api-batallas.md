@@ -42,6 +42,10 @@ Al crear: `team_mode` (`none` por defecto, `random` o `manual`), `team_count` (2
 - Para competir por equipos tiene que haber gente en al menos dos equipos (basta con uno mientras el modo se prueba, cuando `min_players` es 1).
 - El estado trae `team_mode`, `teams: [{id, name, color}]`, `team` en cada jugador, `my_team` para jugadores y, en `reveal`/`finished`, `team_ranking: [{position, id, name, color, members, points (promedio por integrante), total, correct}]`. Los equipos sin integrantes no compiten. Se ordena por promedio, luego total, luego nombre; el ranking de personas no cambia.
 
+## Etapa 5: modo presentación
+
+Es la pantalla de quien organiza, en grande y a pantalla completa, para proyectarla (botón «Modo presentación» en el sitio; no cambia la API). Para eso el estado trae, **solo al organizador** y en las fases `reveal` y `finished`, `stats` de la ronda que acaba de cerrar: `{total, answered, correct, fastest: {name, seconds}|null, top_guesses: [{title, artist, count, correct}] (las 3 más elegidas)}`. Las personas rechazadas o en espera no cuentan. Al terminar, `stats` es el de la última ronda; el podio (tres primeros, de jugadores y de equipos) sale de `ranking` y `team_ranking`.
+
 ## Estado (`GET /api/battles/<code>/`)
 
 - **Quien no participó:** si la sala está en el lobby, `{joinable:true, code, title, round_count, round_seconds, players_count}`; en cualquier otro caso, **404** (igual que una sala inexistente). Los resultados de una batalla solo los ven quienes participaron o la crearon.

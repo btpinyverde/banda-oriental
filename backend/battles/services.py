@@ -365,3 +365,30 @@ def team_ranking(battle):
     for position, row in enumerate(rows, start=1):
         row["position"] = position
     return rows
+
+
+def round_stats(round_):
+    """How the room answered a closed round, for the organizer's screen: who answered, who got it right and how fast the quickest
+    was, and the three songs people chose most (right or wrong). Turned-away and waiting players do not count."""
+    battle = round_.battle
+    total = battle.players.filter(status=BattlePlayer.ACCEPTED).count()
+    answers = list(round_.answers.filter(player__status=BattlePlayer.ACCEPTED).select_related("player", "song_guessed__album__artist"))
+    correct = [a for a in answers if a.correct]
+    fastest = None
+    if correct:
+        quickest = min(correct, key=lambda a: a.received_at)
+        fastest = {"name": quickest.player.display_name, "seconds": round((quickest.received_at - round_.starts_at).total_seconds(), 1)}
+    counts = {}
+    for answer in answers:
+        if answer.song_guessed is not None:
+            counts.setdefault(answer.song_guessed_id, [answer.song_guessed, 0])[1] += 1
+    popular = sorted(counts.values(), key=lambda pair: (-pair[1], pair[0].title.lower(), pair[0].pk))[:3]
+    return {
+        "total": total,
+        "answered": len(answers),
+        "correct": len(correct),
+        "fastest": fastest,
+        "top_guesses": [
+            {"title": song.title, "artist": song.album.artist.name, "count": n, "correct": song.pk == round_.song_id} for song, n in popular
+        ],
+    }

@@ -32,6 +32,15 @@ export interface FilaEquipo {
   correct: number;
 }
 
+/** Cómo respondió la sala la ronda que acaba de cerrar (solo para quien organiza: es lo que muestra la pantalla grande). */
+export interface DatosDeRonda {
+  total: number;
+  answered: number;
+  correct: number;
+  fastest: { name: string; seconds: number } | null;
+  top_guesses: { title: string; artist: string; count: number; correct: boolean }[];
+}
+
 export interface FilaRanking {
   position: number;
   name: string;
@@ -115,6 +124,7 @@ export interface EstadoSala {
   /** Solo para jugadores: el equipo (id) en el que está. */
   my_team?: number | null;
   team_ranking?: FilaEquipo[];
+  stats?: DatosDeRonda;
   /** Solo para quien organiza, en el lobby: quiénes esperan que los acepte. */
   pending?: { id: number; name: string }[];
   players: JugadorSala[];

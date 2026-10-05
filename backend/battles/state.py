@@ -143,6 +143,8 @@ def build_state(battle, caller, token, since, now):
             else None,
         }
         data["ranking"] = services.ranking(battle)
+        if host:
+            data["stats"] = services.round_stats(closed)  # for the organizer's screen (the big one): how the room answered
         if with_teams:
             data["team_ranking"] = services.team_ranking(battle)
     return data
