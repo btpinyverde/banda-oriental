@@ -11,7 +11,7 @@ from django.db.models.functions import Lower
 
 from catalog.models import Song
 
-from . import audio
+from . import audio, jobs
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +97,15 @@ class Stem(models.Model):
         return f"{self.daily_song} — {self.get_stem_type_display()} (#{self.unlock_order})"
 
     def save(self, *args, **kwargs):
-        if self.audio_file and not self.audio_file._committed:  # a new upload (not a stem that was already stored)
-            self.make_versions()
+        new_upload = bool(self.audio_file) and not self.audio_file._committed  # not a stem that was already stored
+        if new_upload:
+            # The versions belong to the previous audio (if any): they stop being served at once. The new ones are made
+            # after the save, in the background (gameplay/jobs.py): converting here would hold the request up for minutes.
+            self.audio_high = ""
+            self.audio_low = ""
         super().save(*args, **kwargs)
+        if new_upload:
+            jobs.schedule_conversion(self.pk)
 
     def make_versions(self, data: bytes | None = None) -> bool:
         """Converts the original into the versions the players download. If it cannot be converted the stem is still

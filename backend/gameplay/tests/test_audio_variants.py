@@ -59,8 +59,35 @@ def upload(data, name="drums.wav"):
     return SimpleUploadedFile(name, data, content_type="audio/wav")
 
 
+@pytest.fixture(autouse=True)
+def conversion_runs_where_it_is_scheduled(settings):
+    """In production the conversion runs in a background thread so the upload request is not held up; in the tests it
+    runs right where it is scheduled, so it can be asserted."""
+    settings.STEM_CONVERSION_BACKGROUND = False
+
+
+@pytest.fixture(autouse=True)
+def after_commit(django_capture_on_commit_callbacks):
+    """Everything that is scheduled to run after the commit runs right after the save in these tests."""
+    global _after_commit
+    _after_commit = django_capture_on_commit_callbacks
+    yield
+
+
+_after_commit = None
+
+
+def save_and_convert(stem):
+    with _after_commit(execute=True):
+        stem.save()
+    return stem
+
+
 def make_stem(daily, data, stem_type="drums", order=1):
-    return Stem.objects.create(daily_song=daily, stem_type=stem_type, unlock_order=order, audio_file=upload(data))
+    stem = Stem(daily_song=daily, stem_type=stem_type, unlock_order=order, audio_file=upload(data))
+    save_and_convert(stem)
+    stem.refresh_from_db()
+    return stem
 
 
 class TestEncoding:
@@ -96,6 +123,84 @@ class TestEncoding:
 
         with pytest.raises(audio.AudioError, match="ffmpeg"):
             audio.encode_variants(b"x")
+
+
+class TestTheUploadRequestIsNotHeldUp:
+    """Converting four full-length stems takes minutes on the free server, far past the 30 seconds gunicorn gives a
+    request (the worker is killed and the site goes down). So the save only stores the original; the conversion follows."""
+
+    def test_saving_does_not_convert_anything_by_itself(self, daily, wav, monkeypatch):
+        monkeypatch.setattr(audio, "encode_variants", lambda data: pytest.fail("converted inside the save"))
+
+        stem = Stem.objects.create(daily_song=daily, stem_type="drums", unlock_order=1, audio_file=upload(wav))
+
+        stem.refresh_from_db()
+        assert stem.audio_file and not stem.audio_high and not stem.audio_low
+
+    def test_the_conversion_is_scheduled_for_after_the_commit_and_then_fills_the_versions(self, daily, wav, django_capture_on_commit_callbacks):
+        with django_capture_on_commit_callbacks(execute=False) as callbacks:
+            stem = Stem.objects.create(daily_song=daily, stem_type="drums", unlock_order=1, audio_file=upload(wav))
+        assert len(callbacks) >= 1
+        stem.refresh_from_db()
+        assert not stem.audio_high
+
+        for callback in callbacks:
+            callback()
+
+        stem.refresh_from_db()
+        assert stem.audio_high.name.endswith(".m4a") and stem.audio_low.name.endswith(".m4a")
+
+    def test_in_production_it_runs_in_a_background_thread_not_in_the_request(self, daily, wav, settings, django_capture_on_commit_callbacks):
+        import threading
+
+        settings.STEM_CONVERSION_BACKGROUND = True
+        started = []
+        real_thread = threading.Thread
+
+        class Spy(real_thread):
+            def start(self):
+                started.append(self)  # not started: the test only checks that a thread is what would run it
+
+        monkey = pytest.MonkeyPatch()
+        monkey.setattr("gameplay.jobs.threading.Thread", Spy)
+        try:
+            with django_capture_on_commit_callbacks(execute=True):
+                Stem.objects.create(daily_song=daily, stem_type="drums", unlock_order=1, audio_file=upload(wav))
+        finally:
+            monkey.undo()
+
+        assert len(started) == 1 and started[0].daemon is True
+
+    def test_a_replaced_audio_loses_its_old_versions_at_once_instead_of_serving_the_old_song_meanwhile(self, daily, wav):
+        stem = make_stem(daily, wav)
+        assert stem.audio_high
+
+        stem = Stem.objects.get(pk=stem.pk)
+        stem.audio_file = upload(wav_bytes(1), "other.wav")
+        stem.save()  # no commit hooks run: the conversion has not happened yet
+
+        stem.refresh_from_db()
+        assert not stem.audio_high and not stem.audio_low
+
+    def test_if_the_audio_is_replaced_while_converting_the_old_result_is_not_saved_over_the_new_one(self, daily, wav, monkeypatch):
+        from gameplay import jobs
+
+        stem = Stem.objects.create(daily_song=daily, stem_type="drums", unlock_order=1, audio_file=upload(wav))
+        real = audio.encode_variants
+
+        def slow_and_replaced(data):
+            result = real(data)
+            replacement = Stem.objects.get(pk=stem.pk)
+            replacement.audio_file = "stems/replacement.wav"
+            replacement.save()
+            return result
+
+        monkeypatch.setattr(audio, "encode_variants", slow_and_replaced)
+        jobs.convert_stem(stem.pk)
+
+        stem.refresh_from_db()
+        assert stem.audio_file.name == "stems/replacement.wav"
+        assert not stem.audio_high and not stem.audio_low
 
 
 class TestSavingAStem:
@@ -241,4 +346,4 @@ class TestAdminInline:
         converted = make_stem(daily, wav)
         plain = Stem.objects.create(daily_song=daily, stem_type="bass", unlock_order=2, audio_file="stems/old.mp3")
         assert "Listas" in inline.versiones(converted)
-        assert "Faltan" in inline.versiones(plain)
+        assert "En proceso" in inline.versiones(plain)

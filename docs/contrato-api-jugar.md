@@ -148,7 +148,8 @@ el dispositivo), el nombre público se pide una sola vez, /ranking tiene las cua
 
 ## Audio: versiones de cada pista
 
-El admin recibe el audio original (normalmente un WAV) y al guardarlo el backend lo convierte a **AAC (.m4a)** en dos
+El admin recibe el audio original (normalmente un WAV), lo guarda al instante y **en segundo plano** (después de guardar, de a una
+conversión por vez: convertir cuatro canciones enteras en el servidor gratis tarda minutos y un pedido dura 30 s como máximo) lo convierte a **AAC (.m4a)** en dos
 versiones, sin las etiquetas del original (un título en una etiqueta daría la respuesta): `high` (128 kbps) y `low` (64 kbps).
 El original queda guardado (privado) para poder volver a convertir. Un WAV de 30 s (5,3 MB) pasa a ~490 KB y ~250 KB.
 
@@ -159,7 +160,7 @@ El front elige la versión una vez por intento: la liviana si la persona activó
 conexión lenta (`2g`/`3g` o `saveData`) o si la última pista bajó a menos de 250 KB/s (Safari no informa la conexión, así
 que se mide); si no, la buena.
 
-Operación: `manage.py encode_stems` convierte las pistas subidas antes (o las que no se pudieron convertir); se puede correr
+Mientras la conversión no terminó (o si falló) la pista suena con el original; el admin muestra "En proceso". Operación: `manage.py encode_stems` convierte las pistas subidas antes (o las que no se pudieron convertir); se puede correr
 más de una vez. Si un audio no se puede convertir, el admin igual lo guarda, se sirve el original y se avisa en el log. Usa el
 ffmpeg del sistema o, si no hay, el que trae el paquete `imageio-ffmpeg` (ajuste `FFMPEG_BINARY` para forzar otro).
 
