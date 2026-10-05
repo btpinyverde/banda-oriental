@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { BotonCompartirPosicion } from "../compartir/BotonCompartirPosicion";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
 import { pedirRanking } from "../lib/juego/estadisticas-servidor";
 import type { FilaRanking, PeriodoRanking, RankingServidor } from "../lib/juego/tipos";
@@ -162,6 +163,9 @@ export function Ranking() {
               ))}
             </ol>
           )}
+
+          {/* Presumir el puesto de la escala que se está mirando (hoy, semana, mes o de siempre). */}
+          {ranking.me && <BotonCompartirPosicion key={ranking.period} ranking={ranking} />}
 
           {ranking.me && !meEnLista && (
             <section className="ranking__tu-puesto" aria-label="Tu puesto">

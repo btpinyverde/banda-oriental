@@ -186,3 +186,60 @@ describe("Ranking", () => {
     expect(screen.getByRole("tab", { name: "Esta semana" })).toHaveAttribute("aria-selected", "true");
   });
 });
+
+describe("Ranking: compartir mi posición", () => {
+  const conPuesto = (periodo: PeriodoRanking, puesto: number, players = 128): RankingServidor => ({
+    ...respuesta(periodo, [fila(1, "Carla", 3000, 4)], fila(puesto, "Ana", 900)),
+    players,
+  });
+
+  it("si tenés puesto en la escala que estás mirando, podés compartirlo", async () => {
+    vi.spyOn(servidor, "pedirRanking").mockResolvedValue(conPuesto("day", 3));
+    render(<Ranking />);
+
+    expect(await screen.findByRole("button", { name: "Compartir mi posición" })).toBeInTheDocument();
+  });
+
+  it("sin puesto propio no aparece (nada que presumir)", async () => {
+    vi.spyOn(servidor, "pedirRanking").mockResolvedValue(respuesta("day", [fila(1, "Carla", 3000, 4)]));
+    render(<Ranking />);
+    await screen.findByText("Carla");
+
+    expect(screen.queryByRole("button", { name: "Compartir mi posición" })).toBeNull();
+  });
+
+  it("comparte el puesto de cada escala: al cambiar de pestaña la imagen es la de esa escala", async () => {
+    vi.spyOn(servidor, "pedirRanking").mockImplementation(async (periodo) => conPuesto(periodo, periodo === "week" ? 5 : 3));
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, blob: async () => new Blob(["png"], { type: "image/png" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    URL.createObjectURL = vi.fn(() => "blob:imagen");
+    URL.revokeObjectURL = vi.fn();
+    render(<Ranking />);
+    await screen.findByRole("button", { name: "Compartir mi posición" });
+    fireEvent.click(screen.getByRole("tab", { name: "Esta semana" }));
+
+    await waitFor(() => expect(screen.getByRole("tab", { name: "Esta semana" })).toHaveAttribute("aria-selected", "true"));
+    const boton = await screen.findByRole("button", { name: "Compartir mi posición" });
+    await act(async () => fireEvent.click(boton));
+
+    const pedido = String(fetchMock.mock.calls[0][0]);
+    expect(pedido).toContain("p=week");
+    expect(pedido).toContain("r=5");
+    vi.unstubAllGlobals();
+  });
+
+  it("mientras carga otra escala no queda el botón de la anterior", async () => {
+    let responder!: (r: RankingServidor) => void;
+    vi.spyOn(servidor, "pedirRanking").mockImplementation((periodo) =>
+      periodo === "day" ? Promise.resolve(conPuesto("day", 3)) : new Promise((resolver) => (responder = resolver)),
+    );
+    render(<Ranking />);
+    await screen.findByRole("button", { name: "Compartir mi posición" });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Este mes" }));
+
+    expect(screen.queryByRole("button", { name: "Compartir mi posición" })).toBeNull();
+    await act(async () => responder(conPuesto("month", 9)));
+  });
+});
+

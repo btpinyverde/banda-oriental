@@ -53,6 +53,32 @@ def names(response):
     return [(e["rank"], e["display_name"], e["score"]) for e in response.json()["entries"]]
 
 
+class TestHowManyPlayers:
+    """To say "you are 3rd of 128" the ranking tells how many players it has, not only the top of them."""
+
+    def test_it_says_how_many_players_there_are_even_if_only_the_top_is_shown(self, client, song):
+        score(song, TODAY, 900, "Ana", D1)
+        score(song, TODAY, 800, "Beto", D2)
+        score(song, TODAY, 700, "Cata", D3)
+        views.LEADERBOARD_LIMIT = 2
+        try:
+            body = board(client, "day").json()
+        finally:
+            views.LEADERBOARD_LIMIT = 50
+
+        assert len(body["entries"]) == 2 and body["players"] == 3
+
+    def test_each_period_counts_its_own_players(self, client, song):
+        score(song, TODAY, 900, "Ana", D1)
+        score(song, TODAY - timedelta(days=40), 800, "Vieja", D2)
+
+        assert board(client, "day").json()["players"] == 1
+        assert board(client, "all").json()["players"] == 2
+
+    def test_an_empty_ranking_has_zero_players(self, client, db):
+        assert board(client, "day").json()["players"] == 0
+
+
 class TestPeriods:
     def test_the_period_is_required_to_be_one_of_the_four(self, client, db):
         assert board(client, "year").status_code == 400

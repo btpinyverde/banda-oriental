@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { EVENTO_HISTORIAL } from "../lib/juego/almacen-historial";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
+import { BotonCompartirPosicion } from "../compartir/BotonCompartirPosicion";
 import { pedirRanking } from "../lib/juego/estadisticas-servidor";
 import type { FilaRanking, RankingServidor } from "../lib/juego/tipos";
 import "./ranking-del-dia.css";
@@ -104,6 +105,7 @@ export function RankingDelDia() {
               <Fila fila={mia} esMia data-testid="mi-puesto" />
             </ol>
           )}
+          {estado.tipo === "listo" && <BotonCompartirPosicion ranking={estado.ranking} />}
         </>
       )}
     </section>

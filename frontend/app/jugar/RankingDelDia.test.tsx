@@ -106,4 +106,18 @@ describe("RankingDelDia", () => {
 
     expect(await screen.findByText("yo")).toBeInTheDocument();
   });
+
+  it("con puesto propio se puede compartir; sin él, no", async () => {
+    pedir.mockResolvedValueOnce({ ...ranking([fila(1, "lucas", 1240)], fila(4, "yo", 700)), players: 20 });
+    const { unmount } = render(<RankingDelDia />);
+    expect(await screen.findByRole("button", { name: "Compartir mi posición" })).toBeInTheDocument();
+    unmount();
+
+    pedir.mockResolvedValueOnce(ranking([fila(1, "lucas", 1240)]));
+    render(<RankingDelDia />);
+    await screen.findByText("lucas");
+
+    expect(screen.queryByRole("button", { name: "Compartir mi posición" })).toBeNull();
+  });
 });
+

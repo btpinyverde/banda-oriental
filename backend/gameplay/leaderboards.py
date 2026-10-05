@@ -88,5 +88,7 @@ def build(period: str, today: date, *, limit: int, me_key=None) -> dict:
         "from": str(start) if start else None,
         "to": str(end) if end else None,
         "entries": [public(p) for p in shown],
+        # How many players the ranking has in all, not only the ones shown: "you are 3rd of 128".
+        "players": len(players),
         "me": public(me) if me else None,
     }

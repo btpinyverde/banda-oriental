@@ -165,3 +165,9 @@ Mientras la conversión no terminó (o si falló) la pista suena con el original
 más de una vez. Si un audio no se puede convertir, el admin igual lo guarda, se sirve el original y se avisa en el log. Usa el
 ffmpeg del sistema o, si no hay, el que trae el paquete `imageio-ffmpeg` (ajuste `FFMPEG_BINARY` para forzar otro).
 
+## Ranking: cuántos jugadores hay
+
+`GET /api/leaderboard/?period=...` suma `players`: cuántos jugadores tiene ese ranking **en total** (no solo los de `entries`, que son
+los primeros), para poder decir "puesto 3 de 128". El front lo usa en la imagen para compartir la posición
+(`/compartir/posicion`, en cada escala: hoy, semana, mes y de siempre). Es un campo nuevo: el front funciona igual si falta.
+

@@ -136,5 +136,7 @@ export interface RankingServidor {
   from: string | null;
   to: string | null;
   entries: FilaRanking[];
+  /** Cuántos jugadores tiene el ranking en total (no solo los que se muestran). Falta si el servidor es anterior. */
+  players?: number;
   me: FilaRanking | null;
 }
