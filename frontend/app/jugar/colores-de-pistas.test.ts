@@ -46,12 +46,21 @@ describe("colores de los íconos de las pistas", () => {
     }
   });
 
-  it("las cuatro pistas se distinguen entre sí", () => {
-    const tonos = PISTAS.map((tipo) => tono(colorDe(tipo)));
-    for (let i = 0; i < tonos.length; i++) {
-      for (let j = i + 1; j < tonos.length; j++) {
-        expect(distancia(tonos[i], tonos[j]), `${PISTAS[i]} y ${PISTAS[j]}`).toBeGreaterThanOrEqual(25);
-      }
+  it("los colores son de la familia violeta/lavanda de la marca, no colores sueltos", () => {
+    for (const tipo of PISTAS) {
+      const t = tono(colorDe(tipo));
+      expect(t, `${tipo} (${colorDe(tipo)})`).toBeGreaterThanOrEqual(235);
+      expect(t, `${tipo} (${colorDe(tipo)})`).toBeLessThanOrEqual(275);
+    }
+  });
+
+  it("las cuatro pistas se distinguen y van de más clara a más intensa en el orden en que se desbloquean (batería, bajo, otros, voz)", () => {
+    const claridad = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).reduce((a, b) => a + b, 0);
+    const colores = PISTAS.map(colorDe);
+
+    expect(new Set(colores).size).toBe(4);
+    for (let i = 1; i < colores.length; i++) {
+      expect(claridad(colores[i]), `${PISTAS[i]} más intensa que ${PISTAS[i - 1]}`).toBeLessThan(claridad(colores[i - 1]));
     }
   });
 });

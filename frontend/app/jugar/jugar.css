@@ -212,12 +212,13 @@
 }
 
 .jugar .stem__circulo img { width: 22px; height: 22px; }
-/* Ningún color de pista se parece a los de la tabla de intentos (verde = acierto, amarillo = casi, rosa = error):
-   si no, una pista abierta se lee como un acierto. Lo comprueba colores-de-pistas.test.ts. */
-.jugar .stem--abierta .stem__circulo--drums { background: #ffab73; }
-.jugar .stem--abierta .stem__circulo--bass { background: #8cc8ff; }
-.jugar .stem--abierta .stem__circulo--other { background: #a99dff; }
-.jugar .stem--abierta .stem__circulo--vocals { background: #e0a3ff; }
+/* Las pistas usan solo la familia violeta/lavanda de la marca, de más clara a más intensa según se desbloquean: así no
+   se parecen a los colores de la tabla (verde = acierto, amarillo = casi, rosa = error) y cada una se reconoce por su
+   ícono y su nombre. Lo comprueba colores-de-pistas.test.ts. */
+.jugar .stem--abierta .stem__circulo--drums { background: #efedfc; }
+.jugar .stem--abierta .stem__circulo--bass { background: #e3defb; }
+.jugar .stem--abierta .stem__circulo--other { background: #cfc6f8; }
+.jugar .stem--abierta .stem__circulo--vocals { background: #b7a9f4; }
 .jugar .stem--bloqueada { color: var(--tinta-suave); }
 
 /* ---------- Buscador ---------- */
