@@ -5,44 +5,48 @@ export type Calidad = "high" | "low";
 export interface Conexion {
   effectiveType?: string;
   saveData?: boolean;
+  /** Ancho de banda estimado, en Mbit/s. */
+  downlink?: number;
 }
 
 /** Por debajo de esta velocidad medida (bytes por segundo, unos 2 Mbit/s) conviene la versión liviana. */
 export const UMBRAL_LENTO = 250_000;
+/** Lo mismo, para el ancho de banda que informa el navegador (Mbit/s). */
+const DOWNLINK_LENTO = 2;
 
 const CONEXIONES_LENTAS = new Set(["slow-2g", "2g", "3g"]);
-// Fuera del prefijo del juego (`banda-oriental:juego:`), que se limpia al cambiar de día.
-const CLAVE_AHORRO = "banda-oriental:ahorrar-datos";
 
 /**
- * Elige la versión de las pistas. Manda lo que pidió la persona; después lo que informa el navegador; y como no
- * todos lo informan, la velocidad a la que bajó la última pista.
+ * Elige la versión de una pista en el momento de bajarla, según la conexión: lo que informa el navegador si lo informa
+ * (Chrome, Android: conexión lenta, ahorro de datos activado en el sistema o poco ancho de banda) y, como no todos lo
+ * informan (Safari, Firefox), la velocidad a la que bajó la última pista. Sin ningún dato, la buena.
  */
-export function elegirCalidad({ ahorrar, conexion, velocidad }: { ahorrar: boolean; conexion?: Conexion; velocidad?: number }): Calidad {
-  if (ahorrar) return "low";
+export function elegirCalidad({ conexion, velocidad }: { conexion?: Conexion; velocidad?: number }): Calidad {
   if (conexion?.saveData) return "low";
   if (conexion?.effectiveType && CONEXIONES_LENTAS.has(conexion.effectiveType)) return "low";
+  if (conexion?.downlink !== undefined && conexion.downlink > 0 && conexion.downlink < DOWNLINK_LENTO) return "low";
   if (velocidad !== undefined && velocidad < UMBRAL_LENTO) return "low";
   return "high";
 }
 
-export function leerAhorro(): boolean {
-  try {
-    return window.localStorage.getItem(CLAVE_AHORRO) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function guardarAhorro(valor: boolean): void {
-  try {
-    window.localStorage.setItem(CLAVE_AHORRO, valor ? "1" : "0");
-  } catch {
-    // Almacenamiento bloqueado: la elección vale mientras la página siga abierta.
-  }
-}
-
 /** Lo que el navegador informa de la conexión, si lo informa. */
 export function conexionDelNavegador(): Conexion | undefined {
-  return (navigator as Navigator & { connection?: Conexion }).connection;
+  return typeof navigator === "undefined" ? undefined : (navigator as Navigator & { connection?: Conexion }).connection;
+}
+
+// La velocidad de la última descarga, en memoria mientras la página siga abierta: con ella se elige la calidad de las
+// pistas que se bajan después (cada intento desbloquea una).
+let velocidadMedida: number | undefined;
+
+export function registrarVelocidad(bytesPorSegundo: number): void {
+  velocidadMedida = bytesPorSegundo;
+}
+
+export function olvidarVelocidad(): void {
+  velocidadMedida = undefined;
+}
+
+/** La calidad que corresponde bajar ahora. */
+export function calidadActual(): Calidad {
+  return elegirCalidad({ conexion: conexionDelNavegador(), velocidad: velocidadMedida });
 }

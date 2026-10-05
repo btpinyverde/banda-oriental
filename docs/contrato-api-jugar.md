@@ -156,9 +156,10 @@ El original queda guardado (privado) para poder volver a convertir. Un WAV de 30
 En `unlocked_stems` cada pista trae `url` (la versión buena; el original si la pista es anterior a la conversión) y
 `variants`: `{"high": url, "low": url}` con las que existan (`{}` si no se convirtió). Las direcciones son firmadas y vencen.
 
-El front elige la versión una vez por intento: la liviana si la persona activó "Ahorrar datos", si el navegador informa una
-conexión lenta (`2g`/`3g` o `saveData`) o si la última pista bajó a menos de 250 KB/s (Safari no informa la conexión, así
-que se mide); si no, la buena.
+El front elige la versión **en el momento de bajar cada pista**, según la conexión (la persona no elige nada): la liviana si el
+navegador informa una conexión lenta (`2g`/`3g`), poco ancho de banda (`downlink` menor a 2 Mbit/s) o ahorro de datos del
+sistema (`saveData`), o si la última pista bajó a menos de 250 KB/s (Safari y Firefox no informan la conexión, así que se
+mide); si no, la buena.
 
 Mientras la conversión no terminó (o si falló) la pista suena con el original; el admin muestra "En proceso". Operación: `manage.py encode_stems` convierte las pistas subidas antes (o las que no se pudieron convertir); se puede correr
 más de una vez. Si un audio no se puede convertir, el admin igual lo guarda, se sirve el original y se avisa en el log. Usa el

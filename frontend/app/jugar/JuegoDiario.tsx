@@ -20,8 +20,6 @@ import { TutorialInteractivo } from "./TutorialInteractivo";
 import { BuscadorCanciones } from "./BuscadorCanciones";
 import { FilaStems } from "./FilaStems";
 import { PantallaFinal } from "./PantallaFinal";
-import { useCalidadDeAudio } from "../lib/juego/useCalidadDeAudio";
-import { AhorrarDatos } from "./AhorrarDatos";
 import { ReproductorPista } from "./ReproductorPista";
 import { TablaIntentos, type IntentoMostrado } from "./TablaIntentos";
 
@@ -141,7 +139,6 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   }, [hoy, diaCargado, cargar]);
 
   const numeroActual = estado && !estado.finished ? estado.attempt_number : 0;
-  const { calidad, ahorrar, cambiarAhorro, alMedir } = useCalidadDeAudio(estado?.day ?? "", numeroActual);
 
   // Al terminar el día (ganando o perdiendo, o al volver a abrir un día ya terminado) la partida queda guardada
   // en este dispositivo. Se repite sin problema: el historial tiene una sola partida por día y la va completando.
@@ -278,7 +275,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
     );
   }
 
-  const pistas = pistasParaMezclar(actual.day, actual.unlocked_stems, calidad);
+  const pistas = pistasParaMezclar(actual.day, actual.unlocked_stems);
 
   return (
     <div className="jugar__tarjeta">
@@ -303,10 +300,9 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
       {/* Una clave por día e intento: hay 4 pistas y 6 intentos, así que las pistas se repiten y sin esto el
           reproductor seguiría "escuchado" en un intento nuevo. */}
       {pistas.length > 0 && (
-        <ReproductorPista key={`${actual.day}-${actual.attempt_number}`} pistas={pistas} alCambiarListo={setListo} alFallar={renovarAudio} alMedir={alMedir} />
+        <ReproductorPista key={`${actual.day}-${actual.attempt_number}`} pistas={pistas} alCambiarListo={setListo} alFallar={renovarAudio} />
       )}
       <FilaStems desbloqueadas={actual.unlocked_stems} />
-      <AhorrarDatos activo={ahorrar} alCambiar={cambiarAhorro} />
 
       <TablaIntentos intentos={intentos} />
       <p className="jugar__intento">Intento {actual.attempt_number} de 6</p>

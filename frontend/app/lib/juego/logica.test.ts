@@ -117,16 +117,19 @@ describe("pistasParaMezclar", () => {
     expect(bateria.clave).toBe("2026-10-03:drums");
   });
 
-  it("con la calidad liviana usa la versión liviana de cada pista, y la buena si no se pide otra cosa", () => {
-    const conVersiones = { ...stem("drums", 1), url: "https://audio.example/alta.m4a", variants: { high: "https://audio.example/alta.m4a", low: "https://audio.example/baja.m4a" } };
+  it("lleva las versiones de cada pista para que se elija la calidad al bajarla, y la dirección buena como la de siempre", () => {
+    const variants = { high: "https://audio.example/alta.m4a", low: "https://audio.example/baja.m4a" };
+    const [bateria] = pistasParaMezclar("2026-10-03", [{ ...stem("drums", 1), url: variants.high, variants }]);
 
-    expect(pistasParaMezclar("2026-10-03", [conVersiones], "low")[0].url).toBe("https://audio.example/baja.m4a");
-    expect(pistasParaMezclar("2026-10-03", [conVersiones], "high")[0].url).toBe("https://audio.example/alta.m4a");
-    expect(pistasParaMezclar("2026-10-03", [conVersiones])[0].url).toBe("https://audio.example/alta.m4a");
+    expect(bateria.url).toBe(variants.high);
+    expect(bateria.variants).toEqual(variants);
   });
 
-  it("una pista sin versiones (subida antes de la conversión) suena con la dirección de siempre en cualquier calidad", () => {
-    expect(pistasParaMezclar("2026-10-03", [stem("drums", 1)], "low")[0].url).toBe("https://audio.example/drums.mp3");
+  it("una pista sin versiones (subida antes de la conversión) sigue con su dirección de siempre", () => {
+    const [bateria] = pistasParaMezclar("2026-10-03", [stem("drums", 1)]);
+
+    expect(bateria.url).toBe("https://audio.example/drums.mp3");
+    expect(bateria.variants).toBeUndefined();
   });
 
   it("devuelve una lista vacía si no hay ninguna", () => {

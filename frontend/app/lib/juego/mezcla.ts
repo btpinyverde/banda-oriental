@@ -1,9 +1,15 @@
+import { calidadActual, registrarVelocidad } from "./calidad-de-audio";
 import { picosDeOnda, sumarSeñales } from "./onda";
 
-/** Una pista del día. La `clave` (día + tipo) identifica el audio; la `url` está firmada y cambia en cada pedido. */
+/**
+ * Una pista del día. La `clave` (día + tipo) identifica el audio; las direcciones están firmadas y cambian en cada pedido.
+ * `url` es la versión buena (o el original, si la pista no se convirtió); `variants` trae las versiones que existen, y la
+ * liviana se usa si la conexión es lenta (se decide al bajarla).
+ */
 export interface Pista {
   clave: string;
   url: string;
+  variants?: Partial<Record<"high" | "low", string>>;
 }
 
 // Audios ya decodificados, por clave. Cada intento desbloquea una pista más y vuelve a pedir el estado del día con
@@ -29,11 +35,7 @@ export class Mezcla {
   private desde = 0;
   private reproduciendo = false;
 
-  /** `alMedir` recibe la velocidad (bytes por segundo) de cada descarga, para elegir la calidad de las siguientes. */
-  constructor(
-    private readonly contexto: AudioContext,
-    private readonly alMedir?: (bytesPorSegundo: number) => void,
-  ) {}
+  constructor(private readonly contexto: AudioContext) {}
 
   /** Duración de la mezcla: la de la pista más larga. */
   get duracion(): number {
@@ -48,11 +50,12 @@ export class Mezcla {
     this.buffers = await Promise.all(pistas.map((pista) => this.leer(pista)));
   }
 
-  private leer({ clave, url }: Pista): Promise<AudioBuffer> {
+  private leer({ clave, url, variants }: Pista): Promise<AudioBuffer> {
     let carga = cache.get(clave);
     if (!carga) {
       const empezo = performance.now();
-      carga = fetch(url)
+      // La calidad se elige ahora, al bajar, según la conexión de este momento.
+      carga = fetch(variants?.[calidadActual()] ?? url)
         .then((respuesta) => {
           if (!respuesta.ok) throw new Error(`No se pudo bajar el audio (${respuesta.status})`);
           return respuesta.arrayBuffer();
@@ -70,8 +73,8 @@ export class Mezcla {
 
   private medir(bytes: number, milisegundos: number): void {
     // Un archivo diminuto baja casi al instante en cualquier conexión: no dice nada de ella.
-    if (!this.alMedir || bytes < MINIMO_PARA_MEDIR || milisegundos <= 0) return;
-    this.alMedir((bytes * 1000) / milisegundos);
+    if (bytes < MINIMO_PARA_MEDIR || milisegundos <= 0) return;
+    registrarVelocidad((bytes * 1000) / milisegundos);
   }
 
   /** Alturas (de 0 a 1) de las barras de la onda de la mezcla completa. */
