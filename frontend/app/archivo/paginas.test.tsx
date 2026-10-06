@@ -262,18 +262,79 @@ describe("/archivo/discos", () => {
     expect(within(tarjeta).getByRole("img", { name: /Tapa de Vaivén/ })).toBeInTheDocument();
   });
 
-  it("con ?artista=7 muestra solo los discos de ese artista, lo dice, y se puede volver a ver todos", async () => {
-    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
-    const listar = vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 2, pages: 2 }));
+  describe("con ?artista=7 (la página de un artista)", () => {
+    const FICHA = { id: 7, name: "Jorge Drexler", songs: 27, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "", albums: [DISCO] };
+    const preparar = (extra: { destacados?: datos.ArtistaDestacado[] | null; ficha?: unknown } = {}) => {
+      vi.spyOn(datos, "fichaDeArtista").mockResolvedValue((extra.ficha ?? FICHA) as never);
+      vi.spyOn(datos, "artistasDestacados").mockResolvedValue(extra.destacados === undefined ? [] : extra.destacados);
+      return vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 2, pages: 2 }));
+    };
 
-    render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+    it("se entiende que es el artista: su nombre como título, la etiqueta, y las cantidades de sus discos, canciones y años", async () => {
+      const listar = preparar();
 
-    expect(listar).toHaveBeenCalledWith(expect.objectContaining({ artista: 7 }));
-    expect(screen.getByText("2 discos de Jorge Drexler")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ver todos los discos" })).toHaveAttribute("href", "/archivo/discos");
-    // El filtro se conserva al paginar y al elegir un género.
-    expect(screen.getByRole("link", { name: "Página 2" }).getAttribute("href")).toContain("artista=7");
-    expect(screen.getByRole("link", { name: "Rock" }).getAttribute("href")).toContain("artista=7");
+      render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+
+      expect(listar).toHaveBeenCalledWith(expect.objectContaining({ artista: 7 }));
+      expect(screen.getByRole("heading", { level: 1, name: "Jorge Drexler" })).toBeInTheDocument();
+      expect(screen.getByText("Artista")).toBeInTheDocument();
+      expect(screen.getByText("2 discos")).toBeInTheDocument();
+      expect(screen.getByText("27 canciones")).toBeInTheDocument();
+      expect(screen.getByText("1996–2004")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: "Discos" })).toBeInTheDocument();
+    });
+
+    it("lleva a todas sus canciones y a volver a los discos; no muestra el buscador ni las pestañas del explorador", async () => {
+      preparar();
+
+      render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+
+      expect(screen.getByRole("link", { name: /Ver todas sus canciones/ })).toHaveAttribute("href", "/archivo/canciones?artista=7");
+      expect(screen.getByRole("link", { name: /Todos los discos/ })).toHaveAttribute("href", "/archivo/discos");
+      expect(screen.queryByRole("searchbox")).toBeNull();
+      expect(screen.queryByRole("navigation", { name: "Qué explorar" })).toBeNull();
+    });
+
+    it("muestra su foto recortada si es un artista destacado; si no, la de Deezer; si no, el bloque de papel con el vinilo", async () => {
+      const destacado = { ...ARTISTA, photo_url: "https://api.example/api/catalog/featured/7/image/?v=1" };
+      preparar({ destacados: [destacado] });
+      const { unmount } = render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+      expect(screen.getByRole("img", { name: "Foto de Jorge Drexler" })).toHaveAttribute("src", destacado.photo_url);
+      unmount();
+
+      preparar({ ficha: { ...FICHA, picture_url: "https://cdn.example/d.jpg" } });
+      const otra = render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+      expect(screen.getByRole("img", { name: "Foto de Jorge Drexler" })).toHaveAttribute("src", "https://cdn.example/d.jpg");
+      otra.unmount();
+
+      preparar();
+      const { container } = render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+      expect(container.querySelector(".cabecera-artista .vacia__simbolo")).toHaveAttribute("src", "/assets/vinilo.svg");
+    });
+
+    it("sus discos van en tarjetas y la paginación conserva al artista", async () => {
+      preparar();
+
+      render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+
+      expect(screen.getByText("Vaivén").closest("li")).toHaveClass("tarjeta");
+      expect(screen.getByRole("link", { name: "Página 2" }).getAttribute("href")).toContain("artista=7");
+    });
+
+    it("un artista que no existe es una página no encontrada", async () => {
+      preparar({ ficha: "no-encontrado" });
+
+      await expect(PaginaDiscos({ searchParams: buscaParams({ artista: "999" }) })).rejects.toThrow();
+    });
+
+    it("si la API de la ficha no responde no rompe: igual muestra sus discos", async () => {
+      preparar({ ficha: null });
+
+      render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+
+      expect(screen.getByRole("heading", { level: 1, name: "Jorge Drexler" })).toBeInTheDocument(); // el nombre sale de su primer disco
+      expect(screen.getByText("Vaivén")).toBeInTheDocument();
+    });
   });
 
   it("un artista inválido se ignora", async () => {
@@ -283,7 +344,7 @@ describe("/archivo/discos", () => {
     render(await PaginaDiscos({ searchParams: buscaParams({ artista: "abc" }) }));
 
     expect(listar.mock.calls[0][0].artista).toBeUndefined();
-    expect(screen.queryByRole("link", { name: "Ver todos los discos" })).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Qué explorar" })).toBeInTheDocument(); // sigue siendo la lista de discos de siempre
   });
 
   it("una década o un orden inválidos se ignoran", async () => {

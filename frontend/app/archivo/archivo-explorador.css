@@ -10,6 +10,17 @@
 .hero-archivo__resaltado { background: url("/assets/hero-highlight.svg") no-repeat 50% 94% / 106% 0.34em; }
 .hero-archivo__bajada { margin: 14px 0 0; max-width: 470px; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.4; color: var(--tinta-suave); }
 
+/* Página de un artista */
+.cabecera-artista { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 36px; align-items: center; padding: 8px 0 6px; }
+.cabecera-artista__foto { padding: 9px; border-radius: 20px; background: #fff; box-shadow: 0 6px 20px rgba(60, 40, 20, 0.07); }
+.cabecera-artista__foto .tarjeta__foto, .cabecera-artista__foto .tarjeta__tapa { aspect-ratio: 1 / 0.88; margin: 0; border-radius: 12px; }
+.cabecera-artista__volver { display: inline-block; margin-bottom: 18px; font-size: 14px; font-weight: 700; color: var(--violeta); text-decoration: none; }
+.cabecera-artista__volver:hover { text-decoration: underline; }
+.cabecera-artista h1 { margin: 0; font-size: clamp(40px, 5.4vw, 76px); font-weight: 900; line-height: 1; letter-spacing: -0.045em; overflow-wrap: anywhere; }
+.cabecera-artista__datos { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 22px; padding: 0; list-style: none; }
+.cabecera-artista__datos li { padding: 7px 16px; border-radius: 999px; background: #efede8; font-size: 14px; font-weight: 700; color: var(--tinta); }
+.archivo-seccion { margin: 8px 0 -6px; font-size: 26px; font-weight: 900; letter-spacing: -0.03em; }
+
 /* Pestañas: canciones, artistas y discos */
 .pestanas { display: inline-flex; gap: 2px; margin-top: 26px; padding: 5px; border-radius: 18px; background: #fff; border: 2px solid #ece9f5; }
 .pestana { display: grid; justify-items: center; gap: 1px; min-width: 128px; padding: 9px 22px 8px; border-radius: 14px; color: var(--tinta); text-decoration: none; }
@@ -110,6 +121,8 @@
 @media (max-width: 1100px) { .hero-archivo h1 { white-space: normal; } }
 
 @media (max-width: 860px) {
+  .cabecera-artista { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .cabecera-artista__foto { max-width: 280px; }
   .hero-archivo { grid-template-columns: minmax(0, 1fr); }
   .hero-archivo h1 { font-size: clamp(38px, 11vw, 56px); }
   .pestanas { display: flex; width: 100%; }
