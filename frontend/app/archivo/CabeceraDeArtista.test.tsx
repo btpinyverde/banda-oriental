@@ -34,4 +34,13 @@ describe("CabeceraDeArtista", () => {
     rerender(<CabeceraDeArtista {...base} />);
     expect(container.querySelector(".vacia__simbolo")).toHaveAttribute("src", "/assets/vinilo.svg");
   });
+
+  it("ofrece avisar de un error de ese artista, con quién es en la dirección", () => {
+    render(<CabeceraDeArtista {...base} nombre="Fernando Cabrera" id={262} />);
+
+    const enlace = screen.getByRole("link", { name: /Algo no está bien/ });
+    const url = new URL(enlace.getAttribute("href")!, "https://x.test");
+    expect(url.pathname).toBe("/archivo/reportar");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ tipo: "artista", id: "262", nombre: "Fernando Cabrera" });
+  });
 });

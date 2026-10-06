@@ -8,6 +8,8 @@ import PaginaDiscos from "./discos/page";
 import PaginaCanciones from "./canciones/page";
 import FichaArtista from "./artista/[ficha]/page";
 import FichaDisco from "./disco/[ficha]/page";
+import PaginaReportar from "./reportar/page";
+import PaginaSumar from "./sumar/page";
 import FichaCancion, { generateMetadata as metadataCancion } from "./cancion/[ficha]/page";
 
 // La barra de filtros navega con el router de Next, que en las pruebas no está montado; `notFound` y lo demás siguen siendo los reales.
@@ -401,9 +403,23 @@ describe("fichas", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Vaivén" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /Tapa de Vaivén/ })).toHaveAttribute("src", "https://img/c.jpg");
-    expect(screen.getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(screen.getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/discos?artista=7");
     expect(screen.getByRole("link", { name: "Luna negra" })).toHaveAttribute("href", "/archivo/cancion/5-luna-negra");
     expect(screen.getByText("3:45")).toBeInTheDocument();
+  });
+
+  it("la página del disco es del mismo estilo que el resto del archivo: cabecera, datos en píldoras, canciones y un aviso de errores", async () => {
+    vi.spyOn(datos, "fichaDeDisco").mockResolvedValue({ ...DISCO, songs: [{ id: 5, title: "Luna negra", duration_seconds: 225 }] });
+
+    const { container } = render(await FichaDisco({ params: ficha("12-vaiven") }));
+
+    expect(screen.getByText("Disco")).toBeInTheDocument();
+    expect(container.querySelector(".cabecera-artista")).not.toBeNull();
+    const pildoras = [...container.querySelectorAll(".cabecera-artista__datos li")].map((n) => n.textContent);
+    expect(pildoras).toEqual(["Jorge Drexler", "1996", "Folk", "1 canción"]);
+    expect(screen.getByRole("heading", { level: 2, name: "Canciones" })).toBeInTheDocument();
+    const aviso = new URL(screen.getByRole("link", { name: /Algo no está bien/ }).getAttribute("href")!, "https://x.test");
+    expect(Object.fromEntries(aviso.searchParams)).toEqual({ tipo: "disco", id: "12", nombre: "Vaivén" });
   });
 
   it("el disco sin tapa no dibuja una imagen rota", async () => {
@@ -412,6 +428,7 @@ describe("fichas", () => {
     render(await FichaDisco({ params: ficha("12") }));
 
     expect(screen.queryByRole("img", { name: /Tapa de/ })).toBeNull();
+    expect(document.querySelector(".tarjeta__tapa--vacia .vacia__simbolo")).toHaveAttribute("src", "/assets/vinilo.svg");
   });
 
   it("la canción dice de qué artista y disco es, y en qué días anteriores fue la del día, con enlace", async () => {
@@ -460,5 +477,47 @@ describe("fichas", () => {
     expect(String(meta.title)).toContain("Luna negra");
     expect(String(meta.title)).toContain("Jorge Drexler");
     expect(meta.alternates?.canonical).toBe("/archivo/cancion/5-luna-negra");
+  });
+});
+
+describe("/archivo/reportar y /archivo/sumar", () => {
+  it("reportar: dice sobre qué es lo que se reporta, con lo que vino en la dirección", async () => {
+    render(await PaginaReportar({ searchParams: buscaParams({ tipo: "artista", id: "7", nombre: "Fernando Cabrera" }) }));
+
+    expect(screen.getByRole("heading", { level: 1, name: /Algo no está bien/ })).toBeInTheDocument();
+    expect(screen.getByText("Fernando Cabrera")).toBeInTheDocument();
+    expect(screen.getByText(/el artista/)).toBeInTheDocument();
+  });
+
+  it("reportar: sin datos válidos en la dirección igual se puede avisar de algo, sin 'sobre quién'", async () => {
+    render(await PaginaReportar({ searchParams: buscaParams({ tipo: "otra", id: "abc" }) }));
+
+    expect(screen.getByLabelText(/Qué está mal/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Sobre /)).toBeNull();
+  });
+
+  it("reportar: no se indexa, y un nombre larguísimo en la dirección se recorta", async () => {
+    expect(String(((await import("./reportar/page")).metadata.robots as { index: boolean }).index)).toBe("false");
+    render(await PaginaReportar({ searchParams: buscaParams({ tipo: "disco", id: "5", nombre: "x".repeat(500) }) }));
+
+    expect(screen.getByText("x".repeat(120))).toBeInTheDocument();
+  });
+
+  it("sumar: explica y trae el formulario de alta", async () => {
+    render(await PaginaSumar());
+
+    expect(screen.getByRole("heading", { level: 1, name: /Sumá tu música/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Nombre del artista o banda/)).toBeInTheDocument();
+  });
+
+  it("el encabezado del explorador ofrece sumar una banda que falta", async () => {
+    vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION], { count: 10 }));
+    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
+    vi.spyOn(datos, "listarArtistas").mockResolvedValue(pagina([ARTISTA], { count: 2 }));
+    vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 2 }));
+
+    render(await PaginaArchivo({ searchParams: buscaParams({}) }));
+
+    expect(screen.getByRole("link", { name: /Sumala/ })).toHaveAttribute("href", "/archivo/sumar");
   });
 });

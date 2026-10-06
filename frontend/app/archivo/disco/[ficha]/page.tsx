@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fichaDeDisco, idDeFicha, rutaDeArtista, rutaDeCancion, rutaDeDisco } from "../../../lib/archivo-musical";
+import { fichaDeDisco, idDeFicha, rutaDeCancion, rutaDeDisco } from "../../../lib/archivo-musical";
 import { NOMBRE } from "../../../lib/seo";
 import { duracion } from "../../Listados";
+import { CabeceraDeDisco } from "../../CabeceraDeDisco";
 import { Marco } from "../../Marco";
 
 type Props = { params: Promise<{ ficha: string }> };
+
+import "../../archivo-explorador.css";
 
 export const revalidate = 600;
 const NO_INDEXAR = { index: false, follow: false } as const;
@@ -39,23 +42,30 @@ export default async function FichaDelDisco({ params }: Props) {
   if (disco === null) throw new Error("No se pudo cargar el disco");
 
   return (
-    <Marco>
-      <p className="archivo-migas"><Link href="/archivo/discos">← Discos</Link></p>
-      <header className="archivo-ficha">
-        {disco.cover_art_url && <img className="archivo-ficha__portada" src={disco.cover_art_url} alt={`Tapa de ${disco.name}`} width={160} height={160} loading="lazy" />}
-        <h1>{disco.name}</h1>
-        <p className="archivo-ficha__datos">
-          <Link href={rutaDeArtista(disco.artist)}>{disco.artist.name}</Link>
-          {[disco.year ? String(disco.year) : "", disco.genre].filter(Boolean).map((t) => ` · ${t}`).join("")}
-        </p>
-      </header>
-      <section aria-labelledby="canciones" className="archivo-grupo">
-        <h2 id="canciones">Canciones</h2>
-        <ol className="archivo-lista">
-          {disco.songs.map((c) => (
-            <li key={c.id} className="archivo-fila">
-              <Link href={rutaDeCancion(c)} className="archivo-fila__titulo">{c.title}</Link>
-              {duracion(c.duration_seconds) && <span className="archivo-fila__datos">{duracion(c.duration_seconds)}</span>}
+    <Marco ancho pie="completo">
+      <CabeceraDeDisco
+        id={disco.id}
+        nombre={disco.name}
+        artista={disco.artist}
+        anio={disco.year}
+        genero={disco.genre}
+        canciones={disco.songs.length}
+        tapa={disco.cover_art_url.startsWith("https://") ? disco.cover_art_url : undefined}
+      />
+      <section aria-labelledby="canciones">
+        <h2 className="archivo-seccion" id="canciones">
+          Canciones
+        </h2>
+        <ol className="pistas">
+          {disco.songs.map((c, i) => (
+            <li key={c.id} className="pista">
+              <span className="pista__numero" aria-hidden="true">
+                {i + 1}
+              </span>
+              <Link href={rutaDeCancion(c)} className="pista__titulo">
+                {c.title}
+              </Link>
+              {duracion(c.duration_seconds) && <span className="pista__duracion">{duracion(c.duration_seconds)}</span>}
             </li>
           ))}
         </ol>
