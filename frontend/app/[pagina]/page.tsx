@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SLUGS, paginaPorSlug } from "../lib/paginas";
+
+/** Las páginas que tienen ruta propia (app/<nombre>/page.tsx) y no pasan por esta. */
+const CON_RUTA_PROPIA = ["contacto"];
 import { PaginaDeContenido } from "../ui/PaginaDeContenido";
 
 type Props = { params: Promise<{ pagina: string }> };
@@ -9,7 +12,7 @@ type Props = { params: Promise<{ pagina: string }> };
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  return SLUGS.map((pagina) => ({ pagina }));
+  return SLUGS.filter((slug) => !CON_RUTA_PROPIA.includes(slug)).map((pagina) => ({ pagina }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

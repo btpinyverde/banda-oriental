@@ -1,0 +1,71 @@
+/* ---------- Contacto: "Hablemos." ---------- */
+.contacto { display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: 24px; max-width: 1300px; margin: 0 auto; padding: 40px var(--gutter) 56px; align-items: stretch; }
+.contacto__columna { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* Cabecera */
+.contacto__cabecera { position: relative; flex: 1; min-height: 440px; padding: 22px 0 0 82px; }
+.contacto__eyebrow { margin: 0 0 14px; font-size: 14px; font-weight: 700; letter-spacing: 0.22em; color: #8f8a94; }
+.contacto__cabecera h1 { margin: 0; font-size: clamp(56px, 7vw, 100px); font-weight: 900; line-height: 1; letter-spacing: -0.045em; }
+/* El subrayado amarillo cubre solo "lemos." (el tramo final de la palabra). */
+.contacto__resaltado { background: url("/assets/hero-highlight.svg") no-repeat 100% 94% / 68% 0.32em; }
+.contacto__bajada { position: relative; z-index: 1; margin: 16px 0 0 126px; max-width: 470px; }
+.contacto__lema { margin: 0; font-size: 22px; line-height: 1.35; color: var(--tinta-suave); }
+.contacto__detalle { margin: 14px 0 0; max-width: 330px; font-size: 16px; line-height: 1.45; color: var(--tinta); }
+
+/* Dibujo: mancha rosa, sobre, asterisco, garabato y rayitas (en px, sobre una caja de 340 × 340 junto al texto) */
+.contacto__dibujo { position: absolute; left: -24px; top: 135px; width: 340px; height: 340px; pointer-events: none; }
+.contacto__dibujo > img { position: absolute; height: auto; }
+.contacto__mancha { left: 30px; top: 96px; width: 190px; transform: rotate(-62deg) scale(1.0, 1.7); }
+.contacto__sobre { left: 52px; top: 134px; width: 178px; z-index: 2; }
+.contacto__asterisco { left: -4px; top: 190px; width: 54px; z-index: 3; }
+.contacto__garabato { left: 4px; top: 252px; width: 78px; z-index: 3; }
+.contacto__rayas--arriba { left: 24px; top: 2px; width: 30px; transform: rotate(8deg); }
+.contacto__rayas--sobre { left: 252px; top: 150px; width: 44px; transform: rotate(-10deg); }
+
+/* Tarjetas */
+.contacto__tarjeta { position: relative; padding: 24px 28px; border-radius: 22px; }
+.contacto__tarjeta h2 { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.03em; }
+.contacto__tarjeta p { margin: 8px 0 0; font-size: 16px; line-height: 1.45; color: var(--tinta-suave); }
+.contacto__tarjeta--lila { background: #eeeafc; }
+.contacto__tarjeta--amarilla { display: flex; align-items: center; gap: 22px; background: #fbf0c4; }
+.contacto__tarjeta--amarilla p { color: var(--tinta); }
+.contacto__pistas { display: grid; grid-template-columns: 1.05fr 1.2fr 1fr; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
+.contacto__pistas li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; line-height: 1.3; }
+.contacto__icono { flex: none; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: #e0d9fa; color: var(--tinta); }
+.contacto__icono svg { width: 32px; height: 32px; stroke-width: 2.7; }
+.contacto__rayas--tarjeta { position: absolute; right: 18px; top: 14px; width: 26px; height: auto; transform: rotate(150deg); }
+.contacto__personaje { flex: none; width: 108px; height: auto; }
+.contacto__rayas--personaje { position: absolute; left: 114px; top: 12px; width: 34px; height: auto; transform: rotate(8deg); }
+.contacto__rayas--amarilla { position: absolute; right: 18px; bottom: 14px; width: 28px; height: auto; transform: rotate(160deg); }
+
+/* Formulario */
+.contacto__formulario { padding: 26px 32px 30px; border-radius: 22px; background: #fff; box-shadow: 0 6px 24px rgba(60, 40, 20, 0.06); }
+.contacto-form { display: grid; gap: 16px; }
+.contacto-form__campo { display: grid; gap: 8px; font-size: 14px; font-weight: 700; }
+.contacto-form__campo input, .contacto-form__campo select, .contacto-form__campo textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #e4e0ee; border-radius: 14px; background: #fff; font: inherit; font-size: 14.5px; font-weight: 400; color: var(--tinta); }
+.contacto-form__campo input::placeholder, .contacto-form__campo textarea::placeholder { color: #8f8a94; }
+.contacto-form__campo textarea { min-height: 110px; resize: vertical; }
+.contacto-form__campo select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1.5 1.5l5.5 5.5 5.5-5.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 18px center; cursor: pointer; }
+.contacto-form__campo input:focus-visible, .contacto-form__campo select:focus-visible, .contacto-form__campo textarea:focus-visible { outline: 3px solid var(--violeta); outline-offset: 2px; }
+.contacto-form__aviso { margin: 0; padding: 12px 16px; border-radius: 14px; background: #ffe1e6; font-weight: 600; }
+.contacto-form__enviar { justify-self: start; gap: 12px; height: 54px; padding: 0 30px; font-size: 16px; }
+.contacto-form--listo { gap: 12px; }
+.contacto-form__gracias { margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.03em; }
+.contacto-form__trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+@media (max-width: 960px) {
+  .contacto { grid-template-columns: minmax(0, 1fr); padding-top: 24px; }
+  .contacto__cabecera { min-height: 0; padding: 8px 0 0; }
+  .contacto__dibujo { position: relative; left: auto; top: auto; width: 340px; height: 330px; margin: 0 0 6px -10px; }
+  .contacto__columna { display: contents; }
+  .contacto__cabecera { order: 1; }
+  .contacto__formulario { order: 2; }
+  .contacto__tarjeta--lila { order: 3; }
+  .contacto__tarjeta--amarilla { order: 4; }
+  .contacto { gap: 22px; }
+  .contacto__bajada { margin: 0; max-width: none; }
+  .contacto__cabecera .contacto__bajada { margin-top: 12px; }
+  .contacto__pistas { grid-template-columns: minmax(0, 1fr); }
+  .contacto__tarjeta--amarilla { flex-direction: column; align-items: flex-start; }
+  .contacto__formulario { padding: 22px 20px 26px; }
+}
