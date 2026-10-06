@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from battles.privacy import purge_anonymous_battles
 from gameplay.maintenance import purge_inactive_anonymous
 
 
@@ -12,10 +13,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, days, dry_run, **options):
         counts = purge_inactive_anonymous(days=days, dry_run=dry_run)
+        battles = purge_anonymous_battles(days=days, dry_run=dry_run)
         verb = "Se borrarían" if dry_run else "Se borraron"
         self.stdout.write(
             self.style.SUCCESS(
                 f"{verb} {counts['devices']} jugadores anónimos inactivos "
                 f"({counts['attempts']} intentos, {counts['scores']} puntajes, {counts['stats']} estadísticas)."
+            )
+        )
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"{verb} el nombre y el dispositivo de {battles['players']} jugadores anónimos de batallas "
+                f"y el dispositivo de {battles['rooms']} salas."
             )
         )

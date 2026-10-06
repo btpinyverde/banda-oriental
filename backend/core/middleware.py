@@ -40,8 +40,11 @@ def _run_purge(days: int, close_connection: bool = False) -> None:
     try:
         from gameplay import maintenance
 
+        from battles.privacy import purge_anonymous_battles
+
         counts = maintenance.purge_inactive_anonymous(days=days)
         logger.info("Borrado de anónimos inactivos: %s", counts)
+        logger.info("Anónimos de batallas: %s", purge_anonymous_battles(days=days))
     except Exception:
         logger.exception("No se pudo borrar a los anónimos inactivos")
     finally:
