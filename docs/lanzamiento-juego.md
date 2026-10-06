@@ -79,7 +79,7 @@ Celular (390 px y 360 px):
 ## 5. Antes de difundirlo
 
 - [ ] Primera semana de canciones del día cargada, con sus pistas (el juego no puede quedarse sin canción).
-- [ ] Un ping cada 5 minutos a `/api/health/` (por ejemplo UptimeRobot) para que Render no se duerma, o pasar a un plan pago: sin eso el primer visitante espera hasta un minuto.
+- [ ] Un ping cada 5 minutos a `https://api.bandaoriental.xami.uy/api/health/` para que Render no se duerma, o pasar a un plan pago: sin eso el primer visitante espera hasta un minuto. **Usar UptimeRobot** (gratis, `uptimerobot.com`): crear un monitor HTTP a esa dirección con intervalo de 5 minutos, otro al sitio (`https://bandaoriental.xami.uy`), y poner tu correo para los avisos de caída. Así sirve además de alarma. (El chequeo que había en GitHub Actions se sacó: nunca corrió bien, GitHub lo ejecutaba cada 6 a 9 horas y fallaba a los 3 segundos porque Actions está bloqueado en la cuenta.)
 - [ ] Textos legales revisados (son preliminares) y correo de contacto definido.
 
 ## 6. Cuentas (cuando esté el correo: ver `docs/activar-correo.md`)

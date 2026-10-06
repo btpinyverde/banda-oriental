@@ -5,7 +5,8 @@ services:
     plan: free
     rootDir: backend
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py recompute_stats && python manage.py ensure_superuser"
-    startCommand: "gunicorn config.wsgi:application"
+    # Hilos: sin ellos un solo pedido lento (por ejemplo empezar una batalla, que pide los audios a Deezer) frena a todos los demás.
+    startCommand: "gunicorn config.wsgi:application --threads 4"
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.7"

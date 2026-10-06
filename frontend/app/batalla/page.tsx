@@ -6,7 +6,7 @@ import "./batalla.css";
 
 export const metadata: Metadata = {
   // Título genérico: a quien no puede crear salas no le tiene que decir que existe el modo.
-  title: "Banda Oriental",
+  title: { absolute: "Banda Oriental" }, // sin el sufijo del sitio: si no, sale "Banda Oriental | Banda Oriental"
   robots: { index: false, follow: false },
 };
 
