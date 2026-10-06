@@ -9,6 +9,7 @@ export function EncabezadoDelArchivo({ actual, cantidades }: { actual: "cancione
   const total = cantidades.canciones;
   return (
     <section className="hero-archivo">
+      <img className="hero-archivo__borde" src="/assets/hero-edge-purple.svg" alt="" aria-hidden="true" />
       <div className="hero-archivo__texto">
         <p className="hero-archivo__etiqueta">Archivo de música uruguaya</p>
         <h1>
