@@ -17,9 +17,11 @@ describe("TarjetaDeArtista", () => {
     expect(screen.getByText("2004")).toBeInTheDocument();
   });
 
-  it("sin foto va la inicial sobre el color que toca por su lugar; con foto de Deezer la muestra", () => {
+  it("sin foto va el bloque de papel con el vinilo y el color que toca por su lugar; con foto de Deezer la muestra", () => {
     const { container, rerender } = render(<ul><TarjetaDeArtista artista={ARTISTA} lugar={3} /></ul>);
-    expect(container.querySelector(".artista__foto--tono-3 .artista__inicial")).toHaveTextContent("J");
+    expect(container.querySelector(".tarjeta__tapa--vacia .vacia__simbolo")).toHaveAttribute("src", "/assets/vinilo.svg");
+    expect(container.querySelector(".vacia__asterisco--tono-3")).not.toBeNull();
+    expect(container.querySelector(".artista__inicial")).toBeNull();
 
     rerender(<ul><TarjetaDeArtista artista={{ ...ARTISTA, picture_url: "https://cdn.example/d.jpg" }} lugar={3} /></ul>);
     expect(screen.getByRole("img", { name: "Foto de Jorge Drexler" })).toHaveAttribute("src", "https://cdn.example/d.jpg");
@@ -28,7 +30,7 @@ describe("TarjetaDeArtista", () => {
 
 describe("TarjetaDeDisco", () => {
   it("muestra la tapa, el nombre (enlace principal), el artista, el año, las canciones y el género", () => {
-    render(<ul><TarjetaDeDisco disco={DISCO} /></ul>);
+    render(<ul><TarjetaDeDisco disco={DISCO} lugar={0} /></ul>);
 
     expect(screen.getByRole("img", { name: "Tapa de Vaivén" })).toHaveAttribute("src", "https://cdn.example/t.jpg");
     expect(screen.getByRole("link", { name: "Vaivén" })).toHaveAttribute("href", "/archivo/disco/12-vaiven");
@@ -39,10 +41,11 @@ describe("TarjetaDeDisco", () => {
     expect(screen.getByText("Folk")).toHaveClass("tarjeta__genero");
   });
 
-  it("sin tapa va el bloque de color con la nota, nunca una imagen inventada", () => {
-    const { container } = render(<ul><TarjetaDeDisco disco={{ ...DISCO, cover_art_url: "" }} /></ul>);
+  it("sin tapa va el bloque de papel con el vinilo, nunca una imagen inventada", () => {
+    const { container } = render(<ul><TarjetaDeDisco disco={{ ...DISCO, cover_art_url: "" }} lugar={2} /></ul>);
 
     expect(screen.queryByRole("img", { name: /Tapa/ })).toBeNull();
-    expect(container.querySelector(".tarjeta__tapa--sin")).not.toBeNull();
+    expect(container.querySelector(".tarjeta__tapa--sin .vacia__simbolo")).toHaveAttribute("src", "/assets/vinilo.svg");
+    expect(container.querySelector(".vacia__asterisco--tono-2")).not.toBeNull();
   });
 });

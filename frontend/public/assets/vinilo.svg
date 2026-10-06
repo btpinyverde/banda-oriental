@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <title>vinilo</title>
+  <circle cx="60" cy="60" r="54" fill="#14110f"/>
+  <g stroke="#4a4540" stroke-width="1.6" stroke-linecap="round">
+    <circle cx="60" cy="60" r="46"/>
+    <circle cx="60" cy="60" r="39"/>
+    <circle cx="60" cy="60" r="32"/>
+  </g>
+  <path d="M22 40a42 42 0 0 1 22-22" stroke="#f4efe3" stroke-width="3.2" stroke-linecap="round" opacity="0.85"/>
+  <path d="M98 80a42 42 0 0 1-22 22" stroke="#f4efe3" stroke-width="3.2" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="60" cy="60" r="19" fill="#ece6d8"/>
+  <circle cx="60" cy="60" r="19" stroke="#14110f" stroke-width="3"/>
+  <circle cx="60" cy="60" r="3.6" fill="#14110f"/>
+</svg>

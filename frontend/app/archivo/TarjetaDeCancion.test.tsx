@@ -46,7 +46,16 @@ describe("TarjetaDeCancion", () => {
     const { container } = render(<ul><TarjetaDeCancion cancion={{ ...CANCION, album: { ...CANCION.album, cover_art_url: "" } }} /></ul>);
 
     expect(screen.queryByRole("img", { name: /Tapa de/ })).toBeNull();
-    expect(container.querySelector(".tarjeta__tapa--sin")).not.toBeNull();
+    expect(container.querySelector(".tarjeta__tapa--sin .vacia__simbolo")).toHaveAttribute("src", "/assets/icon-note.svg");
+  });
+
+  it("el color del asterisco sale del lugar en la lista (las vecinas no repiten), o del id si no se da", () => {
+    const sinTapa = { ...CANCION, album: { ...CANCION.album, cover_art_url: "" } };
+    const { container, rerender } = render(<ul><TarjetaDeCancion cancion={sinTapa} lugar={4} /></ul>);
+    expect(container.querySelector(".vacia__asterisco--tono-4")).not.toBeNull();
+
+    rerender(<ul><TarjetaDeCancion cancion={{ ...sinTapa, id: 7 }} /></ul>);
+    expect(container.querySelector(".vacia__asterisco--tono-2")).not.toBeNull();
   });
 
   it("si la tapa no se puede cargar, también vuelve al bloque de color", () => {

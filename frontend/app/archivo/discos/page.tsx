@@ -69,7 +69,7 @@ export default async function PaginaDeDiscos({ searchParams }: { searchParams: P
         <>
           <p className="resultados__cuenta">{`${cantidad(discos.count)} ${discos.count === 1 ? "disco encontrado" : "discos encontrados"}`}</p>
           <ul className="grilla" aria-label="Discos">
-            {discos.results.map((d) => <TarjetaDeDisco key={d.id} disco={d} />)}
+            {discos.results.map((d, lugar) => <TarjetaDeDisco key={d.id} disco={d} lugar={lugar} />)}
           </ul>
           <PaginasNumeradas pagina={discos.page} paginas={discos.pages} ruta="/archivo/discos" parametros={filtrosPuestos} />
         </>

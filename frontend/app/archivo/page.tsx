@@ -101,7 +101,7 @@ export default async function ExploradorDelArchivo({ searchParams }: { searchPar
             </ul>
           ) : (
             <ul className="grilla" aria-label="Canciones">
-              {canciones.results.map((c) => <TarjetaDeCancion key={c.id} cancion={c} />)}
+              {canciones.results.map((c, lugar) => <TarjetaDeCancion key={c.id} cancion={c} lugar={lugar} />)}
             </ul>
           )}
           <PaginasNumeradas pagina={canciones.page} paginas={canciones.pages} ruta="/archivo" parametros={sinVacios({ ...filtrosPuestos, vista: lista ? "lista" : undefined })} />
