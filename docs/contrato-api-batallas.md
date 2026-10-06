@@ -75,3 +75,7 @@ Acierto: `100 + round(50 · (1 − transcurrido/round_seconds))`; fallo o sin re
 Un bar entero comparte una dirección, así que **consultar el estado, `mine`, entrar y responder no cuentan contra el límite global de 240/min**, y
 **entrar no pide la comprobación humana** (el pase tiene un tope de 30 por hora por dirección). Una sala se protege con su código secreto, el
 máximo de 60 jugadores y esos límites por ruta. Crear y empezar sí cuentan contra el límite global.
+
+## Borrar la cuenta
+
+`DELETE /api/me/` también saca a la cuenta de las batallas: sus jugadores pasan a llamarse «Jugador eliminado N», pierden el dispositivo y la cuenta, pero conservan sus respuestas y puntos (el ranking de los demás no cambia). Las salas que organizaba quedan para quienes jugaron, sin dueño; una sala a la que nadie entró se borra.
