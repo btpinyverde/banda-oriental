@@ -178,3 +178,15 @@ class TeamView(APIView):
             raise Http404
         services.assign_team(battle, request.data.get("player_id"), request.data.get("team_id"))
         return Response({"ok": True})
+
+
+class AccessView(APIView):
+    """Whether the visitor may create battles. It answers to everybody (anonymous included) and never hides itself, so the site can
+    decide what to show: the create form, or a message saying the battles are still being tried out."""
+
+    throttle_scope = "battle-state"
+    skip_global_throttle = True
+    authentication_classes = [BearerTokenAuthentication]
+
+    def get(self, request):
+        return Response({"can_create": can_create(request.user)})

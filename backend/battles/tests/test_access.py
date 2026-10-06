@@ -68,3 +68,23 @@ def test_me_tells_the_site_whether_the_account_can_create_battles(client, allowe
     yes, no = user_with(django_user_model, ALLOWED), user_with(django_user_model, "otra@gmail.com")
     assert client.get("/api/me/", **bearer(yes)).json()["can_create_battles"] is True
     assert client.get("/api/me/", **bearer(no)).json()["can_create_battles"] is False
+
+
+def access(client, **extra):
+    return client.get(reverse("battles:access"), HTTP_X_DEVICE_ID=D1, **extra)
+
+
+def test_access_tells_anybody_whether_they_may_create_without_hiding_itself(client, allowed_only, django_user_model):
+    # Unlike create, this answers 200 to everybody: the site uses it to decide what to show.
+    assert access(client).status_code == 200 and access(client).json() == {"can_create": False}
+    assert access(client, **bearer(user_with(django_user_model, "otra@gmail.com"))).json() == {"can_create": False}
+    assert access(client, **bearer(user_with(django_user_model, ALLOWED))).json() == {"can_create": True}
+
+
+def test_access_says_yes_to_everybody_when_the_mode_is_open(client, settings):
+    settings.BATTLES = {**settings.BATTLES, "CREATOR_EMAILS": ["*"]}
+    assert access(client).json() == {"can_create": True}
+
+
+def test_access_does_not_need_a_device_id(client, allowed_only):
+    assert client.get(reverse("battles:access")).status_code == 200

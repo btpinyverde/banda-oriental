@@ -1,68 +1,45 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { borrarSesion, guardarSesion } from "../cuenta/sesion";
-import * as cuenta from "../cuenta/api-cuenta";
+import * as batallas from "./api-batallas";
 import { usePuedeCrearBatallas } from "./usePuedeCrearBatallas";
 
-const DATOS = { email: "a@b.uy", date_joined: "x", accepts_news: false, terms_accepted_at: null };
-
-function simularYo(respuesta: unknown | Error) {
-  const yo = vi.fn();
-  if (respuesta instanceof Error) yo.mockRejectedValue(respuesta);
-  else yo.mockResolvedValue(respuesta);
-  vi.spyOn(cuenta, "crearApiCuenta").mockReturnValue({ yo } as unknown as ReturnType<typeof cuenta.crearApiCuenta>);
-  return yo;
+function simularAcceso(respuesta: boolean | Error | "nunca") {
+  const acceso = vi.fn();
+  if (respuesta === "nunca") acceso.mockReturnValue(new Promise(() => {}));
+  else if (respuesta instanceof Error) acceso.mockRejectedValue(respuesta);
+  else acceso.mockResolvedValue(respuesta);
+  vi.spyOn(batallas, "crearApiBatallas").mockReturnValue({ acceso } as unknown as ReturnType<typeof batallas.crearApiBatallas>);
+  return acceso;
 }
 
 beforeEach(() => window.localStorage.clear());
 afterEach(() => {
+  cleanup(); // desmonta los hooks de la prueba anterior: si no, también preguntan cuando cambia la sesión de la siguiente
   vi.restoreAllMocks();
-  vi.unstubAllEnvs();
   borrarSesion();
 });
 
-describe("usePuedeCrearBatallas", () => {
-  it("con el modo batalla encendido para todos, puede sin preguntar nada", async () => {
-    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "1");
-    const yo = simularYo(DATOS);
+describe("usePuedeCrearBatallas: lo decide siempre el servidor", () => {
+  it("si el servidor dice que sí, puede (con o sin sesión: está abierto a todos)", async () => {
+    simularAcceso(true);
     const { result } = renderHook(() => usePuedeCrearBatallas());
 
     await act(async () => {});
     expect(result.current).toEqual({ puede: true, lista: true });
-    expect(yo).not.toHaveBeenCalled();
   });
 
-  it("sin sesión no puede", async () => {
-    const yo = simularYo(DATOS);
-    const { result } = renderHook(() => usePuedeCrearBatallas());
-
-    await act(async () => {});
-    expect(result.current).toEqual({ puede: false, lista: true });
-    expect(yo).not.toHaveBeenCalled();
-  });
-
-  it("con una cuenta autorizada puede", async () => {
+  it("si dice que no, no puede", async () => {
     guardarSesion({ token: "tok", email: "a@b.uy" });
-    const yo = simularYo({ ...DATOS, can_create_battles: true });
-    const { result } = renderHook(() => usePuedeCrearBatallas());
-
-    await act(async () => {});
-    expect(yo).toHaveBeenCalledWith("tok");
-    expect(result.current).toEqual({ puede: true, lista: true });
-  });
-
-  it("con una cuenta no autorizada no puede", async () => {
-    guardarSesion({ token: "tok", email: "a@b.uy" });
-    simularYo({ ...DATOS, can_create_battles: false });
+    simularAcceso(false);
     const { result } = renderHook(() => usePuedeCrearBatallas());
 
     await act(async () => {});
     expect(result.current).toEqual({ puede: false, lista: true });
   });
 
-  it("si la API no contesta, no puede (y no se rompe)", async () => {
-    guardarSesion({ token: "tok", email: "a@b.uy" });
-    simularYo(new Error("sin conexión"));
+  it("si el servidor no contesta, no puede (y no se rompe)", async () => {
+    simularAcceso(new Error("sin conexión"));
     const { result } = renderHook(() => usePuedeCrearBatallas());
 
     await act(async () => {});
@@ -70,9 +47,22 @@ describe("usePuedeCrearBatallas", () => {
   });
 
   it("mientras no sabe, todavía no está lista", () => {
-    guardarSesion({ token: "tok", email: "a@b.uy" });
-    vi.spyOn(cuenta, "crearApiCuenta").mockReturnValue({ yo: () => new Promise(() => {}) } as unknown as ReturnType<typeof cuenta.crearApiCuenta>);
+    simularAcceso("nunca");
     const { result } = renderHook(() => usePuedeCrearBatallas());
     expect(result.current.lista).toBe(false);
+  });
+
+  it("al iniciar o cerrar sesión vuelve a preguntar (el permiso es de la cuenta)", async () => {
+    const acceso = simularAcceso(false);
+    const { result } = renderHook(() => usePuedeCrearBatallas());
+    await act(async () => {});
+    expect(acceso).toHaveBeenCalledTimes(1);
+
+    acceso.mockResolvedValue(true);
+    await act(async () => guardarSesion({ token: "tok", email: "a@b.uy" }));
+    await act(async () => {});
+
+    expect(acceso).toHaveBeenCalledTimes(2);
+    expect(result.current.puede).toBe(true);
   });
 });

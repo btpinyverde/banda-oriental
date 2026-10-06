@@ -145,6 +145,15 @@ describe("crearApiBatallas", () => {
     expect(ultima(mock).opciones.headers["X-Host-Token"]).toBe("secreto");
   });
 
+  it("acceso dice si se puede crear salas (con o sin sesión)", async () => {
+    const mock = simular(respuesta({ can_create: true }), respuesta({ can_create: false }));
+    const api = crearApiBatallas();
+
+    expect(await api.acceso()).toBe(true);
+    expect(ultima(mock).url).toBe("https://api.example/api/battles/access/");
+    expect(await api.acceso()).toBe(false);
+  });
+
   it("mias devuelve la lista", async () => {
     const mock = simular(respuesta({ battles: [{ code: "ABC234", title: "", status: "finished", created_at: "x", players_count: 3, role: "player", my_position: 2 }] }));
     const lista = await crearApiBatallas().mias();

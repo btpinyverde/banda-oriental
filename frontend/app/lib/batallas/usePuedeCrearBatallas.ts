@@ -1,38 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { crearApiCuenta } from "../cuenta/api-cuenta";
 import { useSesion } from "../cuenta/useSesion";
-import { batallaActiva } from "../funciones";
+import { crearApiBatallas } from "./api-batallas";
 
 /**
- * Si esta persona puede ver y usar el modo batalla para crear salas. Mientras se lo prueba, solo algunas cuentas pueden
- * (el servidor lo decide y lo dice en `/api/me/`); con el interruptor `NEXT_PUBLIC_BATALLA_ACTIVA` encendido es para todos.
- * Entrar a una sala con su enlace no pasa por acá: eso está abierto a quien tenga el enlace.
+ * Si esta persona puede crear salas de batalla. Lo decide siempre el servidor: mientras el modo se prueba, solo algunas cuentas
+ * pueden; cuando se abre, cualquiera (con o sin cuenta). Entrar a una sala con su enlace no pasa por acá: está abierto.
+ * Vuelve a preguntar al iniciar o cerrar sesión, porque el permiso es de la cuenta.
  */
 export function usePuedeCrearBatallas(): { puede: boolean; lista: boolean } {
-  const abierto = batallaActiva();
-  const { sesion, lista } = useSesion();
+  const { sesion, lista: sesionLista } = useSesion();
   const token = sesion?.token ?? null;
   const [permiso, setPermiso] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (abierto || !lista) return;
-    if (!token) {
-      setPermiso(false);
-      return;
-    }
+    if (!sesionLista) return;
     let activo = true;
     setPermiso(null);
-    crearApiCuenta()
-      .yo(token)
-      .then((datos) => activo && setPermiso(datos.can_create_battles === true))
+    crearApiBatallas()
+      .acceso()
+      .then((puede) => activo && setPermiso(puede))
       .catch(() => activo && setPermiso(false)); // sin saberlo, no se muestra
     return () => {
       activo = false;
     };
-  }, [abierto, lista, token]);
+  }, [sesionLista, token]);
 
-  if (abierto) return { puede: true, lista: true };
-  return { puede: permiso === true, lista: lista && permiso !== null };
+  return { puede: permiso === true, lista: sesionLista && permiso !== null };
 }

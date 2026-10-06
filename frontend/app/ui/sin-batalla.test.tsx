@@ -12,9 +12,9 @@ afterEach(() => {
 
 const hayBatalla = () => document.body.innerHTML.toLowerCase().includes("batalla");
 
-describe("el modo batalla, apagado (todavía no está resuelto)", () => {
+describe("el modo batalla, apagado con NEXT_PUBLIC_BATALLA_ACTIVA=0", () => {
   it("no aparece en la barra, el menú móvil, el pie, la portada ni las tarjetas de modos", () => {
-    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "");
+    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "0");
 
     render(
       <>
@@ -30,7 +30,7 @@ describe("el modo batalla, apagado (todavía no está resuelto)", () => {
   });
 
   it("lo demás sigue: jugar el diario, el archivo y las tarjetas del modo diario", () => {
-    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "");
+    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "0");
 
     render(
       <>

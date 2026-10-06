@@ -15,13 +15,16 @@ afterEach(() => {
 
 describe("VistaDelRanking", () => {
   it("con el modo batalla apagado es solo el ranking diario, sin selector", () => {
+    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "0");
+    vi.spyOn(puerta, "usePuedeCrearBatallas").mockReturnValue({ puede: false, lista: true });
     render(<VistaDelRanking />);
     expect(screen.getByText(/ranking diario/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /mis batallas/i })).toBeNull();
   });
 
-  it("con el modo batalla encendido hay un selector Diario | Mis batallas", () => {
+  it("con el modo batalla encendido hay un selector Diario | Mis batallas, aunque la persona no pueda crear salas (puede haber jugado en una)", () => {
     vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "1");
+    vi.spyOn(puerta, "usePuedeCrearBatallas").mockReturnValue({ puede: false, lista: true });
     render(<VistaDelRanking />);
 
     expect(screen.getByRole("button", { name: "Diario" })).toHaveAttribute("aria-pressed", "true");
@@ -32,7 +35,8 @@ describe("VistaDelRanking", () => {
     expect(screen.getByText(/^RANKING DIARIO/)).toBeInTheDocument();
   });
 
-  it("con el modo apagado para todos, una cuenta autorizada igual ve el selector", () => {
+  it("con el modo apagado, una cuenta autorizada a crear igual ve el selector", () => {
+    vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "0");
     vi.spyOn(puerta, "usePuedeCrearBatallas").mockReturnValue({ puede: true, lista: true });
     render(<VistaDelRanking />);
     expect(screen.getByRole("button", { name: "Mis batallas" })).toBeInTheDocument();
@@ -40,6 +44,7 @@ describe("VistaDelRanking", () => {
 
   it("?vista=batallas abre directo en Mis batallas", async () => {
     vi.stubEnv("NEXT_PUBLIC_BATALLA_ACTIVA", "1");
+    vi.spyOn(puerta, "usePuedeCrearBatallas").mockReturnValue({ puede: true, lista: true });
     window.history.replaceState(null, "", "/ranking?vista=batallas");
     render(<VistaDelRanking />);
     expect(await screen.findByText(/^MIS BATALLAS/)).toBeInTheDocument();

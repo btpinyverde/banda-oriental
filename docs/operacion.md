@@ -23,7 +23,7 @@ Una página para quien opere el juego (hoy, Brandon). Complementa `docs/segurida
 `BATTLE_CREATOR_EMAILS` (quién puede crear batallas, separados por coma; por defecto la cuenta de Brandon; `*` = cualquiera, también sin cuenta), `BATTLE_MIN_PLAYERS` (mínimo para empezar; vacío = 1 mientras es restringido y 2 al abrirlo). El borrado de anónimos de los 7 días alcanza también a las batallas.
 
 **Vercel (sitio)**: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CUENTAS_ACTIVAS=1` (cuentas visibles),
-`NEXT_PUBLIC_BATALLA_ACTIVA=1` (muestra el modo batalla; apagado por defecto: sin la variable no aparece nada de él),
+`NEXT_PUBLIC_BATALLA_ACTIVA=0` (esconde el modo batalla de la landing, la barra, el pie y el ranking; **prendido por defecto**, sin la variable se ve). Solo decide si se *ve*: quién puede crear salas lo decide la API con `BATTLE_CREATOR_EMAILS`,
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (clave pública de Turnstile).
 
 Las claves secretas (`RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, R2, `DATABASE_URL`) las carga siempre el dueño a mano;
