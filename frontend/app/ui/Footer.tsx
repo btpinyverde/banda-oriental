@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { batallaActiva } from "../lib/funciones";
+import { redesConfiguradas, type Red } from "../lib/redes";
 import { Ondulada } from "./Ondulada";
 
 const columnas = () => [
@@ -32,12 +33,23 @@ const columnas = () => [
   },
 ];
 
-/** Redes sociales. Íconos de Simple Icons (CC0). Las URLs son provisorias hasta tener los perfiles reales. */
-const REDES = [
-  { href: "#", etiqueta: "Instagram", icono: "social-instagram" },
-  { href: "#", etiqueta: "TikTok", icono: "social-tiktok" },
-  { href: "#", etiqueta: "Spotify", icono: "social-spotify" },
-];
+/** Los botones de redes. No dibuja nada (ni una lista vacía) si no hay ninguna configurada. */
+function Redes({ redes }: { redes: Red[] }) {
+  if (redes.length === 0) return null;
+  return (
+    <ul className="footer__redes">
+      {redes.map(({ href, etiqueta, icono }) => (
+        <li key={etiqueta}>
+          <a href={href} className="red" aria-label={etiqueta} target="_blank" rel="noopener noreferrer">
+            <span className="red__icono" aria-hidden="true">
+              <img src={`/assets/${icono}.svg`} alt="" />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 const LEGALES = [
   { href: "/terminos", etiqueta: "Términos" },
@@ -51,6 +63,7 @@ const LEGALES = [
  * como /jugar. La "compacto" también es una fila, pero con el lema y las redes (página 404).
  */
 export function Footer({ variante = "completo" }: { variante?: "completo" | "minimo" | "compacto" }) {
+  const redes = redesConfiguradas();
   if (variante === "compacto") {
     return (
       <footer className="footer footer--compacto">
@@ -60,17 +73,7 @@ export function Footer({ variante = "completo" }: { variante?: "completo" | "min
             <img src="/assets/brand-wordmark.svg" alt="Banda Oriental, inicio" width={84} height={45} />
           </Link>
           <p className="footer--compacto__lema">El juego de la música uruguaya.</p>
-          <ul className="footer__redes">
-            {REDES.map(({ href, etiqueta, icono }) => (
-              <li key={etiqueta}>
-                <a href={href} className="red" aria-label={etiqueta}>
-                  <span className="red__icono" aria-hidden="true">
-                    <img src={`/assets/${icono}.svg`} alt="" />
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <Redes redes={redes} />
           <ul className="footer--compacto__legales">
             {LEGALES.map(({ href, etiqueta }) => (
               <li key={etiqueta}>
@@ -117,17 +120,7 @@ export function Footer({ variante = "completo" }: { variante?: "completo" | "min
               <img src="/assets/brand-wordmark.svg" alt="Banda Oriental, inicio" width={168} height={90} />
             </Link>
             <p className="footer__lema">El juego de la música uruguaya. Escuchá, pensá, probá y descubrí nuevas canciones.</p>
-            <ul className="footer__redes">
-              {REDES.map(({ href, etiqueta, icono }) => (
-                <li key={etiqueta}>
-                  <a href={href} className="red" aria-label={etiqueta}>
-                    <span className="red__icono" aria-hidden="true">
-                      <img src={`/assets/${icono}.svg`} alt="" />
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+          <Redes redes={redes} />
           </div>
 
           {columnas().map(({ titulo, enlaces }) => (

@@ -1,4 +1,5 @@
 import { batallaActiva } from "./funciones";
+import { redesConfiguradas } from "./redes";
 /** Datos de SEO del sitio: un solo lugar para el título, la descripción, la URL y los datos estructurados. */
 
 const URL_PRODUCCION = "https://bandaoriental.xami.uy";
@@ -31,11 +32,12 @@ export const COLOR_FONDO = "#fbf8f1";
 
 /**
  * Datos estructurados (schema.org) de la portada.
- * Sin `sameAs` a propósito: los enlaces de redes del footer son provisorios y no hay que declarar
- * perfiles que no existen. Agregarlo cuando se tengan las URLs reales.
+ * `sameAs` declara los perfiles de redes que están configurados (NEXT_PUBLIC_INSTAGRAM_URL, NEXT_PUBLIC_TIKTOK_URL); sin
+ * ninguno no se declara nada: no hay que declarar perfiles que no existen.
  */
 export function construirJsonLd() {
   const organizacion = `${SITIO_URL}/#organizacion`;
+  const perfiles = redesConfiguradas().map((red) => red.href);
 
   return {
     "@context": "https://schema.org",
@@ -46,6 +48,7 @@ export function construirJsonLd() {
         name: NOMBRE,
         url: SITIO_URL,
         logo: { "@type": "ImageObject", url: `${SITIO_URL}/icon-512.png` },
+        ...(perfiles.length > 0 && { sameAs: perfiles }),
       },
       {
         "@type": "WebSite",
