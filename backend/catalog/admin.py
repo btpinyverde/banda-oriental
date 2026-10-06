@@ -104,8 +104,10 @@ class SongAdmin(admin.ModelAdmin):
         return song._times_used
 
 
-MAX_PHOTO_BYTES = 2 * 1024 * 1024
-PHOTO_TYPES = {"PNG": "image/png", "WEBP": "image/webp"}
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
+# The card shows the photo at about 300 px; this is enough for a 2x screen. A bigger upload is shrunk, never enlarged.
+PHOTO_MAX_SIDE = 900
+PHOTO_TYPES = {"PNG", "WEBP"}
 
 
 class FeaturedArtistForm(forms.ModelForm):
@@ -115,7 +117,7 @@ class FeaturedArtistForm(forms.ModelForm):
     photo = forms.FileField(
         required=False,
         label="Foto recortada",
-        help_text="PNG o WEBP con fondo transparente, hasta 2 MB. El color de fondo lo pone la tarjeta.",
+        help_text="PNG o WEBP con fondo transparente, hasta 8 MB. Se achica y se comprime sola. El color de fondo lo pone la tarjeta.",
     )
 
     class Meta:
@@ -129,15 +131,18 @@ class FeaturedArtistForm(forms.ModelForm):
                 raise forms.ValidationError("Subí la foto del artista.")
             return None
         if photo.size > MAX_PHOTO_BYTES:
-            raise forms.ValidationError("La foto pesa más de 2 MB.")
-        data = photo.read()
+            raise forms.ValidationError("La foto pesa más de 8 MB.")
         try:
-            fmt = Image.open(io.BytesIO(data)).format
-        except (UnidentifiedImageError, OSError):
+            image = Image.open(io.BytesIO(photo.read()))
+            if image.format not in PHOTO_TYPES:
+                raise forms.ValidationError("Tiene que ser PNG o WEBP.")
+            image = image.convert("RGBA")
+        except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
             raise forms.ValidationError("El archivo no es una imagen.") from None
-        if fmt not in PHOTO_TYPES:
-            raise forms.ValidationError("Tiene que ser PNG o WEBP.")
-        self.cleaned_data["_data"], self.cleaned_data["_type"] = data, PHOTO_TYPES[fmt]
+        image.thumbnail((PHOTO_MAX_SIDE, PHOTO_MAX_SIDE))  # keeps the proportion, never enlarges
+        out = io.BytesIO()
+        image.save(out, "WEBP", quality=88, method=6)
+        self.cleaned_data["_data"], self.cleaned_data["_type"] = out.getvalue(), "image/webp"
         return photo
 
     def save(self, commit=True):

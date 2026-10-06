@@ -88,12 +88,30 @@ class TestAdminForm:
     def upload(self, content, name="foto.png", content_type="image/png"):
         return {"photo": SimpleUploadedFile(name, content, content_type=content_type)}
 
-    def test_stores_a_png_cutout(self):
+    def stored(self, saved):
+        return Image.open(io.BytesIO(bytes(saved.image)))
+
+    def test_stores_a_png_cutout_as_webp_keeping_transparency(self):
         a = make_artist("Ana")
-        form = FeaturedArtistForm(self.data(a), self.upload(png_bytes()))
+        form = FeaturedArtistForm(self.data(a), self.upload(png_bytes((40, 50), (10, 20, 30, 0))))
         assert form.is_valid(), form.errors
         saved = form.save()
-        assert bytes(saved.image) == png_bytes() and saved.image_type == "image/png"
+        image = self.stored(saved)
+        assert saved.image_type == "image/webp" and image.format == "WEBP"
+        assert image.size == (40, 50)  # a small one is not enlarged
+        assert image.convert("RGBA").getpixel((5, 5))[3] == 0  # still transparent
+
+    def test_a_big_photo_is_shrunk_to_fit_and_weighs_much_less(self):
+        a = make_artist("Ana")
+        big = Image.effect_noise((3000, 2000), 40)  # grayscale: keeps the PNG under the upload limit
+        out = io.BytesIO()
+        big.save(out, "PNG")
+        form = FeaturedArtistForm(self.data(a), self.upload(out.getvalue()))
+        assert form.is_valid(), form.errors
+        saved = form.save()
+        image = self.stored(saved)
+        assert max(image.size) == 900 and image.size == (900, 600)  # same proportion
+        assert len(bytes(saved.image)) < len(out.getvalue()) / 4
 
     def test_accepts_webp(self):
         a = make_artist("Ana")
@@ -111,7 +129,7 @@ class TestAdminForm:
         form = FeaturedArtistForm({"artist": a.id, "position": 5, "active": True}, {}, instance=item)
         assert form.is_valid(), form.errors
         saved = form.save()
-        assert saved.position == 5 and bytes(saved.image) == png_bytes()
+        assert saved.position == 5 and bytes(saved.image) == png_bytes()  # untouched
 
     def test_rejects_a_jpeg_and_things_that_are_not_images(self):
         a = make_artist("Ana")
@@ -122,6 +140,6 @@ class TestAdminForm:
 
     def test_rejects_a_photo_that_is_too_heavy(self):
         a = make_artist("Ana")
-        big = png_bytes((1200, 1200)) + b"0" * (2 * 1024 * 1024)
+        big = png_bytes((1200, 1200)) + b"0" * (8 * 1024 * 1024)
         form = FeaturedArtistForm(self.data(a), self.upload(big))
         assert not form.is_valid() and "photo" in form.errors
