@@ -42,4 +42,16 @@ describe("ChipsDeGenero", () => {
 
     expect(screen.getByRole("link", { name: "Fado" })).toHaveAttribute("aria-current", "true");
   });
+
+  it("con `conOtros` suma un chip que lleva al selector de géneros", () => {
+    render(<ChipsDeGenero conOtros generos={["Rock"]} actual={undefined} parametros={{}} />);
+
+    expect(screen.getByRole("link", { name: "Otros" })).toHaveAttribute("href", "#filtro-generos");
+  });
+
+  it("sin `conOtros` no está", () => {
+    render(<ChipsDeGenero generos={["Rock"]} actual={undefined} parametros={{}} />);
+
+    expect(screen.queryByRole("link", { name: "Otros" })).toBeNull();
+  });
 });

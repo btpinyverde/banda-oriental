@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ChipDeGenero } from "./generos";
 
 /** Los géneros para filtrar: "Todas" y cada uno, en el orden recibido. Elegir uno conserva los demás filtros y vuelve a la primera página. */
-export function ChipsDeGenero({ generos, actual, parametros }: { generos: (string | ChipDeGenero)[]; actual: string | undefined; parametros: Record<string, string> }) {
+export function ChipsDeGenero({ generos, actual, parametros, conOtros = false }: { generos: (string | ChipDeGenero)[]; actual: string | undefined; parametros: Record<string, string>; conOtros?: boolean }) {
   const chips = generos.map((g) => (typeof g === "string" ? { valor: g, etiqueta: g } : g));
   const lista = actual && !chips.some((c) => c.valor.toLowerCase() === actual.toLowerCase()) ? [...chips, { valor: actual, etiqueta: actual }] : chips;
   const hacia = (genero?: string) => {
@@ -23,6 +23,14 @@ export function ChipsDeGenero({ generos, actual, parametros }: { generos: (strin
           </Link>
         </li>
       ))}
+      {conOtros && (
+        <li>
+          {/* Lleva al selector de géneros, con todos los del catálogo. */}
+          <a href="#filtro-generos" className="chip">
+            Otros
+          </a>
+        </li>
+      )}
     </ul>
   );
 }

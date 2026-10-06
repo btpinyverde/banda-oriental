@@ -4,30 +4,43 @@
 .archivo-musical--ancho { max-width: 1240px; gap: 22px; }
 
 /* Encabezado */
-.hero-archivo { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; align-items: center; padding: 8px 0 12px; }
-.hero-archivo__etiqueta { margin: 0 0 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tinta-suave); }
-.hero-archivo h1 { margin: 0; font-size: clamp(44px, 6.2vw, 84px); font-weight: 900; line-height: 0.96; letter-spacing: -0.045em; }
-.hero-archivo__resaltado { background: linear-gradient(transparent 66%, var(--amarillo) 66%, var(--amarillo) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
-.hero-archivo__bajada { margin: 22px 0 0; max-width: 460px; font-size: clamp(17px, 1.7vw, 22px); line-height: 1.4; color: var(--tinta-suave); }
+.hero-archivo { position: relative; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); gap: 24px; align-items: center; padding: 8px 0 4px; }
+.hero-archivo__etiqueta { margin: 0 0 12px; font-size: 12.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tinta-suave); }
+.hero-archivo h1 { margin: 0; font-size: clamp(44px, 5.4vw, 78px); font-weight: 900; line-height: 1; letter-spacing: -0.045em; white-space: nowrap; }
+.hero-archivo__resaltado { background: url("/assets/hero-highlight.svg") no-repeat 50% 94% / 106% 0.34em; }
+.hero-archivo__bajada { margin: 14px 0 0; max-width: 470px; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.4; color: var(--tinta-suave); }
+
+/* Pestañas: canciones, artistas y discos */
+.pestanas { display: inline-flex; gap: 2px; margin-top: 26px; padding: 5px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 2px #ebe7f6; }
+.pestana { display: grid; justify-items: center; gap: 1px; min-width: 128px; padding: 9px 22px 8px; border-radius: 14px; color: var(--tinta); text-decoration: none; }
+.pestana:hover { background: var(--violeta-claro); }
+.pestana__nombre { font-size: 15px; font-weight: 800; }
+.pestana__cantidad { font-size: 12px; color: var(--tinta-suave); }
+.pestana[aria-current="page"] { background: var(--violeta); color: #fff; box-shadow: 0 6px 16px rgba(97, 69, 230, 0.3); }
+.pestana[aria-current="page"] .pestana__cantidad { color: rgba(255, 255, 255, 0.82); }
 
 /* Collage */
-.colage { position: relative; min-height: 300px; }
-.colage__mancha { position: absolute; right: -4%; top: -6%; width: 62%; }
-.colage__foto { position: absolute; right: 6%; top: 6%; width: 56%; margin: 0; padding: 10px 10px 14px; background: #fff; box-shadow: 0 10px 28px rgba(60, 40, 20, 0.2); transform: rotate(3deg); }
-.colage__foto img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.05); }
-.colage__nota { position: absolute; left: 2%; top: 4%; display: grid; padding: 18px 24px 20px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(-8deg); font-family: "Caveat Brush", cursive; font-size: clamp(20px, 2.3vw, 31px); line-height: 1.12; text-transform: uppercase; color: var(--tinta); }
-.colage__estrella { position: absolute; right: 1%; bottom: 14%; width: 64px; color: var(--violeta); }
-.colage__rayas { position: absolute; width: 34px; }
-.colage__rayas--izq { left: 46%; top: -2%; }
-.colage__rayas--der { right: -1%; top: 8%; width: 40px; }
+.colage { position: relative; align-self: stretch; min-height: 300px; }
+.colage__mancha { position: absolute; height: auto; }
+.colage__mancha--violeta { left: -2%; top: -2%; width: 46%; transform: rotate(-12deg); }
+.colage__mancha--amarilla { right: -2%; top: 8%; width: 66%; }
+.colage__casete { position: absolute; left: 12%; top: 14%; width: 66%; height: auto; transform: rotate(-5deg); filter: drop-shadow(0 12px 18px rgba(60, 40, 20, 0.22)); }
+.colage__nota { position: absolute; right: 0; top: 0; display: grid; padding: 16px 22px 18px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(3deg); font-family: "Caveat Brush", cursive; font-size: clamp(17px, 1.7vw, 23px); line-height: 1.18; text-transform: uppercase; color: var(--tinta); }
+.colage__rayo { position: absolute; left: 4%; top: 12%; width: 6%; height: auto; z-index: 2; }
+.colage__garabato { position: absolute; left: 36%; bottom: -7%; width: 14%; height: auto; z-index: 2; }
+.colage__rayas { position: absolute; height: auto; }
+.colage__rayas--arriba { left: 56%; top: -6%; width: 7%; }
+.colage__rayas--der { right: -5%; top: 28%; width: 6%; }
+.colage__rayas--abajo { right: 6%; bottom: 0; width: 8%; transform: scaleX(-1) rotate(70deg); }
 
-/* Barra de búsqueda y filtros */
+/* Barra de búsqueda y filtros (por encima del collage, que puede asomar un poco) */
+.barra, .chips, .resultados__cabecera { position: relative; z-index: 1; }
 .barra { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .barra__buscador { position: relative; flex: 1 1 340px; min-width: 0; }
 .barra__buscador input { width: 100%; height: 56px; padding: 0 22px 0 52px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 16px; color: var(--tinta); }
 .barra__buscador input:focus-visible { outline: 3px solid var(--violeta); outline-offset: 2px; }
 .barra__lupa { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--tinta); pointer-events: none; }
-.barra__selector select { height: 48px; padding: 0 40px 0 20px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 15px; font-weight: 600; color: var(--tinta); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; cursor: pointer; }
+.barra__selector select { height: 52px; padding: 0 40px 0 20px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 15px; font-weight: 600; color: var(--tinta); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; cursor: pointer; }
 
 /* Chips de género */
 .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
@@ -46,11 +59,11 @@
 .grilla { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 560px) { .grilla { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 860px) { .grilla { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .grilla { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .grilla { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
 .tarjeta { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 9px 9px 14px; border-radius: 14px; background: #fff; box-shadow: 0 6px 20px rgba(60, 40, 20, 0.07); transition: transform 0.15s, box-shadow 0.15s; }
 .tarjeta:hover, .tarjeta:focus-within { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(60, 40, 120, 0.16); }
-.tarjeta__tapa { aspect-ratio: 1; overflow: hidden; border-radius: 8px; margin-bottom: 8px; background: #ece9e5; }
+.tarjeta__tapa { aspect-ratio: 1 / 0.88; overflow: hidden; border-radius: 8px; margin-bottom: 8px; background: #ece9e5; }
 .tarjeta__tapa img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tarjeta__tapa--sin { display: grid; place-items: center; }
 .tarjeta__tapa--tono-0 { background: var(--rosa); }
@@ -65,8 +78,9 @@
 .tarjeta:focus-within { outline: 3px solid var(--violeta); outline-offset: 2px; }
 .tarjeta__artista { position: relative; z-index: 1; width: fit-content; max-width: 100%; font-size: 13px; color: var(--tinta-suave); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tarjeta__artista:hover { color: var(--violeta); text-decoration: underline; }
+.tarjeta__disco { font-size: 13px; color: var(--tinta-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tarjeta__anio { font-size: 13px; color: var(--tinta-suave); }
-.tarjeta__genero { align-self: flex-start; margin-top: 6px; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; color: var(--tinta); }
+.tarjeta__genero { align-self: flex-start; margin-top: 6px; padding: 3px 12px; border-radius: 999px; background: #ece9e5; font-size: 11px; font-weight: 800; color: var(--tinta); }
 .tarjeta__genero--tono-0 { background: #ffc3dd; }
 .tarjeta__genero--tono-1 { background: #bff0d3; }
 .tarjeta__genero--tono-2 { background: #fde68a; }
@@ -84,9 +98,17 @@
 .archivo-musical__tambien { margin: 8px 0 0; text-align: center; font-size: 15px; color: var(--tinta-suave); }
 .archivo-musical__tambien a { color: var(--violeta); font-weight: 700; }
 
+@media (max-width: 1100px) { .hero-archivo h1 { white-space: normal; } }
+
 @media (max-width: 860px) {
-  .hero-archivo { grid-template-columns: 1fr; }
-  .colage { min-height: 280px; }
-  .barra__selector { flex: 1 1 calc(50% - 6px); }
+  .hero-archivo { grid-template-columns: minmax(0, 1fr); }
+  .hero-archivo h1 { font-size: clamp(38px, 11vw, 56px); }
+  .pestanas { display: flex; width: 100%; }
+  .pestana { flex: 1 1 0; min-width: 0; padding: 9px 8px 8px; }
+  .colage { min-height: 270px; overflow: hidden; }
+  .colage__nota { right: 2%; padding: 12px 16px 14px; font-size: 17px; }
+  .colage__casete { left: 4%; width: 74%; }
+  .barra__buscador { flex: 1 1 100%; }
+  .barra__selector { flex: 1 1 calc(50% - 6px); min-width: 0; }
   .barra__selector select { width: 100%; }
 }

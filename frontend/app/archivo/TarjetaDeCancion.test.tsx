@@ -21,6 +21,7 @@ describe("TarjetaDeCancion", () => {
     expect(screen.getByRole("img", { name: /Tapa de El camino más largo/ })).toHaveAttribute("src", "https://cdn.example/tapa.jpg");
     expect(screen.getByRole("link", { name: "A las nueve" })).toHaveAttribute("href", "/archivo/cancion/5-a-las-nueve");
     expect(screen.getByRole("link", { name: "No Te Va Gustar" })).toHaveAttribute("href", "/archivo/artista/7-no-te-va-gustar");
+    expect(screen.getByText("El camino más largo")).toHaveClass("tarjeta__disco");
     expect(screen.getByText("2004")).toBeInTheDocument();
     expect(screen.getByText("Rock")).toHaveClass("tarjeta__genero");
   });

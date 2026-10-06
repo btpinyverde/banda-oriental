@@ -43,4 +43,10 @@ describe("elegirChips", () => {
   it("sin géneros no hay chips", () => {
     expect(elegirChips([])).toEqual([]);
   });
+
+  it("Latino y Folk también son de siempre: van después de Electrónica", () => {
+    const chips = elegirChips(["Folk", "Latino", "Electronic", "Zouk"], 9);
+
+    expect(chips.map((c) => c.etiqueta)).toEqual(["Electrónica", "Latino", "Folk", "Zouk"]);
+  });
 });

@@ -18,19 +18,23 @@ interface Props {
   decada: string;
   orden: string;
   decadas: number[];
+  /** El género elegido y los que se pueden elegir (los del catálogo). Sin géneros no hay selector. */
+  genero?: string;
+  generos?: string[];
   /** Los otros filtros puestos (género, vista…): se conservan al buscar. */
   parametros: Record<string, string>;
 }
 
 /** La barra del archivo: buscador (busca al dejar de escribir), década y orden. Todo queda en la dirección, así se puede compartir. */
-export function BarraDeFiltros({ q, decada, orden, decadas, parametros }: Props) {
+export function BarraDeFiltros({ q, decada, orden, decadas, genero = "", generos = [], parametros }: Props) {
   const router = useRouter();
   const [texto, setTexto] = useState(q);
   const ultimaBuscada = useRef(q);
 
-  const direccion = (cambios: { q?: string; decada?: string; orden?: string }) => {
+  const direccion = (cambios: { q?: string; decada?: string; orden?: string; genero?: string }) => {
     const busqueda = new URLSearchParams(Object.entries(parametros).filter(([clave]) => clave !== "pagina"));
-    const nuevo = { q, decada, orden, ...cambios };
+    const nuevo = { q, decada, orden, genero, ...cambios };
+    if (nuevo.genero) busqueda.set("genero", nuevo.genero);
     if (nuevo.q.trim()) busqueda.set("q", nuevo.q.trim().replace(/\s+/g, " "));
     if (nuevo.decada) busqueda.set("decada", nuevo.decada);
     if (nuevo.orden && nuevo.orden !== "title") busqueda.set("orden", nuevo.orden);
@@ -78,7 +82,7 @@ export function BarraDeFiltros({ q, decada, orden, decadas, parametros }: Props)
       <label className="barra__selector">
         <span className="solo-lectores">Década</span>
         <select name="decada" value={decada} onChange={(evento) => router.push(direccion({ decada: evento.target.value }), { scroll: false })}>
-          <option value="">Todas las décadas</option>
+          <option value="">Décadas</option>
           {decadas.map((d) => (
             <option key={d} value={d}>
               {nombreDeDecada(d)}
@@ -86,6 +90,19 @@ export function BarraDeFiltros({ q, decada, orden, decadas, parametros }: Props)
           ))}
         </select>
       </label>
+      {generos.length > 0 && (
+        <label className="barra__selector">
+          <span className="solo-lectores">Géneros</span>
+          <select id="filtro-generos" name="genero" value={genero} onChange={(evento) => router.push(direccion({ genero: evento.target.value }), { scroll: false })}>
+            <option value="">Géneros</option>
+            {[...new Set(genero && !generos.includes(genero) ? [...generos, genero] : generos)].map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="barra__selector">
         <span className="solo-lectores">Ordenar por</span>
         <select name="orden" value={orden} onChange={(evento) => router.push(direccion({ orden: evento.target.value }), { scroll: false })}>

@@ -35,6 +35,8 @@ describe("/archivo (el explorador de canciones)", () => {
       f.porPagina === 1 ? pagina([CANCION], { count: 17900 }) : pagina([CANCION, { ...CANCION, id: 6, title: "Otra" }], { count: total, pages: 7 }),
     );
     vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
+    vi.spyOn(datos, "listarArtistas").mockResolvedValue(pagina([ARTISTA], { count: 4218 }));
+    vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 8532 }));
     return canciones;
   };
   const buscar = (p: Record<string, string> = {}) => PaginaArchivo({ searchParams: buscaParams(p) });
@@ -44,9 +46,9 @@ describe("/archivo (el explorador de canciones)", () => {
 
     render(await buscar());
 
-    expect(screen.getByRole("heading", { level: 1, name: /Toda la música uruguaya en un solo lugar/ })).toBeInTheDocument();
-    expect(screen.getByText(/Más de 17\.900 canciones de todas las épocas/)).toBeInTheDocument();
-    expect(screen.getByText("Archivo de canciones")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Explorá el archivo." })).toBeInTheDocument();
+    expect(screen.getByText(/Más de 17\.900 canciones, discos y artistas/)).toBeInTheDocument();
+    expect(screen.getByText("Archivo de música uruguaya")).toBeInTheDocument();
   });
 
   it("tiene la barra de búsqueda, los chips de género y el conteo de lo encontrado", async () => {
@@ -60,12 +62,12 @@ describe("/archivo (el explorador de canciones)", () => {
     expect(screen.getByText("124 canciones encontradas")).toBeInTheDocument();
   });
 
-  it("muestra las canciones como tarjetas con su tapa, de a 18, y pide a la API lo que el visitante eligió", async () => {
+  it("muestra las canciones como tarjetas con su tapa, de a 15 (cinco por fila), y pide a la API lo que el visitante eligió", async () => {
     const canciones = preparar();
 
     render(await buscar({ q: "luna", decada: "1990", genero: "Rock", orden: "newest", pagina: "2" }));
 
-    expect(canciones).toHaveBeenCalledWith({ q: "luna", decada: 1990, genero: "Rock", orden: "newest", pagina: 2, porPagina: 18 });
+    expect(canciones).toHaveBeenCalledWith({ q: "luna", decada: 1990, genero: "Rock", orden: "newest", pagina: 2, porPagina: 15 });
     const lista = screen.getByRole("list", { name: "Canciones" });
     expect(within(lista).getAllByRole("listitem")).toHaveLength(2);
     expect(within(lista).getByRole("link", { name: "Luna negra" })).toHaveAttribute("href", "/archivo/cancion/5-luna-negra");
@@ -105,7 +107,7 @@ describe("/archivo (el explorador de canciones)", () => {
 
     render(await buscar({ [clave]: valor }));
 
-    const pedido = canciones.mock.calls.find(([f]) => f.porPagina === 18)![0];
+    const pedido = canciones.mock.calls.find(([f]) => f.porPagina === 15)![0];
     expect([pedido.pagina, pedido.decada, pedido.orden]).toEqual([1, undefined, undefined]);
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
   });
@@ -131,14 +133,26 @@ describe("/archivo (el explorador de canciones)", () => {
     expect(screen.queryByText(/^0 canciones/)).toBeNull();
   });
 
-  it("deja explorar por artistas y por discos, y ver los juegos anteriores", async () => {
+  it("las pestañas llevan a artistas y a discos, con la cantidad de cada cosa, y el pie lleva a los juegos anteriores", async () => {
     preparar();
 
     render(await buscar());
 
-    expect(screen.getByRole("link", { name: "Artistas" })).toHaveAttribute("href", "/archivo/artistas");
-    expect(screen.getByRole("link", { name: "Discos" })).toHaveAttribute("href", "/archivo/discos");
+    const pestanas = screen.getByRole("navigation", { name: "Qué explorar" });
+    expect(within(pestanas).getByRole("link", { name: /Canciones/ })).toHaveTextContent("17.900");
+    expect(within(pestanas).getByRole("link", { name: /Artistas/ })).toHaveAttribute("href", "/archivo/artistas");
+    expect(within(pestanas).getByRole("link", { name: /Artistas/ })).toHaveTextContent("4.218");
+    expect(within(pestanas).getByRole("link", { name: /Discos/ })).toHaveTextContent("8.532");
     expect(screen.getByRole("link", { name: /juegos anteriores/i })).toHaveAttribute("href", "/anteriores");
+  });
+
+  it("el selector de géneros tiene los del catálogo y el elegido", async () => {
+    preparar();
+
+    render(await buscar({ genero: "Rock" }));
+
+    expect(screen.getByRole("combobox", { name: "Géneros" })).toHaveValue("Rock");
+    expect(screen.getByRole("option", { name: "Folk" })).toBeInTheDocument();
   });
 
   it("tiene título y descripción propios", () => {

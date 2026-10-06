@@ -34,6 +34,7 @@ export function TarjetaDeCancion({ cancion }: { cancion: CancionFila }) {
       <Link href={rutaDeArtista(cancion.artist)} className="tarjeta__artista">
         {cancion.artist.name}
       </Link>
+      {cancion.album.name && <span className="tarjeta__disco">{cancion.album.name}</span>}
       {cancion.album.year && <span className="tarjeta__anio">{cancion.album.year}</span>}
       {cancion.album.genre && <span className={`tarjeta__genero tarjeta__genero--tono-${tonoDelGenero(cancion.album.genre)}`}>{cancion.album.genre}</span>}
       {dia && (
