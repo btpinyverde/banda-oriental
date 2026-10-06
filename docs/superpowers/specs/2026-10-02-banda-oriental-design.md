@@ -1,7 +1,11 @@
 # Banda Oriental — Diseño de arquitectura
 
 **Fecha:** 2026-10-02
-**Estado:** propuesto, pendiente de revisión
+**Estado:** diseño del MVP, implementado. **Nota (2026-10-06):** este documento describe el MVP; lo que se construyó después
+no está acá: las **cuentas** (`2026-10-03-cuentas-design.md`), el **archivo de música**, las **batallas**
+(`2026-10-05-batalla-*`) y los rankings calculados por el servidor. Dos cosas del MVP cambiaron: el orden de las pistas no es
+configurable desde el admin (siempre batería, bajo, otros y voz), y el catálogo se carga con el script `scripts/catalogo.sh`
+además del botón del admin.
 
 ## 1. Resumen
 
