@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { filtrosDelArchivo, listarArtistas, listarCanciones, listarDiscos, type OrdenDeCanciones } from "../lib/archivo-musical";
+import { filtrosDelArchivo, listarCanciones, type OrdenDeCanciones } from "../lib/archivo-musical";
 import { NOMBRE } from "../lib/seo";
 import { BarraDeFiltros } from "./BarraDeFiltros";
 import { ChipsDeGenero } from "./ChipsDeGenero";
 import { elegirChips } from "./generos";
-import { ColageDelArchivo } from "./ColageDelArchivo";
+import { cantidadesDelArchivo } from "./cantidades";
+import { EncabezadoDelArchivo } from "./EncabezadoDelArchivo";
 import { FilaDeCancion } from "./Listados";
 import { Aviso, Marco } from "./Marco";
 import { PaginasNumeradas } from "./PaginasNumeradas";
-import { PestanasDelArchivo } from "./PestanasDelArchivo";
 import { TarjetaDeCancion } from "./TarjetaDeCancion";
 import { cantidad, enteroDe, sinVacios, textoDe, type Parametros } from "./utiles";
 import "./archivo-explorador.css";
@@ -42,11 +42,9 @@ export default async function ExploradorDelArchivo({ searchParams }: { searchPar
   const numero = enteroDe(consulta.pagina) ?? 1;
   const lista = consulta.vista === "lista";
 
-  const [canciones, todas, artistas, discos, filtros] = await Promise.all([
+  const [canciones, cantidades, filtros] = await Promise.all([
     listarCanciones({ q, decada, genero, orden, pagina: numero, porPagina: POR_PAGINA }),
-    listarCanciones({ porPagina: 1 }),
-    listarArtistas({ porPagina: 1 }),
-    listarDiscos({ porPagina: 1 }),
+    cantidadesDelArchivo(),
     filtrosDelArchivo(),
   ]);
 
@@ -59,19 +57,7 @@ export default async function ExploradorDelArchivo({ searchParams }: { searchPar
 
   return (
     <Marco ancho pie="completo">
-      <section className="hero-archivo">
-        <div className="hero-archivo__texto">
-          <p className="hero-archivo__etiqueta">Archivo de música uruguaya</p>
-          <h1>
-            Explorá el <span className="hero-archivo__resaltado">archivo.</span>
-          </h1>
-          <p className="hero-archivo__bajada">
-            {todas && todas.count >= 100 ? `Más de ${cantidad(Math.floor(todas.count / 100) * 100)} canciones, discos y artistas` : "Canciones, discos y artistas uruguayos"} de todas las épocas. Buscá, filtrá y descubrí.
-          </p>
-          <PestanasDelArchivo actual="canciones" cantidades={{ canciones: todas?.count ?? null, artistas: artistas?.count ?? null, discos: discos?.count ?? null }} />
-        </div>
-        <ColageDelArchivo />
-      </section>
+      <EncabezadoDelArchivo actual="canciones" cantidades={cantidades} />
 
       <BarraDeFiltros
         q={q ?? ""}

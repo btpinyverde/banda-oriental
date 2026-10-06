@@ -54,4 +54,11 @@ describe("ChipsDeGenero", () => {
 
     expect(screen.queryByRole("link", { name: "Otros" })).toBeNull();
   });
+
+  it("en otra página del archivo los chips llevan a esa página", () => {
+    render(<ChipsDeGenero ruta="/archivo/discos" generos={["Rock"]} actual={undefined} parametros={{ orden: "year" }} />);
+
+    expect(screen.getByRole("link", { name: "Rock" })).toHaveAttribute("href", "/archivo/discos?orden=year&genero=Rock");
+    expect(screen.getByRole("link", { name: "Todas" })).toHaveAttribute("href", "/archivo/discos?orden=year");
+  });
 });

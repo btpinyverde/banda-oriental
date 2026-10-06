@@ -144,4 +144,22 @@ describe("BarraDeFiltros", () => {
 
     expect(empujar).toHaveBeenCalledWith("/archivo?genero=Rock&decada=1990&orden=newest", { scroll: false });
   });
+
+  it("sirve a otras páginas del archivo: su dirección, su texto, sus órdenes y su orden de siempre", () => {
+    montar({ ruta: "/archivo/discos", placeholder: "Buscá un disco…", ordenes: [{ valor: "name", etiqueta: "Ordenar por" }, { valor: "year", etiqueta: "Año" }], ordenPorDefecto: "name", orden: "name" });
+
+    expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toHaveAttribute("placeholder", "Buscá un disco…");
+    fireEvent.change(screen.getByRole("combobox", { name: "Ordenar por" }), { target: { value: "year" } });
+    expect(empujar).toHaveBeenLastCalledWith("/archivo/discos?orden=year", { scroll: false });
+    fireEvent.change(screen.getByRole("combobox", { name: "Ordenar por" }), { target: { value: "name" } });
+    expect(empujar).toHaveBeenLastCalledWith("/archivo/discos", { scroll: false });
+  });
+
+  it("sin décadas ni órdenes no muestra esos selectores (la búsqueda de artistas es solo un buscador)", () => {
+    montar({ decadas: [], ordenes: [] });
+
+    expect(screen.queryByRole("combobox", { name: "Década" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Ordenar por" })).toBeNull();
+    expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toBeInTheDocument();
+  });
 });

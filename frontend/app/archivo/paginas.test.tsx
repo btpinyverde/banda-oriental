@@ -167,11 +167,29 @@ describe("/archivo/artistas", () => {
 
     render(await PaginaArtistas({ searchParams: buscaParams({ letra: "J" }) }));
 
-    expect(listar).toHaveBeenCalledWith({ q: undefined, letra: "J", pagina: 1 });
+    expect(listar).toHaveBeenCalledWith({ q: undefined, letra: "J", pagina: 1, porPagina: 15 });
     expect(screen.getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
     const letras = screen.getByRole("navigation", { name: "Por letra" });
     expect(within(letras).getByRole("link", { name: "J" })).toHaveAttribute("aria-current", "true");
     expect(within(letras).getByRole("link", { name: "K" })).toHaveAttribute("href", "/archivo/artistas?letra=K");
+  });
+
+  it("es parte del mismo archivo: el mismo encabezado con las pestañas (Artistas marcada) y cada artista en una tarjeta", async () => {
+    vi.spyOn(datos, "listarArtistas").mockResolvedValue(pagina([ARTISTA], { count: 932 }));
+    vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION], { count: 17900 }));
+    vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 8532 }));
+
+    render(await PaginaArtistas({ searchParams: buscaParams({}) }));
+
+    expect(screen.getByRole("heading", { level: 1, name: "Explorá el archivo." })).toBeInTheDocument();
+    const pestanas = screen.getByRole("navigation", { name: "Qué explorar" });
+    expect(within(pestanas).getByRole("link", { name: /Artistas/ })).toHaveAttribute("aria-current", "page");
+    expect(within(pestanas).getByRole("link", { name: /Canciones/ })).toHaveAttribute("href", "/archivo");
+    const tarjeta = screen.getByText("Jorge Drexler").closest("li") as HTMLElement;
+    expect(tarjeta).toHaveClass("tarjeta");
+    expect(within(tarjeta).getByText("3 canciones")).toBeInTheDocument();
+    expect(within(tarjeta).getByText("1996–2004")).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toHaveAttribute("placeholder", "Buscá un artista…");
   });
 
   it("pasa la búsqueda y la página a la API y conserva la búsqueda al paginar", async () => {
@@ -179,8 +197,8 @@ describe("/archivo/artistas", () => {
 
     render(await PaginaArtistas({ searchParams: buscaParams({ q: "los", pagina: "2" }) }));
 
-    expect(listar).toHaveBeenCalledWith({ q: "los", letra: undefined, pagina: 2 });
-    expect(screen.getByRole("link", { name: "Siguiente" })).toHaveAttribute("href", "/archivo/artistas?q=los&pagina=3");
+    expect(listar).toHaveBeenCalledWith({ q: "los", letra: undefined, pagina: 2, porPagina: 15 });
+    expect(screen.getByRole("link", { name: "Página siguiente" })).toHaveAttribute("href", "/archivo/artistas?q=los&pagina=3");
   });
 
   it.each([["abc"], ["-3"], ["0"], ["1.5"], [""]])("una página inválida (%s) es la primera, no un error", async (valor) => {
@@ -218,10 +236,30 @@ describe("/archivo/discos", () => {
 
     render(await PaginaDiscos({ searchParams: buscaParams({ decada: "1990", genero: "Folk", orden: "year" }) }));
 
-    expect(listar).toHaveBeenCalledWith({ q: undefined, decada: 1990, genero: "Folk", orden: "year", pagina: 1 });
+    expect(listar).toHaveBeenCalledWith({ q: undefined, decada: 1990, genero: "Folk", orden: "year", pagina: 1, porPagina: 15 });
     expect(screen.getByRole("combobox", { name: "Década" })).toHaveValue("1990");
-    expect(screen.getByRole("combobox", { name: "Género" })).toHaveValue("Folk");
+    expect(screen.getByRole("combobox", { name: "Géneros" })).toHaveValue("Folk");
+    expect(screen.getByRole("combobox", { name: "Ordenar por" })).toHaveValue("year");
     expect(screen.getByRole("link", { name: "Vaivén" })).toHaveAttribute("href", "/archivo/disco/12-vaiven");
+  });
+
+  it("es parte del mismo archivo: encabezado con pestañas (Discos marcada), chips de género y cada disco en una tarjeta con su artista", async () => {
+    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
+    vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 8532 }));
+    vi.spyOn(datos, "listarArtistas").mockResolvedValue(pagina([ARTISTA], { count: 932 }));
+    vi.spyOn(datos, "listarCanciones").mockResolvedValue(pagina([CANCION], { count: 17900 }));
+
+    render(await PaginaDiscos({ searchParams: buscaParams({}) }));
+
+    expect(screen.getByRole("heading", { level: 1, name: "Explorá el archivo." })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Qué explorar" })).getByRole("link", { name: /Discos/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Rock" })).toHaveAttribute("href", "/archivo/discos?genero=Rock");
+    const tarjeta = screen.getByText("Vaivén").closest("li") as HTMLElement;
+    expect(tarjeta).toHaveClass("tarjeta");
+    expect(within(tarjeta).getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(within(tarjeta).getByText("1996")).toBeInTheDocument();
+    expect(within(tarjeta).getByText("Folk")).toHaveClass("tarjeta__genero");
+    expect(within(tarjeta).getByRole("img", { name: /Tapa de Vaivén/ })).toBeInTheDocument();
   });
 
   it("una década o un orden inválidos se ignoran", async () => {
