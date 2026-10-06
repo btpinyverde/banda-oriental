@@ -21,7 +21,7 @@ TRACKLIST = [
 
 
 def _run_sync(limit=5):
-    with patch("catalog.management.commands.sync_musicbrainz.search_uruguayan_artists") as mock_search, \
+    with patch("catalog.management.commands.sync_musicbrainz.browse_uruguayan_artists") as mock_search, \
          patch("catalog.management.commands.sync_musicbrainz.get_album_release_groups") as mock_groups, \
          patch("catalog.management.commands.sync_musicbrainz.get_release_for_release_group") as mock_release, \
          patch("catalog.management.commands.sync_musicbrainz.get_tracklist") as mock_tracklist, \
@@ -65,7 +65,7 @@ def test_sync_is_idempotent_and_preserves_manual_edits():
 
 @pytest.mark.django_db
 def test_sync_skips_album_with_no_releases():
-    with patch("catalog.management.commands.sync_musicbrainz.search_uruguayan_artists") as mock_search, \
+    with patch("catalog.management.commands.sync_musicbrainz.browse_uruguayan_artists") as mock_search, \
          patch("catalog.management.commands.sync_musicbrainz.get_album_release_groups") as mock_groups, \
          patch("catalog.management.commands.sync_musicbrainz.get_release_for_release_group") as mock_release, \
          patch("catalog.management.commands.sync_musicbrainz.get_tracklist") as mock_tracklist:
@@ -81,7 +81,7 @@ def test_sync_skips_album_with_no_releases():
 
 @pytest.mark.django_db
 def test_sync_advances_and_wraps_the_offset():
-    with patch("catalog.management.commands.sync_musicbrainz.search_uruguayan_artists") as mock_search, \
+    with patch("catalog.management.commands.sync_musicbrainz.browse_uruguayan_artists") as mock_search, \
          patch("catalog.management.commands.sync_musicbrainz.get_album_release_groups", return_value=[]):
         mock_search.return_value = ([{"mbid": "artist-1", "name": "A"}], 1)
         call_command("sync_musicbrainz", limit=5)
@@ -110,7 +110,7 @@ def test_sync_does_not_overwrite_good_album_data_with_empty_resync_data():
 
     # Re-sync where MusicBrainz/Cover Art Archive come back empty this time
     # (e.g. a transient gap, or genre data MusicBrainz just doesn't have).
-    with patch("catalog.management.commands.sync_musicbrainz.search_uruguayan_artists") as mock_search, \
+    with patch("catalog.management.commands.sync_musicbrainz.browse_uruguayan_artists") as mock_search, \
          patch("catalog.management.commands.sync_musicbrainz.get_album_release_groups") as mock_groups, \
          patch("catalog.management.commands.sync_musicbrainz.get_release_for_release_group") as mock_release, \
          patch("catalog.management.commands.sync_musicbrainz.get_tracklist", return_value=[]):
@@ -137,7 +137,7 @@ def test_sync_continues_past_an_artist_that_fails_and_saves_progress_for_it():
         ],
         3,
     )
-    with patch("catalog.management.commands.sync_musicbrainz.search_uruguayan_artists") as mock_search, \
+    with patch("catalog.management.commands.sync_musicbrainz.browse_uruguayan_artists") as mock_search, \
          patch("catalog.management.commands.sync_musicbrainz.get_album_release_groups") as mock_groups:
         mock_search.return_value = artists_page
 
@@ -168,7 +168,7 @@ def test_sync_stops_early_and_saves_progress_when_time_budget_is_exceeded():
         10,
     )
     fake_clock = iter([0.0, 0.0, 100.0, 100.0, 100.0, 100.0])
-    with patch("catalog.management.commands.sync_musicbrainz.search_uruguayan_artists") as mock_search, \
+    with patch("catalog.management.commands.sync_musicbrainz.browse_uruguayan_artists") as mock_search, \
          patch("catalog.management.commands.sync_musicbrainz.get_album_release_groups", return_value=[]), \
          patch("catalog.management.commands.sync_musicbrainz.time.monotonic", side_effect=lambda: next(fake_clock)):
         mock_search.return_value = artists_page

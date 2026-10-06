@@ -67,6 +67,20 @@ def _get(path, params):
         return response
 
 
+# MusicBrainz id of the area "Uruguay". Browsing artists by area has no cap, unlike the search above (which only ever
+# returns its first 500 results and answers 400 past that, so artists beyond the 500th were unreachable).
+URUGUAY_AREA_MBID = "ea88d395-87c9-3c47-b49a-114cad41fd39"
+
+
+def browse_uruguayan_artists(offset, limit=100):
+    """Every artist whose area is Uruguay, `limit` at a time (MusicBrainz allows up to 100), with no cap on how far
+    `offset` can go. Returns (artists, total)."""
+    response = _get("artist", {"area": URUGUAY_AREA_MBID, "offset": offset, "limit": limit})
+    data = response.json()
+    artists = [{"mbid": a["id"], "name": a["name"]} for a in data.get("artists", [])]
+    return artists, data.get("artist-count", 0)
+
+
 def search_uruguayan_artists(offset, limit=25):
     response = _get("artist", {"query": "country:UY", "offset": offset, "limit": limit})
     data = response.json()
