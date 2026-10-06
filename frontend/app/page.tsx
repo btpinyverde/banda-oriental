@@ -1,4 +1,4 @@
-import { filtrosDelArchivo, listarArtistas, listarCanciones, rutaDeArtista } from "./lib/archivo-musical";
+import { artistasDestacados, filtrosDelArchivo, listarArtistas, listarCanciones, rutaDeArtista } from "./lib/archivo-musical";
 import { construirJsonLd, serializarJsonLd } from "./lib/seo";
 import { ArchivoArtistas } from "./ui/ArchivoArtistas";
 import { ComoSeJuega } from "./ui/ComoSeJuega";
@@ -16,10 +16,9 @@ import { Navbar } from "./ui/Navbar";
  *   comprimido, sin revisar.
  * - Casi todos los enlaces ya llevan a una página real. /batalla es la pantalla de crear una batalla (detrás de un interruptor). Los de redes
  *   sociales del footer apuntan a "#" hasta tener los perfiles.
- * - "Explorá el archivo" muestra artistas reales del catálogo (los de más canciones); si la API no responde sale vacío.
+ * - "Explorá el archivo" muestra los artistas destacados que se cargan desde el admin (con su foto recortada); si no hay ninguno,
+ *   los de más canciones del catálogo; si la API no responde sale vacío.
  * - La tarjeta del juego de la hero es una maqueta decorativa, no el juego.
- * - En celular, "Crear cuenta gratis" (ui/LlamadoMovil) enlaza a /login, que no existe: el diseño del
- *   proyecto todavía no tiene cuentas.
  */
 // El catálogo cambia solo cuando se importa: la portada se vuelve a armar como mucho cada diez minutos.
 export const revalidate = 600;
@@ -34,8 +33,9 @@ function aniosDe(a: { first_year: number | null; last_year: number | null }): st
 const GENEROS_EN_LOS_CHIPS = 8;
 
 export default async function Home() {
-  const [artistas, canciones, filtros] = await Promise.all([
+  const [artistas, destacados, canciones, filtros] = await Promise.all([
     listarArtistas({ orden: "songs", porPagina: ARTISTAS_EN_EL_CARRUSEL }),
+    artistasDestacados(),
     listarCanciones({}),
     filtrosDelArchivo(),
   ]);
@@ -51,7 +51,11 @@ export default async function Home() {
         <ModeCards />
         <ComoSeJuega />
         <ArchivoArtistas
-          artistas={(artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a), foto: a.picture_url || undefined }))}
+          artistas={
+            destacados && destacados.length > 0
+              ? destacados.map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a), recorte: a.photo_url || undefined, foto: a.picture_url || undefined }))
+              : (artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a), foto: a.picture_url || undefined }))
+          }
           generos={(filtros?.genres ?? []).slice(0, GENEROS_EN_LOS_CHIPS).map((g) => g.genre)}
           totalCanciones={canciones?.count ?? 0}
         />

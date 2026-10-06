@@ -1,8 +1,13 @@
+import io
+
+from django import forms
 from django.contrib import admin, messages
 from django.core.management import call_command
 from django.db.models import Count, Q
+from django.utils.html import format_html
+from PIL import Image, UnidentifiedImageError
 
-from .models import Album, Artist, Song, SyncState
+from .models import Album, Artist, FeaturedArtist, Song, SyncState
 from .search import Unaccent, strip_accents, unaccent_available
 
 
@@ -97,3 +102,60 @@ class SongAdmin(admin.ModelAdmin):
     @admin.display(description="Veces usada", ordering="_times_used")
     def times_used(self, song):
         return song._times_used
+
+
+MAX_PHOTO_BYTES = 2 * 1024 * 1024
+PHOTO_TYPES = {"PNG": "image/png", "WEBP": "image/webp"}
+
+
+class FeaturedArtistForm(forms.ModelForm):
+    """The photo is uploaded as a file and kept as bytes. Only PNG and WEBP (the cutout needs transparency), checked by
+    what the bytes really are, not by the name or the type the browser says."""
+
+    photo = forms.FileField(
+        required=False,
+        label="Foto recortada",
+        help_text="PNG o WEBP con fondo transparente, hasta 2 MB. El color de fondo lo pone la tarjeta.",
+    )
+
+    class Meta:
+        model = FeaturedArtist
+        fields = ("artist", "position", "active")
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get("photo")
+        if not photo:
+            if not self.instance.pk:
+                raise forms.ValidationError("Subí la foto del artista.")
+            return None
+        if photo.size > MAX_PHOTO_BYTES:
+            raise forms.ValidationError("La foto pesa más de 2 MB.")
+        data = photo.read()
+        try:
+            fmt = Image.open(io.BytesIO(data)).format
+        except (UnidentifiedImageError, OSError):
+            raise forms.ValidationError("El archivo no es una imagen.") from None
+        if fmt not in PHOTO_TYPES:
+            raise forms.ValidationError("Tiene que ser PNG o WEBP.")
+        self.cleaned_data["_data"], self.cleaned_data["_type"] = data, PHOTO_TYPES[fmt]
+        return photo
+
+    def save(self, commit=True):
+        item = super().save(commit=False)
+        if self.cleaned_data.get("photo"):
+            item.image, item.image_type = self.cleaned_data["_data"], self.cleaned_data["_type"]
+        if commit:
+            item.save()
+        return item
+
+
+@admin.register(FeaturedArtist)
+class FeaturedArtistAdmin(admin.ModelAdmin):
+    form = FeaturedArtistForm
+    list_display = ("artist", "position", "active", "preview")
+    list_editable = ("position", "active")
+    autocomplete_fields = ("artist",)
+
+    @admin.display(description="Foto")
+    def preview(self, obj):
+        return format_html('<img src="/api/catalog/featured/{}/image/?v={}" height="48" alt="">', obj.artist_id, int(obj.updated_at.timestamp()))

@@ -115,4 +115,27 @@ describe("ArchivoArtistas", () => {
     renderizar();
     expect(screen.getByRole("link", { name: /Ver todos los artistas/ })).toHaveAttribute("href", "/archivo/artistas");
   });
+
+  it("los colores de las tarjetas siguen el orden y no se repiten entre vecinas", () => {
+    const { container } = renderizar({ artistas: [1, 2, 3, 4, 5, 6, 7].map((n) => artista(`Banda ${"x".repeat(n)}`, n, undefined, n)) });
+
+    const tonos = [...container.querySelectorAll<HTMLElement>(".artista__foto")].map((n) => Number(/tono-(\d)/.exec(n.className)![1]));
+    expect(tonos).toEqual([0, 1, 2, 3, 4, 0, 1]);
+  });
+
+  it("con foto recortada la muestra entera sobre el color, sin filtros, y no usa la foto de Deezer", () => {
+    renderizar({ artistas: [{ ...artista("Indigo", 9, undefined, 4, "https://cdn.example/d.jpg"), recorte: "https://api.example/api/catalog/featured/4/image/?v=1" }] });
+
+    const tarjeta = screen.getByText("Indigo").closest("li") as HTMLElement;
+    const foto = within(tarjeta).getByRole("img", { name: "Foto de Indigo" });
+    expect(foto).toHaveAttribute("src", "https://api.example/api/catalog/featured/4/image/?v=1");
+    expect(tarjeta.querySelector(".artista__foto")).toHaveClass("artista__foto--recorte");
+    expect(tarjeta.querySelector(".artista__foto")).not.toHaveClass("artista__foto--con-foto");
+  });
+
+  it("el recorte puede ser relativo (la API en el mismo sitio)", () => {
+    renderizar({ artistas: [{ ...artista("Indigo", 9, undefined, 4), recorte: "/api/catalog/featured/4/image/?v=1" }] });
+
+    expect(screen.getByRole("img", { name: "Foto de Indigo" })).toHaveAttribute("src", "/api/catalog/featured/4/image/?v=1");
+  });
 });

@@ -13,6 +13,8 @@ export type ArtistaArchivo = {
   href: string;
   /** La foto del artista (de Deezer). Si falta, va la inicial de su nombre sobre un color de la marca. */
   foto?: string;
+  /** La foto sin fondo que se sube desde el admin. Si está, va en lugar de la de Deezer. */
+  recorte?: string;
   /** Los años de sus discos ("1996–2004"), si se sabe. */
   anios?: string;
 };
@@ -82,10 +84,10 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
             <img src="/assets/arrow-right.svg" alt="" width={20} height={20} />
           </button>
           <ul className="archivo__fila" ref={fila}>
-            {artistas.map((artista) => (
+            {artistas.map((artista, lugar) => (
               <li key={artista.id} className="artista">
                 <Link href={artista.href} className="artista__enlace">
-                  <FotoDelArtista nombre={artista.nombre} foto={artista.foto} />
+                  <FotoDelArtista nombre={artista.nombre} foto={artista.foto} recorte={artista.recorte} tono={lugar % 5} />
                   <p className="artista__nombre">{artista.nombre}</p>
                   <p className="artista__canciones">{cancionesDe(artista.canciones)}</p>
                   {artista.anios && <p className="artista__anios">{artista.anios}</p>}
