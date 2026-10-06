@@ -114,8 +114,12 @@ class Submission(models.Model):
     name = models.CharField(max_length=120, blank=True)
     contact = models.CharField(max_length=200, blank=True)
     links = models.CharField(max_length=500, blank=True)
+    # What the visitor picked as the reason of a contact message ("Algo no funciona", "Tengo una duda"...).
+    reason = models.CharField(max_length=60, blank=True)
     message = models.TextField(blank=True)
     status = models.CharField(max_length=12, choices=STATUSES, default="nuevo", db_index=True)
+    # When the owner was emailed about it (empty: no email was sent, so look at it in the admin).
+    notified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
