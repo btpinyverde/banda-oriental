@@ -54,10 +54,10 @@ export default function Contacto() {
               <span className="contacto__resaltado">Hablemos.</span>
             </h1>
             <div className="contacto__dibujo" aria-hidden="true">
-              <img className="contacto__mancha" src="/assets/hero-blob-pink.svg" alt="" />
+              <img className="contacto__mancha" src="/assets/mancha-sobre.svg" alt="" />
               <img className="contacto__sobre" src="/assets/sobre.svg" alt="" />
               <img className="contacto__asterisco" src="/assets/brand-asterisk.svg" alt="" />
-              <img className="contacto__garabato" src="/assets/jugar-garabato-bucle.svg" alt="" />
+              <img className="contacto__garabato" src="/assets/garabato-sobre.svg" alt="" />
               <img className="contacto__rayas contacto__rayas--arriba" src="/assets/hero-rays-top.svg" alt="" />
               <img className="contacto__rayas contacto__rayas--sobre" src="/assets/hero-rays-left.svg" alt="" />
             </div>

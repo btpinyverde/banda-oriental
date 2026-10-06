@@ -10,17 +10,17 @@
 .contacto__resaltado { background: url("/assets/hero-highlight.svg") no-repeat 100% 94% / 68% 0.32em; }
 .contacto__bajada { position: relative; z-index: 1; margin: 16px 0 0 126px; max-width: 470px; }
 .contacto__lema { margin: 0; font-size: 22px; line-height: 1.35; color: var(--tinta-suave); }
-.contacto__detalle { margin: 14px 0 0; max-width: 330px; font-size: 16px; line-height: 1.45; color: var(--tinta); }
+.contacto__detalle { margin: 14px 0 0; max-width: 318px; font-size: 16px; line-height: 1.45; color: var(--tinta); }
 
-/* Dibujo: mancha rosa, sobre, asterisco, garabato y rayitas (en px, sobre una caja de 340 × 340 junto al texto) */
-.contacto__dibujo { position: absolute; left: -24px; top: 135px; width: 340px; height: 340px; pointer-events: none; }
+/* Dibujo: mancha rosa, sobre, asterisco, garabato y rayitas. Posiciones y tamaños tomados de la referencia (en px, caja de 340 × 331). */
+.contacto__dibujo { position: absolute; left: -56px; top: 132px; width: 340px; height: 331px; pointer-events: none; }
 .contacto__dibujo > img { position: absolute; height: auto; }
-.contacto__mancha { left: 30px; top: 96px; width: 190px; transform: rotate(-62deg) scale(1.0, 1.7); }
-.contacto__sobre { left: 52px; top: 134px; width: 178px; z-index: 2; }
-.contacto__asterisco { left: -4px; top: 190px; width: 54px; z-index: 3; }
-.contacto__garabato { left: 4px; top: 252px; width: 78px; z-index: 3; }
-.contacto__rayas--arriba { left: 24px; top: 2px; width: 30px; transform: rotate(8deg); }
-.contacto__rayas--sobre { left: 252px; top: 150px; width: 44px; transform: rotate(-10deg); }
+.contacto__mancha { left: 55px; top: 55px; width: 230px; }
+.contacto__sobre { left: 83px; top: 139px; width: 174px; z-index: 2; }
+.contacto__asterisco { left: 14px; top: 188px; width: 49px; z-index: 3; }
+.contacto__garabato { left: 22px; top: 256px; width: 88px; z-index: 3; }
+.contacto__rayas--arriba { left: 62px; top: 8px; width: 38px; transform: rotate(-4deg); }
+.contacto__rayas--sobre { left: 276px; top: 176px; width: 46px; transform: scaleX(-1) rotate(-6deg); }
 
 /* Tarjetas */
 .contacto__tarjeta { position: relative; padding: 24px 28px; border-radius: 22px; }
