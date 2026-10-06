@@ -129,3 +129,16 @@ class Submission(models.Model):
 
     def __str__(self):
         return f"{self.get_kind_display()}: {self.target_label or self.name or self.message[:40]}"
+
+
+class SubmissionImage(models.Model):
+    """A picture attached to a message (a screenshot of what went wrong). Re-encoded and shrunk on the way in; kept as bytes in the
+    database like the featured artists' photos (a few small files), and only shown to staff."""
+
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="images")
+    data = models.BinaryField()
+    content_type = models.CharField(max_length=20, default="image/webp")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]

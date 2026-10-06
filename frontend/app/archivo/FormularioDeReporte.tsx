@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { enviarReporte } from "../lib/reportes";
+import { AdjuntarImagenes } from "../ui/AdjuntarImagenes";
 
 export type Objetivo = { tipo: "artist" | "album" | "song"; id: number; nombre: string };
 
@@ -18,6 +19,7 @@ export function FormularioDeReporte({ tipo, objetivo }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [imagenes, setImagenes] = useState<File[]>([]);
 
   async function alEnviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -41,7 +43,7 @@ export function FormularioDeReporte({ tipo, objetivo }: Props) {
       links: texto("links"),
       message: mensaje,
       website: texto("website"),
-    });
+    }, imagenes);
     setEnviando(false);
     if (resultado.ok) setEnviado(true);
     else setAviso(resultado.error);
@@ -92,6 +94,7 @@ export function FormularioDeReporte({ tipo, objetivo }: Props) {
           <input name="contact" type="text" maxLength={200} />
         </label>
       )}
+      {tipo === "error" && <AdjuntarImagenes archivos={imagenes} alCambiar={setImagenes} />}
       {/* Trampa para bots: una persona no ve este campo; si viene completo, el reporte se descarta. */}
       <div className="reporte__trampa" aria-hidden="true">
         <label>

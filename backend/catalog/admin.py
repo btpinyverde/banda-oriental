@@ -4,11 +4,13 @@ from django import forms
 from django.contrib import admin, messages
 from django.core.management import call_command
 from django.db.models import Count, Q
+from django.http import Http404, HttpResponse
+from django.urls import path, reverse
 from django.utils.html import format_html
 from PIL import Image, UnidentifiedImageError
 
 from . import verification
-from .models import Album, Artist, FeaturedArtist, Song, Submission, SyncState
+from .models import Album, Artist, FeaturedArtist, Song, Submission, SubmissionImage, SyncState
 from .search import Unaccent, strip_accents, unaccent_available
 
 
@@ -183,6 +185,24 @@ class FeaturedArtistAdmin(admin.ModelAdmin):
         return format_html('<img src="/api/catalog/featured/{}/image/?v={}" height="48" alt="">', obj.artist_id, int(obj.updated_at.timestamp()))
 
 
+class SubmissionImageInline(admin.TabularInline):
+    """The pictures a visitor attached, shown inside the message (only staff can open them)."""
+
+    model = SubmissionImage
+    extra = 0
+    can_delete = False
+    fields = ("preview",)
+    readonly_fields = ("preview",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Imagen")
+    def preview(self, obj):
+        url = reverse("admin:catalog_submission_imagen", args=[obj.pk])
+        return format_html('<a href="{0}" target="_blank" rel="noopener"><img src="{0}" alt="" style="max-height:200px;max-width:100%"></a>', url)
+
+
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):
     """What visitors send from the archive. Only the status is editable: what they wrote stays as it came."""
@@ -192,9 +212,24 @@ class SubmissionAdmin(admin.ModelAdmin):
     search_fields = ("target_label", "name", "contact", "message")
     readonly_fields = ("kind", "target_type", "target_id", "target_label", "name", "contact", "links", "reason", "message", "created_at", "notified_at")
     actions = ["marcar_visto", "marcar_resuelto"]
+    inlines = [SubmissionImageInline]
 
     def has_add_permission(self, request):
         return False
+
+    def get_urls(self):
+        extra = [path("imagen/<int:pk>/", self.admin_site.admin_view(self.imagen), name="catalog_submission_imagen")]
+        return extra + super().get_urls()
+
+    def imagen(self, request, pk):
+        image = SubmissionImage.objects.filter(pk=pk).first()
+        if not image:
+            raise Http404
+        response = HttpResponse(bytes(image.data), content_type=image.content_type)
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Content-Security-Policy"] = "default-src 'none'; img-src 'self'"  # it is only ever shown as a picture
+        response["Cache-Control"] = "private, max-age=3600"
+        return response
 
     @admin.action(description="Marcar como visto")
     def marcar_visto(self, request, queryset):

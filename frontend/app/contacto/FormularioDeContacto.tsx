@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { enviarReporte } from "../lib/reportes";
+import { AdjuntarImagenes } from "../ui/AdjuntarImagenes";
 
 export const MOTIVOS = ["Tengo una duda", "Algo no funciona", "Una idea o sugerencia", "Soy artista o titular de derechos", "Otro motivo"];
 
@@ -13,6 +14,7 @@ export function FormularioDeContacto() {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [aviso, setAviso] = useState("");
+  const [imagenes, setImagenes] = useState<File[]>([]);
 
   async function alEnviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -30,7 +32,7 @@ export function FormularioDeContacto() {
 
     setAviso("");
     setEnviando(true);
-    const resultado = await enviarReporte({ kind: "contacto", name: nombre, contact: correo, reason: motivo, message: mensaje, website: texto("website") });
+    const resultado = await enviarReporte({ kind: "contacto", name: nombre, contact: correo, reason: motivo, message: mensaje, website: texto("website") }, imagenes);
     setEnviando(false);
     if (resultado.ok) setEnviado(true);
     else setAviso(resultado.error);
@@ -75,6 +77,7 @@ export function FormularioDeContacto() {
         <span>Mensaje</span>
         <textarea name="message" rows={4} placeholder="Contanos en qué podemos ayudarte..." maxLength={1900} required />
       </label>
+      <AdjuntarImagenes archivos={imagenes} alCambiar={setImagenes} />
       {/* Trampa para bots: una persona no ve este campo; si viene completo, el mensaje se descarta. */}
       <div className="contacto-form__trampa" aria-hidden="true">
         <label>

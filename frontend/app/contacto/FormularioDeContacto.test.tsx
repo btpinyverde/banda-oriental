@@ -46,14 +46,10 @@ describe("FormularioDeContacto", () => {
     fireEvent.click(screen.getByRole("button", { name: /Enviar mensaje/ }));
 
     await waitFor(() => expect(screen.getByText(/Gracias/)).toBeInTheDocument());
-    expect(enviar).toHaveBeenCalledWith({
-      kind: "contacto",
-      name: "Ana",
-      contact: "ana@correo.com",
-      reason: "Algo no funciona",
-      message: "Se cuelga la reproducción en el celular.",
-      website: "",
-    });
+    expect(enviar).toHaveBeenCalledWith(
+      { kind: "contacto", name: "Ana", contact: "ana@correo.com", reason: "Algo no funciona", message: "Se cuelga la reproducción en el celular.", website: "" },
+      [],
+    );
   });
 
   it.each([
@@ -101,5 +97,20 @@ describe("FormularioDeContacto", () => {
     const trampa = container.querySelector('input[name="website"]') as HTMLInputElement;
     expect(trampa.tabIndex).toBe(-1);
     expect(trampa.closest("[aria-hidden='true']")).not.toBeNull();
+  });
+
+  it("permite adjuntar capturas y las manda junto con el mensaje", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:x");
+    URL.revokeObjectURL = vi.fn();
+    enviar.mockResolvedValue({ ok: true });
+    render(<FormularioDeContacto />);
+    completar();
+    const captura = new File(["x"], "captura.png", { type: "image/png" });
+
+    fireEvent.change(screen.getByLabelText(/Adjuntar imágenes/), { target: { files: [captura] } });
+    fireEvent.click(screen.getByRole("button", { name: /Enviar mensaje/ }));
+
+    await waitFor(() => expect(screen.getByText(/Gracias/)).toBeInTheDocument());
+    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ kind: "contacto" }), [captura]);
   });
 });

@@ -2160,3 +2160,20 @@ button {
   font-weight: 700;
   color: #fff;
 }
+
+/* ---------- Adjuntar imágenes a un mensaje ---------- */
+.adjuntar { display: grid; gap: 10px; }
+.adjuntar__boton { position: relative; display: inline-flex; align-items: center; justify-self: start; height: 46px; padding: 0 22px; border-radius: 999px; background: var(--violeta-claro); font-size: 15px; font-weight: 700; color: var(--violeta); cursor: pointer; }
+.adjuntar__boton:hover { background: #e4def8; }
+.adjuntar__boton:focus-within { outline: 3px solid var(--violeta); outline-offset: 2px; }
+/* El campo de archivo real queda debajo del botón, invisible pero con foco y teclado. */
+.adjuntar__entrada { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.adjuntar__ayuda { margin: 0; font-size: 13px; color: var(--tinta-suave); }
+.adjuntar__lista { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.adjuntar__item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; background: #faf8f4; box-shadow: inset 0 0 0 1.5px #ece9e5; }
+.adjuntar__vista { flex: none; width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #ece9e5; }
+.adjuntar__nombre { flex: 1; min-width: 0; overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.adjuntar__peso { flex: none; font-size: 13px; color: var(--tinta-suave); }
+.adjuntar__quitar { flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: #fff; font: inherit; font-size: 20px; line-height: 1; color: var(--tinta); cursor: pointer; }
+.adjuntar__quitar:hover { background: #ffe1e6; }
+.adjuntar__aviso { margin: 0; padding: 10px 14px; border-radius: 12px; background: #ffe1e6; font-size: 14px; font-weight: 600; }
