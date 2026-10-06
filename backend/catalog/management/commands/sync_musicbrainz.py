@@ -9,7 +9,7 @@ from catalog.musicbrainz import (
     get_album_release_groups,
     get_release_for_release_group,
     get_tracklist,
-    search_uruguayan_artists,
+    browse_uruguayan_artists,
 )
 
 # Each artist can take several seconds (MusicBrainz calls are rate-limited
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         start_offset = state.musicbrainz_offset
         deadline = time.monotonic() + TIME_BUDGET_SECONDS
 
-        artists, total_count = search_uruguayan_artists(offset=start_offset, limit=limit)
+        artists, total_count = browse_uruguayan_artists(offset=start_offset, limit=limit)
 
         attempted = 0
         for artist_data in artists:

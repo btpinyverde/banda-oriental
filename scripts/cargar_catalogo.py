@@ -28,12 +28,12 @@ from catalog.coverartarchive import get_cover_art_url  # noqa: E402
 from catalog.models import Album, Artist, Song, SyncState  # noqa: E402
 from catalog.musicbrainz import (  # noqa: E402
     get_album_release_groups,
+    browse_uruguayan_artists,
     get_release_for_release_group,
     get_tracklist,
-    search_uruguayan_artists,
 )
 
-TANDA = 25
+TANDA = 100  # lo máximo que MusicBrainz entrega por pedido al listar por área
 REINTENTOS = 4
 
 
@@ -98,43 +98,50 @@ def cargar_artista(datos, portadas):
             log(f"    ({n}/{len(discos)}) {disco['title']} → SALTEADO ({type(error).__name__}: {error})")
 
 
+def ya_cargado(mbid):
+    """Un artista con discos ya guardados no se vuelve a bajar: así se puede volver a correr rápido."""
+    return Album.objects.filter(artist__mbid=mbid).exists()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sin-portadas", action="store_true", help="no consultar tapas (mucho más rápido)")
-    parser.add_argument("--max-artistas", type=int, default=0, help="parar después de N artistas (para probar)")
+    parser.add_argument("--max-artistas", type=int, default=0, help="parar después de N artistas NUEVOS (para probar)")
     opciones = parser.parse_args()
     portadas = not opciones.sin_portadas
 
-    estado = SyncState.get_solo()
     log(f"Base de datos: {django.db.connection.settings_dict.get('HOST') or 'local'} · {totales()}")
-    log(f"Empiezo desde el artista nº {estado.musicbrainz_offset}{' (sin portadas)' if not portadas else ''}")
+    log(f"Listo a los artistas de Uruguay por área (sin el tope de 500 de la búsqueda){' (sin portadas)' if not portadas else ''}")
 
-    procesados = 0
+    nuevos = salteados = visto = 0
+    offset = 0
     while True:
-        artistas, total = con_reintentos("buscar artistas", search_uruguayan_artists, estado.musicbrainz_offset, TANDA)
+        artistas, total = con_reintentos("listar artistas", browse_uruguayan_artists, offset, TANDA)
         if not artistas:
             break
         for datos in artistas:
-            log(f"[{estado.musicbrainz_offset + 1}/{total}] {datos['name']}")
+            visto += 1
+            if ya_cargado(datos["mbid"]):
+                salteados += 1
+                continue
+            log(f"[{visto}/{total}] {datos['name']}")
             try:
                 cargar_artista(datos, portadas)
             except Exception as error:
                 log(f"  ARTISTA SALTEADO ({type(error).__name__}: {error})")
-            procesados += 1
-            siguiente = estado.musicbrainz_offset + 1
-            estado.musicbrainz_offset = siguiente if siguiente < total else 0
-            estado.save()
-            log(f"  Totales: {totales()}")
-            if estado.musicbrainz_offset == 0:
-                log("Listo: se recorrieron todos los artistas.")
-                return
-            if opciones.max_artistas and procesados >= opciones.max_artistas:
+            nuevos += 1
+            log(f"  Totales: {totales()}  (nuevos en esta corrida: {nuevos}, ya cargados que se saltearon: {salteados})")
+            if opciones.max_artistas and nuevos >= opciones.max_artistas:
                 log("Paro acá (--max-artistas).")
                 return
+        offset += len(artistas)
+        if offset >= total:
+            break
+    log(f"Listo: se recorrieron {visto} artistas ({nuevos} nuevos, {salteados} ya cargados). {totales()}")
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        log("Cortado. Lo guardado queda; al volver a correr sigue desde el último artista.")
+        log("Cortado. Lo guardado queda; al volver a correr se saltea lo ya cargado.")

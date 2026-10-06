@@ -297,3 +297,32 @@ class TestRetries:
 
 def test_requests_are_spaced_a_little_more_than_the_minimum_the_api_asks_for():
     assert musicbrainz._MIN_INTERVAL_SECONDS >= 1.2
+
+
+# ---------- listing every Uruguayan artist (the search stops at 500 results; browsing by area does not) ----------
+
+from catalog.musicbrainz import URUGUAY_AREA_MBID, browse_uruguayan_artists
+
+
+@patch("catalog.musicbrainz._get")
+def test_browse_uruguayan_artists_lists_by_area_and_returns_the_total(mock_get):
+    mock_get.return_value = _mock_response(
+        {"artist-count": 1416, "artist-offset": 600, "artists": [{"id": "a1", "name": "Uno"}, {"id": "a2", "name": "Dos"}]}
+    )
+
+    artists, total = browse_uruguayan_artists(offset=600, limit=100)
+
+    assert total == 1416
+    assert artists == [{"mbid": "a1", "name": "Uno"}, {"mbid": "a2", "name": "Dos"}]
+    path, params = mock_get.call_args[0]
+    assert path == "artist"
+    assert params == {"area": URUGUAY_AREA_MBID, "offset": 600, "limit": 100}
+
+
+@patch("catalog.musicbrainz._get")
+def test_browse_can_go_past_the_500_results_the_search_is_limited_to(mock_get):
+    mock_get.return_value = _mock_response({"artist-count": 1416, "artists": []})
+
+    browse_uruguayan_artists(offset=1400, limit=100)  # a search would answer 400 here
+
+    assert mock_get.call_args[0][1]["offset"] == 1400
