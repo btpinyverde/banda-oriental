@@ -998,7 +998,7 @@ button {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 360fr 320fr 331fr 342fr;
+  grid-template-columns: 318fr 299fr 294fr 286fr;
   gap: 28px;
   margin: 48px 0 0;
   padding: 0;
@@ -1016,12 +1016,12 @@ button {
   border-radius: 22px;
 }
 
-/* Tarjetas casi blancas con un velo de color de cada paso, y una sombra suave que las despega del fondo. */
-.paso { box-shadow: 0 8px 28px rgba(60, 40, 120, 0.07); }
-.paso--escucha { background: linear-gradient(135deg, #f3f0fd, #fdfcff); }
-.paso--piensa { background: linear-gradient(135deg, #fef9e3, #fffefa); }
-.paso--elegi { background: linear-gradient(135deg, #fdeef5, #fffcfd); }
-.paso--descubri { background: linear-gradient(135deg, #e9faf1, #fbfffd); }
+/* Tarjetas casi blancas (los colores del diseño: #faf8ff, #fefdf8, #fffafa, #fefefe) con una sombra apenas perceptible. */
+.paso { box-shadow: 0 6px 28px rgba(60, 40, 90, 0.06); }
+.paso--escucha { background: linear-gradient(160deg, #f8f5ff, #fefdff 60%); }
+.paso--piensa { background: linear-gradient(160deg, #fefcf2, #fffffd 60%); }
+.paso--elegi { background: linear-gradient(160deg, #fff9fa, #fffefe 60%); }
+.paso--descubri { background: linear-gradient(160deg, #fbfffd, #fff 60%); }
 
 .paso__numero {
   display: grid;
@@ -1076,9 +1076,9 @@ button {
 .como__mancha {
   position: absolute;
   z-index: -1;
-  left: -52px;
-  bottom: -44px;
-  width: 300px;
+  left: -66px;
+  bottom: -14px;
+  width: 190px;
   height: auto;
   pointer-events: none;
 }
@@ -1150,12 +1150,12 @@ button {
 .maqueta-stems__circulo {
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
 }
 
-.maqueta-stems__circulo img { width: 28px; height: 28px; }
+.maqueta-stems__circulo img { width: 26px; height: 26px; }
 .maqueta-stems__circulo--menta { background: #a8ecc9; }
 .maqueta-stems__circulo--rosa { background: #ff9cc3; }
 .maqueta-stems__circulo--lavanda { background: #cbc0fa; }
@@ -1196,6 +1196,9 @@ button {
   padding: 0 14px;
   border-radius: 12px;
   background: #fff;
+  /* Las filas se despegan de la tarjeta (que ahora es casi blanca) con un borde y una sombra suaves. */
+  border: 1px solid #f6e7ee;
+  box-shadow: 0 2px 8px rgba(160, 60, 110, 0.06);
   font-size: 14px;
   font-weight: 600;
 }
