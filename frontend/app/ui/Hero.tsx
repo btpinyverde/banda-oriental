@@ -47,21 +47,6 @@ export function Hero() {
               </svg>
             </a>
           </div>
-
-          <ul className="hero__beneficios">
-            {BENEFICIOS.map(({ color, icono, texto }) => (
-              <li key={texto[0]} className="beneficio">
-                <span className={`beneficio__icono beneficio__icono--${color}`} aria-hidden="true">
-                  <img src={`/assets/${icono}.svg`} alt="" />
-                </span>
-                <span>
-                  {texto[0]}
-                  <br />
-                  {texto[1]}
-                </span>
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="hero__visual" aria-hidden="true">
@@ -90,6 +75,21 @@ export function Hero() {
             <img src="/assets/sticker-note.svg" alt="" />
           </div>
         </div>
+
+        <ul className="hero__beneficios">
+          {BENEFICIOS.map(({ color, icono, texto }) => (
+            <li key={texto[0]} className="beneficio">
+              <span className={`beneficio__icono beneficio__icono--${color}`} aria-hidden="true">
+                <img src={`/assets/${icono}.svg`} alt="" />
+              </span>
+              <span>
+                {texto[0]}
+                <br />
+                {texto[1]}
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );

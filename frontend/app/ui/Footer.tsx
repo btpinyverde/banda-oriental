@@ -145,6 +145,8 @@ export function Footer({ variante = "completo" }: { variante?: "completo" | "min
 
           <div className="footer__arte" aria-hidden="true">
             <img src="/assets/flan_footer.webp" alt="" width={760} height={695} />
+            <p className="footer__nota">La música también se juega acá</p>
+            <img className="footer__nota-flecha" src="/assets/hero-curved-arrow.svg" alt="" />
           </div>
         </div>
 

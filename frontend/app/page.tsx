@@ -4,7 +4,6 @@ import { ArchivoArtistas } from "./ui/ArchivoArtistas";
 import { ComoSeJuega } from "./ui/ComoSeJuega";
 import { Footer } from "./ui/Footer";
 import { Hero } from "./ui/Hero";
-import { LlamadoMovil } from "./ui/LlamadoMovil";
 import { ModeCards } from "./ui/ModeCards";
 import { Navbar } from "./ui/Navbar";
 
@@ -56,7 +55,6 @@ export default async function Home() {
           generos={(filtros?.genres ?? []).slice(0, GENEROS_EN_LOS_CHIPS).map((g) => g.genre)}
           totalCanciones={canciones?.count ?? 0}
         />
-        <LlamadoMovil />
       </main>
       <Footer />
     </>

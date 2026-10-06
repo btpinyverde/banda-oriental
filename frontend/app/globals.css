@@ -186,11 +186,19 @@ button {
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: 40px;
+  /* El texto y las ventajas van en la columna de la izquierda; la composición ocupa los dos renglones de la derecha.
+     (En celular la composición pasa al medio: ver las áreas del bloque de celular.) */
+  grid-template-areas:
+    "texto visual"
+    "beneficios visual";
+  grid-template-rows: auto 1fr;
+  column-gap: 40px;
   max-width: var(--ancho-maximo);
   margin: 0 auto;
   padding: 40px var(--gutter) 0;
 }
+
+.hero__texto { grid-area: texto; }
 
 .hero__eyebrow {
   margin: 0 0 14px;
@@ -275,6 +283,8 @@ button {
 }
 
 .hero__beneficios {
+  grid-area: beneficios;
+  align-self: start;
   display: flex;
   flex-wrap: wrap;
   gap: 48px;
@@ -372,6 +382,7 @@ button {
 }
 
 .hero__visual {
+  grid-area: visual;
   position: relative;
   top: calc(12 * var(--u));
   /* Escala de la composición: 1px a partir de ~1500px de ancho, menos en pantallas más chicas,
@@ -796,6 +807,14 @@ button {
 
 .footer__columna a:hover {
   color: var(--violeta);
+}
+
+@font-face { font-family: "Caveat Brush"; src: url("/fonts/CaveatBrush-subset.ttf") format("truetype"); font-display: swap; }
+
+/* La nota escrita a mano junto a Flan solo se ve en celular. */
+.footer__arte .footer__nota,
+.footer__arte .footer__nota-flecha {
+  display: none;
 }
 
 /* Flan con auriculares: ya incluye el papel amarillo, la estrella lavanda, la nota y las rayitas. */
@@ -1599,8 +1618,14 @@ button {
 
   /* ---------- Hero ---------- */
   .hero {
+    overflow-x: clip;
     grid-template-columns: 1fr;
-    gap: 0;
+    grid-template-areas:
+      "texto"
+      "visual"
+      "beneficios";
+    grid-template-rows: auto;
+    row-gap: 0;
     padding: 22px var(--gutter) 0;
   }
 
@@ -1647,7 +1672,7 @@ button {
   .hero__beneficios {
     justify-content: space-between;
     gap: 8px;
-    margin-top: 30px;
+    margin-top: 8px;
   }
 
   .beneficio {
@@ -1665,53 +1690,78 @@ button {
   .hero__visual {
     --u: calc(min(100vw, 560px) * 0.66 / 390);
     top: 0;
-    height: calc(794 * var(--u));
-    margin-top: 28px;
   }
 
-  .hero__tarjeta { top: calc(140 * var(--u)); left: calc(14 * var(--u)); width: calc(490 * var(--u)); transform: rotate(-4deg); }
-  .deco--mancha-amarilla { display: block; left: calc(-40 * var(--u)); top: calc(70 * var(--u)); width: calc(330 * var(--u)); z-index: 1; }
-  .deco--mancha-violeta { left: calc(330 * var(--u)); top: calc(60 * var(--u)); width: calc(220 * var(--u)); transform: none; opacity: 1; z-index: 1; }
-  .deco--mancha-rosa { left: calc(10 * var(--u)); top: calc(564 * var(--u)); width: calc(250 * var(--u)); transform: rotate(-20deg); }
-  .deco--pincel-amarillo { display: block; left: calc(300 * var(--u)); top: calc(634 * var(--u)); width: calc(190 * var(--u)); z-index: 1; }
-  .deco--mancha-rosa-der { display: none; }
-  .deco--foto { left: calc(282 * var(--u)); top: calc(549 * var(--u)); width: calc(238 * var(--u)); height: calc(200 * var(--u)); z-index: 2; transform: rotate(4deg); }
-  .deco--flor { left: calc(246 * var(--u)); top: calc(674 * var(--u)); width: calc(64 * var(--u)); z-index: 5; }
-  .deco--nota { left: calc(14 * var(--u)); top: calc(640 * var(--u)); width: calc(88 * var(--u)); height: calc(92 * var(--u)); z-index: 5; }
-  .deco--sticker { left: calc(376 * var(--u)); top: calc(-6 * var(--u)); width: calc(140 * var(--u)); z-index: 6; }
-  .deco--rayos-arriba { left: calc(330 * var(--u)); top: calc(18 * var(--u)); width: calc(26 * var(--u)); }
+  .hero__visual { height: calc(770 * var(--u)); margin-top: 18px; }
+  .hero__tarjeta { top: calc(34 * var(--u)); left: calc(18 * var(--u)); width: calc(524 * var(--u)); transform: rotate(-1.5deg); }
+  .deco--mancha-amarilla { display: block; left: calc(330 * var(--u)); top: calc(-24 * var(--u)); width: calc(270 * var(--u)); z-index: 1; }
+  .deco--mancha-violeta { left: calc(-96 * var(--u)); top: calc(150 * var(--u)); width: calc(190 * var(--u)); transform: rotate(8deg); opacity: 1; z-index: 1; }
+  .deco--mancha-rosa-der { display: block; left: calc(480 * var(--u)); top: calc(300 * var(--u)); width: calc(150 * var(--u)); transform: rotate(-90deg); z-index: 1; filter: hue-rotate(-72deg) saturate(0.9); }
+  .deco--sticker { left: calc(4 * var(--u)); top: calc(530 * var(--u)); width: calc(178 * var(--u)); z-index: 6; }
+  .deco--flor { left: calc(268 * var(--u)); top: calc(552 * var(--u)); width: calc(64 * var(--u)); z-index: 5; }
+  .deco--nota { left: calc(196 * var(--u)); top: calc(620 * var(--u)); width: calc(104 * var(--u)); height: calc(108 * var(--u)); z-index: 5; }
+  .deco--foto { left: calc(318 * var(--u)); top: calc(552 * var(--u)); width: calc(238 * var(--u)); height: calc(200 * var(--u)); z-index: 2; transform: rotate(4deg); }
+  .deco--rayos-arriba { left: calc(16 * var(--u)); top: calc(-4 * var(--u)); width: calc(30 * var(--u)); }
+  .deco--rayos-foto { display: block; left: calc(548 * var(--u)); top: calc(150 * var(--u)); width: calc(40 * var(--u)); z-index: 3; }
+  .deco--mancha-rosa,
+  .deco--pincel-amarillo,
   .deco--flecha,
-  .deco--rayos-foto,
   .deco--rayos-titulo,
   .deco--rayita,
   .deco--rayitas-botones {
     display: none;
   }
 
+  /* La tarjeta del juego es solo una maqueta: sin la cuenta regresiva y con las filas de colores, sin texto. */
+  .juego__cuenta {
+    display: none;
+  }
+
+  .juego__cabecera {
+    justify-content: space-between;
+  }
+
+  .juego__tabla .celda:not(.celda--encabezado) {
+    font-size: 0;
+    color: transparent;
+  }
+
   /* ---------- Tarjetas de modos ---------- */
   .modos {
     grid-template-columns: 1fr;
-    gap: 16px;
-    margin: 40px auto 56px;
+    gap: 14px;
+    margin: 30px auto 48px;
   }
 
   .modo {
-    flex-direction: column;
-    align-items: stretch;
+    position: relative;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
     min-height: 0;
-    padding: 26px 22px 22px;
+    padding: 20px 18px;
+    overflow: hidden;
   }
 
-  .modo__contenido {
-    display: contents;
-  }
+  .modo--batalla { background: linear-gradient(120deg, #fdebf2, #fce6f0); }
 
-  .modo__icono { order: 1; align-self: flex-start; margin: 0 0 14px; }
-  .modo__titulo { order: 2; font-size: 28px; }
-  .modo__texto { order: 3; max-width: none; margin-top: 10px; }
-  .modo__arte { order: 4; width: 100%; margin-top: 14px; justify-content: center; }
-  .modo__arte--versus { width: 100%; }
-  .modo__boton { order: 5; width: 100%; justify-content: space-between; height: 54px; margin-top: 18px; padding: 0 28px; font-size: 16px; }
+  .modo__icono { width: 44px; height: 44px; margin: 4px 0 0; }
+  .modo__contenido { display: block; }
+  .modo__titulo { flex-wrap: wrap; gap: 8px; font-size: 24px; white-space: normal; }
+  .modo__texto { max-width: none; margin-top: 8px; font-size: 14px; }
+  .modo__boton { gap: 14px; height: 44px; margin-top: 14px; padding: 0 26px; font-size: 14px; }
+
+  /* La ilustración queda a la derecha, debajo del texto sin pisarlo. */
+  .modo__arte { position: absolute; width: auto; }
+  .modo__texto br { display: none; }
+  .modo--diario .modo__texto { max-width: 168px; }
+  .modo--diario .modo__arte { top: 20px; right: 10px; }
+  .modo--diario .modo__arte img { height: 96px; }
+  .modo--batalla { padding-bottom: 26px; }
+  .modo--batalla .modo__boton { margin-left: -66px; padding: 0 22px; margin-top: 30px; }
+  .modo--batalla .modo__arte { right: 8px; bottom: 8px; width: 140px; }
+  .modo__arte--versus .versus { transform: scale(0.62); transform-origin: right bottom; margin-left: auto; }
 
   /* ---------- Cómo se juega ---------- */
   .como {
@@ -1731,9 +1781,19 @@ button {
   }
 
   .como__sticker,
-  .como__mancha,
-  .paso__flecha {
+  .como__mancha {
     display: none;
+  }
+
+  /* Flecha dibujada a mano que baja de una tarjeta a la siguiente. */
+  .paso__flecha {
+    content: url("/assets/doodle-arrow-curve.svg");
+    top: calc(100% - 12px);
+    right: auto;
+    left: 6px;
+    z-index: 2;
+    width: 30px;
+    transform: scaleX(-1) rotate(8deg);
   }
 
   .como__pasos {
@@ -1744,8 +1804,20 @@ button {
 
   .paso {
     min-height: 0;
-    padding: 22px 20px 22px;
+    column-gap: 14px;
+    padding: 18px 18px 20px;
+    box-shadow: none;
   }
+
+  /* En celular las tarjetas llevan un tinte propio, como en el diseño. */
+  .paso--escucha { background: #f5f3fe; }
+  .paso--piensa { background: #fdf8e6; }
+  .paso--elegi { background: #fdf3f7; }
+  .paso--descubri { background: #ebfaf3; }
+
+  .paso__numero { width: 46px; height: 46px; font-size: 22px; }
+  .paso__texto h3 { min-height: 46px; font-size: 22px; }
+  .paso__texto p { margin-top: 2px; font-size: 14px; }
 
   .como__pasos .paso .paso__demo {
     margin: 18px 0 0;
@@ -1780,58 +1852,76 @@ button {
   }
 
   .archivo__cabecera > div { order: 1; }
-  .archivo__generos { order: 2; margin-top: 20px; gap: 8px; }
-  .archivo__carrusel { order: 3; margin-top: 18px; }
-  .archivo__cabecera > .boton { order: 4; align-self: stretch; justify-content: center; height: 56px; margin-top: 24px; }
+  .archivo__carrusel { order: 2; margin-top: 22px; }
+  .archivo__generos { order: 3; margin-top: 4px; gap: 6px; flex-wrap: nowrap; }
+  .archivo__cabecera > .boton { order: 4; align-self: center; justify-content: center; height: 48px; margin-top: 22px; padding: 0 26px; }
 
   .archivo__ondulada {
     display: block;
     order: 0;
-    margin-bottom: 56px;
+    margin-bottom: 40px;
   }
 
   .archivo__titulo {
-    font-size: 44px;
+    font-size: 52px;
+  }
+
+  /* En celular el punto final y el corte en dos renglones del diseño. */
+  .archivo__titulo::after {
+    content: ".";
+  }
+
+  .archivo__titulo .resaltado {
+    display: block;
+    background: none;
+  }
+
+  .archivo__titulo .resaltado-movil {
+    background: url("/assets/hero-highlight.svg") no-repeat 50% 92% / 106% 0.34em;
   }
 
   .archivo__bajada {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .genero {
-    height: 36px;
-    padding: 0 13px;
+    height: 38px;
+    padding: 0 12px;
     font-size: 13px;
   }
 
-  .archivo__flecha {
-    display: none;
+  .archivo__generos li:nth-child(n + 5) { display: none; }
+  .genero { white-space: nowrap; }
+
+  /* Carrusel de dos tarjetas, con las flechas encima. */
+  .archivo__fila {
+    gap: 14px;
+    padding: 4px 2px 18px;
   }
 
-  .archivo__fila {
-    flex-direction: column;
-    gap: 12px;
-    padding: 0;
-    overflow: visible;
+  .archivo__flecha {
+    display: grid;
+    top: 28%;
+    width: 42px;
+    height: 42px;
   }
+
+  .archivo__flecha--anterior { left: -10px; }
+  .archivo__flecha--siguiente { right: -10px; }
 
   .artista {
-    flex: none;
-    display: grid;
-    grid-template-columns: 112px 1fr;
-    column-gap: 14px;
-    align-items: center;
-    padding: 10px;
+    flex: 0 0 calc((100% - 18px) / 2);
+    display: block;
+    padding: 8px 8px 14px;
   }
 
   .artista__foto {
-    grid-row: 1 / span 2;
-    aspect-ratio: 4 / 3.3;
+    aspect-ratio: 1 / 0.92;
   }
 
-  .artista__nombre { margin: 0; align-self: end; }
-  .artista__canciones { margin: 2px 0 0; align-self: start; }
-  .artista:nth-child(n + 4) { display: none; }
+  .artista__nombre { margin: 12px 6px 0; font-size: 15px; }
+  .artista__canciones { margin: 2px 6px 0; font-size: 13px; }
+  .artista__anios { margin: 0 6px; font-size: 13px; }
 
   /* ---------- Cierre solo para celular ---------- */
   .llamado {
@@ -1914,84 +2004,111 @@ button {
 
   /* ---------- Footer ---------- */
   .footer {
-    margin-top: 44px;
+    margin-top: 10px;
     padding-bottom: 20px;
   }
 
-  .footer__deco,
-  .footer__arte {
+  .footer__deco {
     display: none;
   }
 
-  .footer__principal {
-    grid-template-columns: 1fr 1.05fr 1.2fr;
-    column-gap: 14px;
-    row-gap: 26px;
-    padding: 30px 0 22px;
+  .footer__cuerpo {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .footer__ondulada { order: 0; }
+  .footer__principal { display: contents; }
+  .footer__columna { display: none; }
+
+  /* Flan con su nota, arriba de la tarjeta del pie. */
+  .footer__arte {
+    order: 1;
+    position: relative;
+    display: block;
+    margin: 18px 0 8px;
+  }
+
+  .footer__arte img:first-child {
+    display: block;
+    width: 70%;
+    height: auto;
+  }
+
+  .footer__arte .footer__nota {
+    position: absolute;
+    top: 38%;
+    right: 2%;
+    display: block;
+    width: 31%;
+    margin: 0;
+    font-family: "Caveat Brush", cursive;
+    font-size: 17px;
+    line-height: 1.15;
+    text-transform: uppercase;
+    color: var(--tinta);
+  }
+
+  .footer__arte .footer__nota-flecha {
+    position: absolute;
+    top: 66%;
+    right: 12%;
+    display: block;
+    width: 15%;
+    height: auto;
+  }
+
+  /* La tarjeta del pie: marca arriba, legales abajo, sobre un fondo casi transparente. */
+  .footer__marca,
+  .footer__inferior {
+    background: rgba(255, 255, 255, 0.62);
+    padding-right: 22px;
+    padding-left: 22px;
   }
 
   .footer__marca {
-    grid-column: 1 / -1;
+    order: 2;
+    padding-top: 26px;
+    padding-bottom: 22px;
+    border-radius: 22px 22px 0 0;
   }
 
   .footer__logo {
-    width: 140px;
+    width: 130px;
   }
 
   .footer__lema {
-    max-width: none;
-    margin-top: 16px;
-    font-size: 14px;
+    max-width: 270px;
+    margin-top: 14px;
+    font-size: 15px;
   }
 
   .footer__redes {
-    gap: 10px;
-    margin-top: 18px;
-  }
-
-  .red {
-    width: 42px;
-    height: 42px;
-  }
-
-  .red__icono {
-    width: 20px;
-    height: 20px;
-  }
-
-  .footer__titulo {
-    margin-bottom: 14px;
-    font-size: 15.5px;
-    white-space: nowrap;
-  }
-
-  .footer__columna ul {
-    gap: 11px;
-  }
-
-  .footer__columna a {
-    font-size: 13.5px;
-    line-height: 1.25;
+    gap: 12px;
+    margin-top: 20px;
   }
 
   .footer__inferior {
+    order: 3;
     flex-wrap: wrap;
+    align-items: center;
     gap: 10px 20px;
-    padding-top: 18px;
+    padding-top: 0;
+    padding-bottom: 20px;
+    border-radius: 0 0 22px 22px;
   }
 
-  .footer__inferior p {
+  .footer__inferior::before {
+    content: "";
     flex: 1 0 100%;
-    margin: 0;
+    height: 1px;
+    margin-bottom: 8px;
+    background: #e6e1e0;
   }
 
-  .footer__inferior ul {
-    gap: 20px;
-  }
-
-  .footer__estrella {
-    margin-left: auto;
-  }
+  .footer__inferior ul { order: 1; gap: 22px; }
+  .footer__estrella { order: 2; margin-left: auto; }
+  .footer__inferior p { order: 3; flex: 1 0 100%; margin: 6px 0 0; }
 }
 
 /* En celulares muy angostos el título "Banda Oriental" ya no entra en una línea. */

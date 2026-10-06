@@ -20,7 +20,7 @@ export function ModeCards() {
         <div className="modo__contenido">
           <h2 className="modo__titulo">Modo diario</h2>
           <p className="modo__texto">
-            Una canción nueva todos los días.
+            Una canción nueva todos los días.{" "}
             <br />
             La misma para todo el mundo.
           </p>

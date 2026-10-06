@@ -59,7 +59,7 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
         <div>
           <p className="archivo__eyebrow">Explorá la música uruguaya</p>
           <h2 className="archivo__titulo" id="archivo-titulo">
-            <span className="resaltado">Explorá</span> el archivo
+            <span className="resaltado">Explorá</span> el <span className="resaltado-movil">archivo</span>
           </h2>
           <p className="archivo__bajada">
             {partesDelCatalogo(totalCanciones).destacado && <strong>{partesDelCatalogo(totalCanciones).destacado}</strong>}{" "}
