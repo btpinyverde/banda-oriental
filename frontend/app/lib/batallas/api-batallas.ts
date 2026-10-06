@@ -245,6 +245,10 @@ export function crearApiBatallas() {
     asignarEquipo: async (code: string, playerId: number, teamId: number | null, hostToken?: string): Promise<{ ok: boolean }> =>
       comoJson(await enviar(ruta(code, "team/"), { player_id: playerId, team_id: teamId }, hostToken)),
 
+    /** Si quien consulta puede crear salas (lo decide el servidor; contesta igual a quien no tiene sesión). */
+    acceso: async (): Promise<boolean> =>
+      (await comoJson<{ can_create: boolean }>(await pedir("/api/battles/access/", { headers: cabeceras(), cache: "no-store" }))).can_create,
+
     /** Cuántas canciones tiene un segmento, para ver si alcanza antes de crear la sala. */
     pool: async (filtros: FiltrosAzar): Promise<number> =>
       (await comoJson<{ count: number }>(await pedir("/api/battles/pool/", { method: "POST", headers: cabeceras(undefined, true), body: JSON.stringify({ filters: filtros }) }))).count,

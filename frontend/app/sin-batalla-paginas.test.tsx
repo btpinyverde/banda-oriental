@@ -16,14 +16,14 @@ async function cargar(valor: string) {
 
 describe("el modo batalla apagado: páginas y textos", () => {
   it("/batalla no existe: no está registrada ni se genera", async () => {
-    const { paginas, ruta } = await cargar("");
+    const { paginas, ruta } = await cargar("0");
 
     expect(paginas.paginaPorSlug("batalla")).toBeUndefined();
     expect((await ruta.generateStaticParams()).map((p: { pagina: string }) => p.pagina)).not.toContain("batalla");
   });
 
   it("no queda ningún texto del sitio que prometa el modo batalla", async () => {
-    const { paginas, seo } = await cargar("");
+    const { paginas, seo } = await cargar("0");
 
     const todo = JSON.stringify([Object.values(paginas.PAGINAS), seo.DESCRIPCION]).toLowerCase();
     expect(todo).not.toContain("batalla");

@@ -46,6 +46,8 @@ Al crear: `team_mode` (`none` por defecto, `random` o `manual`), `team_count` (2
 
 Es la pantalla de quien organiza, en grande y a pantalla completa, para proyectarla (botón «Modo presentación» en el sitio; no cambia la API). Para eso el estado trae, **solo al organizador** y en las fases `reveal` y `finished`, `stats` de la ronda que acaba de cerrar: `{total, answered, correct, fastest: {name, seconds}|null, top_guesses: [{title, artist, count, correct}] (las 3 más elegidas)}`. Las personas rechazadas o en espera no cuentan. Al terminar, `stats` es el de la última ronda; el podio (tres primeros, de jugadores y de equipos) sale de `ranking` y `team_ranking`.
 
+`GET /api/battles/access/` → `{can_create}`: si quien consulta (con o sin sesión) puede crear salas; contesta 200 a todos y no se esconde, para que el sitio decida qué mostrar.
+
 ## Estado (`GET /api/battles/<code>/`)
 
 - **Quien no participó:** si la sala está en el lobby, `{joinable:true, code, title, round_count, round_seconds, players_count}`; en cualquier otro caso, **404** (igual que una sala inexistente). Los resultados de una batalla solo los ven quienes participaron o la crearon.

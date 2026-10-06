@@ -1,11 +1,12 @@
 from django.urls import path
 
-from .views import AnswerView, CreateView, DetailView, JoinView, MineView, PoolView, ReviewView, StartView, TeamView, YoutubeView
+from .views import AccessView, AnswerView, CreateView, DetailView, JoinView, MineView, PoolView, ReviewView, StartView, TeamView, YoutubeView
 
 app_name = "battles"
 
 urlpatterns = [
     path("battles/", CreateView.as_view(), name="create"),
+    path("battles/access/", AccessView.as_view(), name="access"),
     path("battles/pool/", PoolView.as_view(), name="pool"),
     path("battles/youtube/", YoutubeView.as_view(), name="youtube"),
     path("battles/mine/", MineView.as_view(), name="mine"),  # before <code>/, or "mine" would be read as a code

@@ -17,8 +17,9 @@ Backend en Django + DRF, frontend en Next.js (React + TypeScript). Sitio: <https
 | Cuentas | Correo y contraseña o enlace por correo; el historial sin cuenta se une al crearla | `docs/contrato-api-cuentas.md`, `docs/activar-correo.md` |
 | Batallas | Salas con enlace o QR, audio en cada dispositivo o solo en el anfitrión, aceptar gente, equipos, lista elegida o azar segmentado, enlaces de YouTube, modo presentación | `docs/contrato-api-batallas.md`, `docs/carga-batallas.md` |
 
-Las batallas están restringidas: solo las cuentas de `BATTLE_CREATOR_EMAILS` pueden crear una sala (entrar con el enlace está
-abierto). Para abrirlas a todos hace falta `BATTLE_CREATOR_EMAILS=*` en la API y `NEXT_PUBLIC_BATALLA_ACTIVA=1` en el sitio.
+Las batallas se ven en la landing, pero crear una sala está restringido: solo pueden las cuentas de `BATTLE_CREATOR_EMAILS` (a las
+demás el sitio les dice que se está probando; entrar con el enlace de una sala está abierto). Para abrirlas a todos hace falta
+`BATTLE_CREATOR_EMAILS=*` en la API. Para esconderlas de la landing, `NEXT_PUBLIC_BATALLA_ACTIVA=0` en el sitio.
 
 ## Estructura
 
