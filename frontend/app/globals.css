@@ -572,6 +572,9 @@ button {
   overflow: hidden;
 }
 
+/* Un título largo se corta con puntos suspensivos en vez de a la mitad de una palabra. */
+.celda__texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
 .celda--encabezado { height: calc(22 * var(--u)); background: var(--gris-celda); font-weight: 500; justify-content: center; color: var(--tinta-suave); }
 .celda--acierto { background: var(--acierto); }
 .celda--cerca { background: var(--cerca); }
