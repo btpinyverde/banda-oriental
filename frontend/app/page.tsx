@@ -46,7 +46,7 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializarJsonLd(construirJsonLd()) }}
       />
-      <Navbar />
+      <Navbar etiquetaJugar="Jugar la canción de hoy" />
       <main>
         <Hero />
         <ModeCards />

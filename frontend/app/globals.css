@@ -207,12 +207,12 @@ button {
 
 .hero__titulo img {
   display: block;
-  width: min(100%, 500px);
+  width: min(100%, 530px);
   height: auto;
 }
 
 .hero__bajada {
-  max-width: 420px;
+  max-width: 385px;
   margin: 22px 0 0;
   font-size: 19px;
   line-height: 1.32;
@@ -221,9 +221,34 @@ button {
 
 .hero__acciones {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
   margin-top: 28px;
+}
+
+/* El botón principal del hero: ancho, con el play a la izquierda y la flecha a la derecha. */
+.boton--ancho {
+  min-width: 400px;
+  height: 68px;
+  justify-content: center;
+  gap: 18px;
+  font-size: 19px;
+}
+
+.boton--ancho .boton__flecha {
+  margin-left: 6px;
+}
+
+.hero__como {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--tinta);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .boton--grande {
@@ -281,18 +306,18 @@ button {
 }
 
 /* Formas orgánicas: casi redondas, con el borde apenas irregular. */
-.beneficio__icono--amarillo {
-  background: #ffe063;
+.beneficio__icono--lila {
+  background: #d9cffb;
   border-radius: 54% 46% 52% 48% / 50% 55% 45% 50%;
 }
 
-.beneficio__icono--coral {
-  background: #f9808a;
+.beneficio__icono--rosa {
+  background: #ffa3cf;
   border-radius: 47% 53% 46% 54% / 55% 46% 54% 45%;
 }
 
-.beneficio__icono--menta {
-  background: #8fe3b0;
+.beneficio__icono--beige {
+  background: #efe6d4;
   border-radius: 52% 48% 55% 45% / 46% 52% 48% 54%;
 }
 
@@ -356,9 +381,9 @@ button {
 
 .hero__tarjeta {
   position: absolute;
-  top: calc(-14 * var(--u));
-  left: calc(-2 * var(--u));
-  width: calc(490 * var(--u));
+  top: calc(24 * var(--u));
+  left: calc(-34 * var(--u));
+  width: calc(545 * var(--u));
   transform: rotate(-3.2deg);
   z-index: 3;
 }
@@ -372,22 +397,22 @@ button {
 .deco--rayita { left: calc(-67 * var(--u)); top: calc(194 * var(--u)); width: calc(30 * var(--u)); }
 .deco--rayitas-botones { left: calc(-97 * var(--u)); top: calc(363 * var(--u)); width: calc(40 * var(--u)); }
 .deco--rayos-arriba { left: calc(205 * var(--u)); top: calc(-58 * var(--u)); width: calc(26 * var(--u)); }
-.deco--mancha-amarilla { left: calc(-82 * var(--u)); top: calc(-40 * var(--u)); width: calc(280 * var(--u)); z-index: 1; }
-.deco--mancha-violeta { left: calc(419 * var(--u)); top: calc(38 * var(--u)); width: calc(228 * var(--u)); z-index: 1; }
-.deco--mancha-rosa { left: calc(-52 * var(--u)); top: calc(282 * var(--u)); width: calc(180 * var(--u)); transform: rotate(-65deg); z-index: 1; }
-.deco--pincel-amarillo { left: calc(380 * var(--u)); top: calc(346 * var(--u)); width: calc(150 * var(--u)); z-index: 1; }
-.deco--sticker { left: calc(484 * var(--u)); top: calc(-8 * var(--u)); width: calc(135 * var(--u)); z-index: 4; }
+.deco--mancha-amarilla, .deco--pincel-amarillo { display: none; }
+.deco--mancha-violeta { left: calc(-84 * var(--u)); top: calc(-6 * var(--u)); width: calc(240 * var(--u)); transform: rotate(-24deg); opacity: 0.72; z-index: 1; }
+.deco--mancha-rosa { left: calc(-86 * var(--u)); top: calc(372 * var(--u)); width: calc(205 * var(--u)); transform: rotate(-72deg); z-index: 1; }
+.deco--mancha-rosa-der { left: calc(383 * var(--u)); top: calc(491 * var(--u)); width: calc(233 * var(--u)); z-index: 1; }
+.deco--sticker { left: calc(498 * var(--u)); top: calc(8 * var(--u)); width: calc(150 * var(--u)); z-index: 4; }
 .deco--flecha { left: calc(452 * var(--u)); top: calc(118 * var(--u)); width: calc(72 * var(--u)); z-index: 4; }
-.deco--rayos-foto { left: calc(640 * var(--u)); top: calc(120 * var(--u)); width: calc(44 * var(--u)); transform: scaleX(-1); }
+.deco--rayos-foto { left: calc(667 * var(--u)); top: calc(150 * var(--u)); width: calc(44 * var(--u)); transform: scaleX(-1); }
 .deco--foto {
-  left: calc(468 * var(--u));
-  top: calc(164 * var(--u));
-  width: calc(186 * var(--u));
-  height: calc(160 * var(--u));
+  left: calc(472 * var(--u));
+  top: calc(188 * var(--u));
+  width: calc(200 * var(--u));
+  height: calc(262 * var(--u));
   z-index: 2;
   overflow: hidden;
   background: #fff;
-  transform: rotate(4deg);
+  transform: rotate(3deg);
   border: calc(5 * var(--u)) solid #fff;
   box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(20, 17, 15, 0.15);
 }
@@ -400,12 +425,12 @@ button {
   object-fit: cover;
   object-position: 50% 38%;
 }
-.deco--flor { left: calc(506 * var(--u)); top: calc(300 * var(--u)); width: calc(74 * var(--u)); z-index: 5; }
+.deco--flor { left: calc(561 * var(--u)); top: calc(491 * var(--u)); width: calc(64 * var(--u)); z-index: 5; }
 .deco--nota {
-  left: calc(600 * var(--u));
-  top: calc(332 * var(--u));
-  width: calc(80 * var(--u));
-  height: calc(84 * var(--u));
+  left: calc(631 * var(--u));
+  top: calc(408 * var(--u));
+  width: calc(72 * var(--u));
+  height: calc(78 * var(--u));
   z-index: 5;
   display: grid;
   place-items: center;
@@ -564,7 +589,7 @@ button {
 }
 
 .modo--diario { background: linear-gradient(120deg, #e3defb, #eeebfd); }
-.modo--batalla { background: linear-gradient(120deg, #fde982, #fff1ab); }
+.modo--batalla { background: linear-gradient(120deg, #e3defb, #eeebfd); }
 
 .modo__icono {
   flex: none;
@@ -938,7 +963,7 @@ button {
 }
 
 .como__bajada {
-  max-width: 560px;
+  max-width: 760px;
   margin: 16px 0 0;
   font-size: 21px;
   line-height: 1.35;
@@ -991,10 +1016,12 @@ button {
   border-radius: 22px;
 }
 
-.paso--escucha { background: linear-gradient(135deg, #e8e3fb, #f0edfd); }
-.paso--piensa { background: linear-gradient(135deg, #fdf1c0, #fef8dc); }
-.paso--elegi { background: linear-gradient(135deg, #fde3ee, #fff1f6); }
-.paso--descubri { background: linear-gradient(135deg, #d2f6e4, #e4fbef); }
+/* Tarjetas casi blancas con un velo de color de cada paso, y una sombra suave que las despega del fondo. */
+.paso { box-shadow: 0 8px 28px rgba(60, 40, 120, 0.07); }
+.paso--escucha { background: linear-gradient(135deg, #f3f0fd, #fdfcff); }
+.paso--piensa { background: linear-gradient(135deg, #fef9e3, #fffefa); }
+.paso--elegi { background: linear-gradient(135deg, #fdeef5, #fffcfd); }
+.paso--descubri { background: linear-gradient(135deg, #e9faf1, #fbfffd); }
 
 .paso__numero {
   display: grid;
@@ -1123,15 +1150,16 @@ button {
 .maqueta-stems__circulo {
   display: grid;
   place-items: center;
-  width: 68px;
-  height: 68px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
 }
 
-.maqueta-stems__circulo img { width: 32px; height: 32px; }
+.maqueta-stems__circulo img { width: 28px; height: 28px; }
 .maqueta-stems__circulo--menta { background: #a8ecc9; }
 .maqueta-stems__circulo--rosa { background: #ff9cc3; }
 .maqueta-stems__circulo--lavanda { background: #cbc0fa; }
+.maqueta-stems__circulo--gris { background: #ebe8e3; }
 
 .como__rayas--paso2 { left: -6px; bottom: calc(100% - 14px); width: 40px; }
 
@@ -1229,6 +1257,15 @@ button {
   gap: 32px;
 }
 
+.archivo__eyebrow {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
 .archivo__titulo {
   margin: 0;
   font-size: 64px;
@@ -1237,11 +1274,20 @@ button {
   letter-spacing: -0.045em;
 }
 
+.archivo__titulo .resaltado {
+  background: url("/assets/hero-highlight.svg") no-repeat 50% 92% / 106% 0.34em;
+}
+
 .archivo__bajada {
   margin: 14px 0 0;
   font-size: 19px;
   line-height: 1.35;
   color: var(--tinta-suave);
+}
+
+.archivo__bajada strong {
+  font-weight: 700;
+  color: var(--tinta);
 }
 
 .archivo__carrusel {
@@ -1286,11 +1332,13 @@ button {
 /* No hay fotos de las bandas: cada artista lleva su inicial sobre un color de la marca. */
 .artista__foto { display: grid; place-items: center; }
 .artista__foto img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.artista__foto--tono-0 { background: var(--rosa); }
-.artista__foto--tono-1 { background: var(--menta); }
-.artista__foto--tono-2 { background: var(--amarillo); }
-.artista__foto--tono-3 { background: #cfc6f8; }
-.artista__foto--tono-4 { background: var(--coral); }
+/* Las fotos van en blanco y negro sobre el color del fondo (como en el diseño): al multiplicar, lo claro toma el color. */
+.artista__foto--con-foto img { filter: grayscale(1) contrast(1.08); mix-blend-mode: multiply; }
+.artista__foto--tono-0 { background: #ffb4da; }
+.artista__foto--tono-1 { background: #d9cffb; }
+.artista__foto--tono-2 { background: #fbe889; }
+.artista__foto--tono-3 { background: #ff9fb8; }
+.artista__foto--tono-4 { background: #cfc6f8; }
 .artista__inicial { font-size: clamp(44px, 5vw, 68px); font-weight: 900; line-height: 1; color: var(--tinta); }
 .artista__anios { margin: 2px 8px 0; font-size: 13px; color: var(--tinta-suave); }
 
@@ -1339,18 +1387,28 @@ button {
 }
 
 .genero {
+  display: inline-flex;
+  align-items: center;
   height: 44px;
   padding: 0 24px;
-  border: 1px solid #ebe6e2;
+  border: 1px solid #e6e1dc;
   border-radius: 999px;
   background: #fff;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
 .genero:hover {
   border-color: var(--violeta);
+}
+
+/* "Todos" es la vista en la que estamos: va marcado en negro. */
+.genero--activo {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: #fff;
+  font-weight: 700;
 }
 
 .genero[aria-pressed="true"] {
@@ -1503,6 +1561,14 @@ button {
     font-size: 17px;
   }
 
+  .boton--ancho {
+    min-width: 0;
+  }
+
+  .hero__como {
+    align-self: center;
+  }
+
   .hero__acciones .boton--claro {
     background: #fff;
     box-shadow: inset 0 0 0 2px #e4def6;
@@ -1533,12 +1599,13 @@ button {
     margin-top: 28px;
   }
 
-  .hero__tarjeta { top: calc(140 * var(--u)); left: calc(14 * var(--u)); transform: rotate(-4deg); }
-  .deco--mancha-amarilla { left: calc(-40 * var(--u)); top: calc(70 * var(--u)); width: calc(330 * var(--u)); }
-  .deco--mancha-violeta { left: calc(330 * var(--u)); top: calc(60 * var(--u)); width: calc(220 * var(--u)); }
+  .hero__tarjeta { top: calc(140 * var(--u)); left: calc(14 * var(--u)); width: calc(490 * var(--u)); transform: rotate(-4deg); }
+  .deco--mancha-amarilla { display: block; left: calc(-40 * var(--u)); top: calc(70 * var(--u)); width: calc(330 * var(--u)); z-index: 1; }
+  .deco--mancha-violeta { left: calc(330 * var(--u)); top: calc(60 * var(--u)); width: calc(220 * var(--u)); transform: none; opacity: 1; z-index: 1; }
   .deco--mancha-rosa { left: calc(10 * var(--u)); top: calc(564 * var(--u)); width: calc(250 * var(--u)); transform: rotate(-20deg); }
-  .deco--pincel-amarillo { left: calc(300 * var(--u)); top: calc(634 * var(--u)); width: calc(190 * var(--u)); }
-  .deco--foto { left: calc(282 * var(--u)); top: calc(549 * var(--u)); width: calc(238 * var(--u)); height: calc(200 * var(--u)); z-index: 2; }
+  .deco--pincel-amarillo { display: block; left: calc(300 * var(--u)); top: calc(634 * var(--u)); width: calc(190 * var(--u)); z-index: 1; }
+  .deco--mancha-rosa-der { display: none; }
+  .deco--foto { left: calc(282 * var(--u)); top: calc(549 * var(--u)); width: calc(238 * var(--u)); height: calc(200 * var(--u)); z-index: 2; transform: rotate(4deg); }
   .deco--flor { left: calc(246 * var(--u)); top: calc(674 * var(--u)); width: calc(64 * var(--u)); z-index: 5; }
   .deco--nota { left: calc(14 * var(--u)); top: calc(640 * var(--u)); width: calc(88 * var(--u)); height: calc(92 * var(--u)); z-index: 5; }
   .deco--sticker { left: calc(376 * var(--u)); top: calc(-6 * var(--u)); width: calc(140 * var(--u)); z-index: 6; }

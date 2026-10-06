@@ -47,7 +47,7 @@ export function ModeCards() {
               </span>
             </h2>
             <p className="modo__texto">
-              Competí con tus amigos en canciones aleatorias. ¿Quién adivina
+              Competí con tus amigos en cinco canciones. ¿Quién adivina
               primero?
             </p>
             <Link href="/batalla" className="modo__boton">

@@ -22,7 +22,7 @@ export function FotoDelArtista({ nombre, foto, clase = "" }: { nombre: string; f
   const [fallida, setFallida] = useState<string | null>(null);
   const hayFoto = !!foto && foto.startsWith("https://") && fallida !== foto;
   return (
-    <div className={`artista__foto artista__foto--tono-${tonoDe(nombre)} ${clase}`.trim()}>
+    <div className={`artista__foto artista__foto--tono-${tonoDe(nombre)} ${hayFoto ? "artista__foto--con-foto" : ""} ${clase}`.replace(/\s+/g, " ").trim()}>
       {hayFoto ? (
         <img src={foto} alt={`Foto de ${nombre}`} loading="lazy" referrerPolicy="no-referrer" onError={() => setFallida(foto)} />
       ) : (
