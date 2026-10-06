@@ -56,6 +56,8 @@ describe("el modo batalla, apagado con NEXT_PUBLIC_BATALLA_ACTIVA=0", () => {
       </>,
     );
 
-    expect(document.querySelectorAll('a[href="/batalla"]').length).toBeGreaterThanOrEqual(4);
+    // La barra (y su menú), la tarjeta de modos y el pie. El hero ya no lleva su propio botón: tiene un solo llamado, el de jugar.
+    expect(document.querySelectorAll('a[href="/batalla"]').length).toBeGreaterThanOrEqual(3);
+    expect(document.querySelector('.hero a[href="/batalla"]')).toBeNull();
   });
 });

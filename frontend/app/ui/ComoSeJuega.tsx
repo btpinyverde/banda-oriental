@@ -6,7 +6,7 @@ import { Ondulada } from "./Ondulada";
  */
 export function ComoSeJuega() {
   return (
-    <section className="como" aria-labelledby="como-titulo">
+    <section className="como" id="como-se-juega" aria-labelledby="como-titulo">
       <Ondulada className="como__ondulada" trazo="corta" />
 
       <div className="como__cabecera">
@@ -15,12 +15,6 @@ export function ComoSeJuega() {
           Es si<span className="resaltado">mple.</span>
         </h2>
         <p className="como__bajada">Escuchá, pensá y elegí. Cada intento te acerca un poco más a la canción.</p>
-
-        <div className="como__sticker" aria-hidden="true">
-          <img className="como__rayas como__rayas--sticker-izq" src="/assets/hero-rays-claim.svg" alt="" />
-          <img className="como__rayas como__rayas--sticker-der" src="/assets/hero-rays-top.svg" alt="" />
-          <img className="como__sticker-img" src="/assets/sticker-six-attempts-pink.svg" alt="" />
-        </div>
       </div>
 
       <ol className="como__pasos">
@@ -48,7 +42,7 @@ export function ComoSeJuega() {
           <span className="paso__numero" aria-hidden="true">2</span>
           <div className="paso__texto">
             <h3>Pensá</h3>
-            <p>Con las pistas intentá descubrir la canción.</p>
+            <p>Con cada intento se desbloquea una nueva pista.</p>
           </div>
           <div className="paso__demo" aria-hidden="true">
             <img className="como__rayas como__rayas--paso2" src="/assets/hero-rays-claim.svg" alt="" />
@@ -70,6 +64,12 @@ export function ComoSeJuega() {
                   <img src="/assets/icon-voice.svg" alt="" />
                 </span>
                 Voz
+              </li>
+              <li>
+                <span className="maqueta-stems__circulo maqueta-stems__circulo--gris">
+                  <img src="/assets/lock.svg" alt="" />
+                </span>
+                Otros
               </li>
             </ul>
           </div>

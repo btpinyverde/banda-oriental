@@ -7,6 +7,13 @@ afterEach(cleanup);
 const principal = () => screen.getByRole("navigation", { name: "Principal" });
 
 describe("Navbar", () => {
+  it("la landing puede pedir otro rótulo para el botón de jugar", () => {
+    render(<Navbar etiquetaJugar="Jugar la canción de hoy" />);
+
+    expect(screen.getByRole("link", { name: "Jugar la canción de hoy" })).toHaveAttribute("href", "/jugar");
+    expect(screen.queryByRole("link", { name: "Jugar el diario" })).toBeNull();
+  });
+
   it("en la home no marca ningún enlace y ofrece Jugar el diario", () => {
     render(<Navbar />);
 

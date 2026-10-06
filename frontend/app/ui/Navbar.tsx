@@ -12,7 +12,7 @@ const enlaces = () => [
 ];
 
 /** `actual` es la ruta de la página donde está: se marca en los enlaces y, en /jugar, se oculta el botón de jugar. */
-export function Navbar({ actual }: { actual?: string }) {
+export function Navbar({ actual, etiquetaJugar = "Jugar el diario" }: { actual?: string; etiquetaJugar?: string }) {
   const ENLACES = enlaces();
   return (
     <header className="navbar">
@@ -39,7 +39,7 @@ export function Navbar({ actual }: { actual?: string }) {
             <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" aria-hidden="true">
               <path d="M1 1.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 1 1.5Z" />
             </svg>
-            Jugar el diario
+            {etiquetaJugar}
           </Link>
         )}
       </div>

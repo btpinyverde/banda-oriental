@@ -26,11 +26,17 @@ type Props = {
 
 const COLA_DE_LA_BAJADA = "de todas las épocas, géneros y rincones del Uruguay.";
 
+/** Bajada de la sección, partida en lo que va en negrita (el total) y el resto. */
+export function partesDelCatalogo(canciones: number): { destacado: string; resto: string } {
+  if (canciones >= 100) return { destacado: `Más de ${new Intl.NumberFormat("es-UY").format(Math.floor(canciones / 100) * 100)} canciones`, resto: COLA_DE_LA_BAJADA };
+  if (canciones > 0) return { destacado: `${canciones} ${canciones === 1 ? "canción" : "canciones"}`, resto: COLA_DE_LA_BAJADA };
+  return { destacado: "", resto: "Canciones uruguayas de todas las épocas, géneros y rincones del país." };
+}
+
 /** Bajada de la sección, con el total de canciones del catálogo. */
 export function textoCatalogo(canciones: number): string {
-  if (canciones >= 100) return `Más de ${new Intl.NumberFormat("es-UY").format(Math.floor(canciones / 100) * 100)} canciones ${COLA_DE_LA_BAJADA}`;
-  if (canciones > 0) return `${canciones} ${canciones === 1 ? "canción" : "canciones"} ${COLA_DE_LA_BAJADA}`;
-  return "Canciones uruguayas de todas las épocas, géneros y rincones del país.";
+  const { destacado, resto } = partesDelCatalogo(canciones);
+  return destacado ? `${destacado} ${resto}` : resto;
 }
 
 const cancionesDe = (n: number) => `${n} ${n === 1 ? "canción" : "canciones"}`;
@@ -51,10 +57,14 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
       <Ondulada className="archivo__ondulada" trazo="corta" />
       <div className="archivo__cabecera">
         <div>
+          <p className="archivo__eyebrow">Explorá la música uruguaya</p>
           <h2 className="archivo__titulo" id="archivo-titulo">
-            Explorá el archivo
+            <span className="resaltado">Explorá</span> el <span className="resaltado-movil">archivo</span>
           </h2>
-          <p className="archivo__bajada">{textoCatalogo(totalCanciones)}</p>
+          <p className="archivo__bajada">
+            {partesDelCatalogo(totalCanciones).destacado && <strong>{partesDelCatalogo(totalCanciones).destacado}</strong>}{" "}
+            {partesDelCatalogo(totalCanciones).resto}
+          </p>
         </div>
         <Link href="/archivo/artistas" className="boton boton--contorno">
           Ver todos los artistas
@@ -93,7 +103,10 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
         <ul className="archivo__generos" aria-label="Explorar por género">
           {[null, ...generos].map((nombre) => (
             <li key={nombre ?? "todos"}>
-              <Link href={nombre === null ? "/archivo" : `/archivo/discos?${new URLSearchParams({ genero: nombre })}`} className="genero">
+              <Link
+                href={nombre === null ? "/archivo" : `/archivo/discos?${new URLSearchParams({ genero: nombre })}`}
+                className={nombre === null ? "genero genero--activo" : "genero"}
+              >
                 {nombre ?? "Todos"}
               </Link>
             </li>

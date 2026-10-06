@@ -20,7 +20,7 @@ export function ModeCards() {
         <div className="modo__contenido">
           <h2 className="modo__titulo">Modo diario</h2>
           <p className="modo__texto">
-            Una canción nueva todos los días.
+            Una canción nueva todos los días.{" "}
             <br />
             La misma para todo el mundo.
           </p>
@@ -47,7 +47,7 @@ export function ModeCards() {
               </span>
             </h2>
             <p className="modo__texto">
-              Competí con tus amigos en canciones aleatorias. ¿Quién adivina
+              Competí con tus amigos en cinco canciones. ¿Quién adivina
               primero?
             </p>
             <Link href="/batalla" className="modo__boton">
