@@ -20,3 +20,4 @@ frontend/.env
 
 # Audios de demostración de /jugar (solo para probar localmente)
 frontend/public/demo/
+riesgo-emparejados.csv
