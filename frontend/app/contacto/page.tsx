@@ -33,9 +33,9 @@ const PISTAS = [
     texto: "Una captura de pantalla, si podés.",
     icono: (
       <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="4.5" y="4.5" width="23" height="23" rx="6.5" />
-        <circle cx="16" cy="16" r="5.5" />
-        <circle cx="22.7" cy="9.3" r="0.9" fill="currentColor" />
+        <rect x="3.5" y="5.5" width="25" height="21" rx="3" />
+        <circle cx="11" cy="12.5" r="2.4" />
+        <path d="M4.5 23.5 12 17l5 4.5 4-3.5 6.5 5.5" />
       </svg>
     ),
   },
@@ -78,7 +78,7 @@ export default function Contacto() {
                 </li>
               ))}
             </ul>
-            <img className="contacto__rayas contacto__rayas--tarjeta" src="/assets/doodle-rays.svg" alt="" aria-hidden="true" />
+            <img className="contacto__rayas contacto__rayas--tarjeta" src="/assets/hero-rays-left.svg" alt="" aria-hidden="true" />
           </section>
         </div>
 
@@ -89,8 +89,8 @@ export default function Contacto() {
 
           <section className="contacto__tarjeta contacto__tarjeta--amarilla" aria-labelledby="contacto-artistas">
             <img className="contacto__personaje" src="/assets/art-personaje-gorra.svg" alt="" aria-hidden="true" />
-            <img className="contacto__rayas--personaje" src="/assets/hero-rays-left.svg" alt="" aria-hidden="true" />
-            <img className="contacto__rayas--amarilla" src="/assets/hero-rays-top.svg" alt="" aria-hidden="true" />
+            <img className="contacto__rayas--personaje" src="/assets/doodle-rays.svg" alt="" aria-hidden="true" />
+            <img className="contacto__rayas--amarilla" src="/assets/doodle-rays.svg" alt="" aria-hidden="true" />
             <div>
               <h2 id="contacto-artistas">Artistas y titulares de derechos</h2>
               <p>Si sos artista o titular de derechos y tenés una consulta sobre una canción del juego, escribinos y la vemos con atención.</p>
