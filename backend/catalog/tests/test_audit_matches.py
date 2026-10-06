@@ -57,6 +57,39 @@ class TestAudit:
         assert "Sin coincidencia: 1" in out
         assert "Los Homónimos" in out
 
+    def test_a_confirmed_artist_with_many_more_discs_than_confirmed_ones_is_a_possible_mix(self):
+        # One disc is known to both sources, but 20 more are only in Deezer: a homonym's discs may be mixed in (the AFC case).
+        a = artist("AFC", deezer_id=4)
+        album(a, "El de verdad", mbid="al-afc", deezer_id=40)
+        for i in range(20):
+            album(a, f"Ajeno {i}", deezer_id=100 + i, songs=2)
+
+        out = run()
+
+        assert "Posible mezcla: 1" in out
+        assert "AFC" in out and "20 discos y 40 canciones" in out
+        assert "Confirmados: 0" in out
+
+    def test_a_confirmed_artist_with_a_few_extra_discs_is_still_fine(self):
+        a = artist("Drexler", deezer_id=1)
+        for i in range(3):
+            album(a, f"Disco {i}", mbid=f"al-{i}", deezer_id=10 + i)
+        for i in range(4):
+            album(a, f"Solo Deezer {i}", deezer_id=50 + i)
+
+        out = run()
+
+        assert "Confirmados: 1" in out and "Posible mezcla: 0" in out
+
+    def test_the_thresholds_can_be_changed(self):
+        a = artist("Drexler", deezer_id=1)
+        album(a, "Eco", mbid="al-eco", deezer_id=11)
+        for i in range(5):
+            album(a, f"Solo Deezer {i}", deezer_id=50 + i)
+
+        assert "Posible mezcla: 0" in run()
+        assert "Posible mezcla: 1" in run("--minimo-discos", "5", "--proporcion", "3")
+
     def test_artists_without_a_deezer_match_are_not_part_of_the_audit(self):
         artist("Sin Deezer")
 
