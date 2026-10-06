@@ -36,8 +36,11 @@
 .colage__mancha { position: absolute; height: auto; }
 .colage__mancha--violeta { left: -2%; top: -2%; width: 46%; transform: rotate(-12deg); }
 .colage__mancha--amarilla { right: -2%; top: 8%; width: 66%; }
-.colage__casete { position: absolute; left: 12%; top: 14%; width: 66%; height: auto; transform: rotate(-5deg); filter: drop-shadow(0 12px 18px rgba(60, 40, 20, 0.22)); }
-.colage__nota { position: absolute; right: 0; top: 0; display: grid; padding: 16px 22px 18px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(3deg); font-family: "Caveat Brush", cursive; font-size: clamp(17px, 1.7vw, 23px); line-height: 1.18; text-transform: uppercase; color: var(--tinta); }
+.colage__casete { position: absolute; left: 0; top: 12%; width: 88%; filter: drop-shadow(0 12px 18px rgba(60, 40, 20, 0.28)); }
+.colage__casete-foto { display: block; width: 100%; height: auto; }
+/* El logo va sobre la etiqueta del casete, con la misma inclinación que él. */
+.colage__casete-logo { position: absolute; left: 25%; top: 18%; width: 48%; height: auto; transform: rotate(-5deg); }
+.colage__nota { position: absolute; right: -2%; top: -3%; display: grid; padding: 16px 22px 18px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(3deg); font-family: "Caveat Brush", cursive; font-size: clamp(17px, 1.7vw, 23px); line-height: 1.18; text-transform: uppercase; color: var(--tinta); }
 .colage__rayo { position: absolute; left: 4%; top: 12%; width: 6%; height: auto; z-index: 2; }
 .colage__garabato { position: absolute; left: 36%; bottom: -7%; width: 14%; height: auto; z-index: 2; }
 .colage__rayas { position: absolute; height: auto; }
