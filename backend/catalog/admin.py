@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from PIL import Image, UnidentifiedImageError
 
 from . import verification
-from .models import Album, Artist, FeaturedArtist, Song, SyncState
+from .models import Album, Artist, FeaturedArtist, Song, Submission, SyncState
 from .search import Unaccent, strip_accents, unaccent_available
 
 
@@ -181,3 +181,25 @@ class FeaturedArtistAdmin(admin.ModelAdmin):
     @admin.display(description="Foto")
     def preview(self, obj):
         return format_html('<img src="/api/catalog/featured/{}/image/?v={}" height="48" alt="">', obj.artist_id, int(obj.updated_at.timestamp()))
+
+
+@admin.register(Submission)
+class SubmissionAdmin(admin.ModelAdmin):
+    """What visitors send from the archive. Only the status is editable: what they wrote stays as it came."""
+
+    list_display = ("created_at", "kind", "target_label", "name", "contact", "status")
+    list_filter = ("status", "kind", "target_type")
+    search_fields = ("target_label", "name", "contact", "message")
+    readonly_fields = ("kind", "target_type", "target_id", "target_label", "name", "contact", "links", "message", "created_at")
+    actions = ["marcar_visto", "marcar_resuelto"]
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.action(description="Marcar como visto")
+    def marcar_visto(self, request, queryset):
+        queryset.update(status="visto")
+
+    @admin.action(description="Marcar como resuelto")
+    def marcar_resuelto(self, request, queryset):
+        queryset.update(status="resuelto")

@@ -97,3 +97,31 @@ class SyncState(models.Model):
     def get_solo(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class Submission(models.Model):
+    """What visitors send from the archive: a mistake they found, a band asking to be added, or a message. The admin reads them."""
+
+    KINDS = [("error", "Algo está mal"), ("alta", "Quiere sumarse"), ("contacto", "Mensaje")]
+    TARGETS = [("artist", "Artista"), ("album", "Disco"), ("song", "Canción")]
+    STATUSES = [("nuevo", "Nuevo"), ("visto", "Visto"), ("resuelto", "Resuelto"), ("descartado", "Descartado")]
+
+    kind = models.CharField(max_length=10, choices=KINDS)
+    target_type = models.CharField(max_length=10, choices=TARGETS, blank=True)
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    # The name of what was reported, from our own database when it exists (never trusted from the visitor).
+    target_label = models.CharField(max_length=200, blank=True)
+    name = models.CharField(max_length=120, blank=True)
+    contact = models.CharField(max_length=200, blank=True)
+    links = models.CharField(max_length=500, blank=True)
+    message = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=STATUSES, default="nuevo", db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        verbose_name = "reporte o pedido"
+        verbose_name_plural = "reportes y pedidos"
+
+    def __str__(self):
+        return f"{self.get_kind_display()}: {self.target_label or self.name or self.message[:40]}"

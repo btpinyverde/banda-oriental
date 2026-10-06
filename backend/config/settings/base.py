@@ -138,6 +138,7 @@ REST_FRAMEWORK = {
         "songs": "30/min",
         "catalog": "60/min",  # the music archive: search and browse artists, albums and songs
         "human": "30/hour",
+        "reports": "8/hour",  # mistakes reported, bands that ask to be added and messages from the archive
         "battle-create": "20/hour",
         "battle-join": "600/hour",  # joining and starting; a bar joins in bursts from one address
         "battle-answer": "1500/min",

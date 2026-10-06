@@ -46,6 +46,9 @@ export function CabeceraDeArtista({
           Ver todas sus canciones
           <img src="/assets/arrow-right.svg" alt="" width={18} height={18} />
         </Link>
+        <p className="cabecera-artista__aviso">
+          <Link href={`/archivo/reportar?${new URLSearchParams({ tipo: "artista", id: String(id), nombre })}`}>¿Algo no está bien? Avisanos</Link>
+        </p>
       </div>
     </section>
   );

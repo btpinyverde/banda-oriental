@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import archive
+from .submissions import SubmissionCreateView
 from .views import AlbumListView, SongListView
 
 app_name = "catalog"
@@ -11,6 +12,7 @@ urlpatterns = [
     # The music archive: search and browse artists, albums and songs (docs/contrato-api-archivo.md).
     path("catalog/featured/", archive.FeaturedListView.as_view(), name="archive-featured"),
     path("catalog/featured/<int:pk>/image/", archive.FeaturedImageView.as_view(), name="archive-featured-image"),
+    path("catalog/reports/", SubmissionCreateView.as_view(), name="reports"),
     path("catalog/search/", archive.SearchView.as_view(), name="archive-search"),
     path("catalog/filters/", archive.FiltersView.as_view(), name="archive-filters"),
     path("catalog/artists/", archive.ArtistListView.as_view(), name="archive-artists"),

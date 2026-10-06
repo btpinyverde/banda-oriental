@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ColageDelArchivo } from "./ColageDelArchivo";
 import { PestanasDelArchivo } from "./PestanasDelArchivo";
 import { cantidad } from "./utiles";
@@ -19,6 +20,9 @@ export function EncabezadoDelArchivo({ actual, cantidades }: { actual: "cancione
           {total !== null && total >= 100 ? `Más de ${cantidad(Math.floor(total / 100) * 100)} canciones, discos y artistas` : "Canciones, discos y artistas uruguayos"} de todas las épocas. Buscá, filtrá y descubrí.
         </p>
         <PestanasDelArchivo actual={actual} cantidades={cantidades} />
+        <p className="hero-archivo__sumar">
+          ¿No encontrás una banda? <Link href="/archivo/sumar">Sumala</Link>
+        </p>
       </div>
       <ColageDelArchivo />
     </section>
