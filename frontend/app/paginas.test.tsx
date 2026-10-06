@@ -313,3 +313,23 @@ describe("sitemap del archivo de música", () => {
   });
 });
 
+describe("los textos legales cubren las batallas", () => {
+  const texto = (slug: string) => JSON.stringify(paginaPorSlug(slug)).toLowerCase();
+
+  it("la privacidad dice qué se guarda de una batalla, quién lo ve, qué pasa sin cuenta y qué sale de YouTube y Deezer", () => {
+    const t = texto("privacidad");
+    expect(t).toContain("batalla");
+    expect(t).toContain("no hay un ranking público de batallas");
+    expect(t).toContain("jugador anónimo");
+    expect(t).toContain("jugador eliminado");
+    expect(t).toContain("youtube");
+    expect(t).toContain("deezer");
+  });
+
+  it("los términos mencionan las batallas y los contenidos de YouTube y Deezer", () => {
+    const t = texto("terminos");
+    expect(t).toContain("batalla");
+    expect(t).toContain("youtube");
+    expect(t).toContain("deezer");
+  });
+});
