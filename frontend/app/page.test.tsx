@@ -18,14 +18,14 @@ describe("la portada: Explorá el archivo con datos reales", () => {
     return artistas;
   };
 
-  it("muestra a los artistas con más canciones, con sus años, y cada uno lleva a su ficha", async () => {
+  it("muestra a los artistas con más canciones, con sus años, y cada uno lleva a la lista de sus discos", async () => {
     const artistas = preparar();
 
     render(await Home());
 
     expect(artistas).toHaveBeenCalledWith(expect.objectContaining({ orden: "songs" }));
     const carrusel = screen.getByRole("region", { name: "Explorá el archivo" });
-    expect(within(carrusel).getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(within(carrusel).getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/discos?artista=7");
     expect(within(carrusel).getByRole("img", { name: /Jorge Drexler/ })).toHaveAttribute("src", "https://img/d.jpg");
     expect(within(carrusel).queryByRole("img", { name: /Rubén Rada/ })).toBeNull(); // sin foto: la inicial, no una imagen inventada
     expect(within(carrusel).getByText("120 canciones")).toBeInTheDocument();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 const TONOS = 5;
 
@@ -17,14 +17,17 @@ const tonoDe = (nombre: string) => [...nombre].reduce((suma, c) => suma + c.char
  * `recorte` es la foto sin fondo que se sube desde el admin: va entera, apoyada abajo, sobre el color y sin filtros (ya viene
  * editada). `tono` fija el color por el lugar de la tarjeta; sin él sale del nombre.
  *
+ * `vacio` reemplaza a la inicial cuando no hay foto o no carga (el archivo pone ahí su bloque de papel).
+ *
  * La foto del artista (de Deezer). Si no tiene, o la imagen no se puede cargar, queda la inicial del nombre sobre un color de la
  * marca: nunca una imagen inventada ni una imagen rota. Solo se aceptan fotos por https.
  */
-export function FotoDelArtista({ nombre, foto, recorte, tono, clase = "" }: { nombre: string; foto?: string; recorte?: string; tono?: number; clase?: string }) {
+export function FotoDelArtista({ nombre, foto, recorte, tono, clase = "", vacio }: { nombre: string; foto?: string; recorte?: string; tono?: number; clase?: string; vacio?: ReactNode }) {
   // Se recuerda qué foto falló, no un "falló" suelto: con otra foto (otro artista) se vuelve a intentar.
   const [fallida, setFallida] = useState<string | null>(null);
   const hayRecorte = !!recorte && fallida !== recorte;
   const hayFoto = !hayRecorte && !!foto && foto.startsWith("https://") && fallida !== foto;
+  if (vacio && !hayRecorte && !hayFoto) return <>{vacio}</>;
   const clases = `artista__foto artista__foto--tono-${tono ?? tonoDe(nombre)} ${hayFoto ? "artista__foto--con-foto" : ""} ${hayRecorte ? "artista__foto--recorte" : ""} ${clase}`;
   return (
     <div className={clases.replace(/\s+/g, " ").trim()}>

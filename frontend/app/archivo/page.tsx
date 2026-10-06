@@ -5,7 +5,8 @@ import { NOMBRE } from "../lib/seo";
 import { BarraDeFiltros } from "./BarraDeFiltros";
 import { ChipsDeGenero } from "./ChipsDeGenero";
 import { elegirChips } from "./generos";
-import { ColageDelArchivo } from "./ColageDelArchivo";
+import { cantidadesDelArchivo } from "./cantidades";
+import { EncabezadoDelArchivo } from "./EncabezadoDelArchivo";
 import { FilaDeCancion } from "./Listados";
 import { Aviso, Marco } from "./Marco";
 import { PaginasNumeradas } from "./PaginasNumeradas";
@@ -28,8 +29,8 @@ export const metadata: Metadata = {
   twitter: { title: TITULO, description: DESCRIPCION },
 };
 
-const POR_PAGINA = 18; // seis por fila, tres filas
-const GENEROS_EN_LOS_CHIPS = 7;
+const POR_PAGINA = 15; // cinco por fila, tres filas
+const GENEROS_EN_LOS_CHIPS = 8; // más "Otros", que lleva al selector con todos
 const ORDENES: OrdenDeCanciones[] = ["title", "artist", "newest", "oldest"];
 
 export default async function ExploradorDelArchivo({ searchParams }: { searchParams: Parametros }) {
@@ -41,9 +42,9 @@ export default async function ExploradorDelArchivo({ searchParams }: { searchPar
   const numero = enteroDe(consulta.pagina) ?? 1;
   const lista = consulta.vista === "lista";
 
-  const [canciones, todas, filtros] = await Promise.all([
+  const [canciones, cantidades, filtros] = await Promise.all([
     listarCanciones({ q, decada, genero, orden, pagina: numero, porPagina: POR_PAGINA }),
-    listarCanciones({ porPagina: 1 }),
+    cantidadesDelArchivo(),
     filtrosDelArchivo(),
   ]);
 
@@ -55,28 +56,19 @@ export default async function ExploradorDelArchivo({ searchParams }: { searchPar
   };
 
   return (
-    <Marco ancho>
-      <section className="hero-archivo">
-        <div className="hero-archivo__texto">
-          <p className="hero-archivo__etiqueta">Archivo de canciones</p>
-          <h1>
-            Toda la música uruguaya en un <span className="hero-archivo__resaltado">solo lugar.</span>
-          </h1>
-          <p className="hero-archivo__bajada">
-            {todas && todas.count >= 100 ? `Más de ${cantidad(Math.floor(todas.count / 100) * 100)} canciones` : "Canciones uruguayas"} de todas las épocas. Explorá, filtrá y jugá las que quieras.
-          </p>
-        </div>
-        <ColageDelArchivo />
-      </section>
+    <Marco ancho pie="completo">
+      <EncabezadoDelArchivo actual="canciones" cantidades={cantidades} />
 
       <BarraDeFiltros
         q={q ?? ""}
         decada={decada ? String(decada) : ""}
         orden={orden ?? "title"}
         decadas={(filtros?.decades ?? []).map((d) => d.decade)}
-        parametros={sinVacios({ genero, vista: lista ? "lista" : undefined })}
+        genero={genero ?? ""}
+        generos={(filtros?.genres ?? []).map((g) => g.genre)}
+        parametros={sinVacios({ vista: lista ? "lista" : undefined })}
       />
-      <ChipsDeGenero generos={generos} actual={genero} parametros={sinVacios({ q, decada, orden: orden && orden !== "title" ? orden : undefined, vista: lista ? "lista" : undefined })} />
+      <ChipsDeGenero conOtros generos={generos} actual={genero} parametros={sinVacios({ q, decada, orden: orden && orden !== "title" ? orden : undefined, vista: lista ? "lista" : undefined })} />
 
       {canciones === null ? (
         <Aviso>No pudimos cargar las canciones ahora. Probá de nuevo en un rato.</Aviso>
@@ -109,16 +101,12 @@ export default async function ExploradorDelArchivo({ searchParams }: { searchPar
             </ul>
           ) : (
             <ul className="grilla" aria-label="Canciones">
-              {canciones.results.map((c) => <TarjetaDeCancion key={c.id} cancion={c} />)}
+              {canciones.results.map((c, lugar) => <TarjetaDeCancion key={c.id} cancion={c} lugar={lugar} />)}
             </ul>
           )}
           <PaginasNumeradas pagina={canciones.page} paginas={canciones.pages} ruta="/archivo" parametros={sinVacios({ ...filtrosPuestos, vista: lista ? "lista" : undefined })} />
         </>
       )}
-
-      <p className="archivo-musical__tambien">
-        También podés explorar por <Link href="/archivo/artistas">Artistas</Link> · <Link href="/archivo/discos">Discos</Link> · o ver los <Link href="/anteriores">juegos anteriores</Link>.
-      </p>
     </Marco>
   );
 }

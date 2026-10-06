@@ -42,4 +42,23 @@ describe("ChipsDeGenero", () => {
 
     expect(screen.getByRole("link", { name: "Fado" })).toHaveAttribute("aria-current", "true");
   });
+
+  it("con `conOtros` suma un chip que lleva al selector de géneros", () => {
+    render(<ChipsDeGenero conOtros generos={["Rock"]} actual={undefined} parametros={{}} />);
+
+    expect(screen.getByRole("link", { name: "Otros" })).toHaveAttribute("href", "#filtro-generos");
+  });
+
+  it("sin `conOtros` no está", () => {
+    render(<ChipsDeGenero generos={["Rock"]} actual={undefined} parametros={{}} />);
+
+    expect(screen.queryByRole("link", { name: "Otros" })).toBeNull();
+  });
+
+  it("en otra página del archivo los chips llevan a esa página", () => {
+    render(<ChipsDeGenero ruta="/archivo/discos" generos={["Rock"]} actual={undefined} parametros={{ orden: "year" }} />);
+
+    expect(screen.getByRole("link", { name: "Rock" })).toHaveAttribute("href", "/archivo/discos?orden=year&genero=Rock");
+    expect(screen.getByRole("link", { name: "Todas" })).toHaveAttribute("href", "/archivo/discos?orden=year");
+  });
 });

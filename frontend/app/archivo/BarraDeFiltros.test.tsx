@@ -25,7 +25,7 @@ describe("BarraDeFiltros", () => {
     expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toHaveValue("luna");
     expect(screen.getByRole("combobox", { name: "Década" })).toHaveValue("1990");
     expect(screen.getByRole("combobox", { name: "Ordenar por" })).toHaveValue("newest");
-    expect(screen.getByRole("option", { name: "Todas las décadas" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Décadas" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Años 60" })).toHaveValue("1960");
     expect(screen.getByRole("option", { name: "Años 2000" })).toHaveValue("2000");
   });
@@ -89,7 +89,7 @@ describe("BarraDeFiltros", () => {
     expect(empujar).toHaveBeenCalledWith("/archivo?genero=Rock&q=luna&decada=1990", { scroll: false });
   });
 
-  it("'Todas las décadas' quita la década de la dirección", () => {
+  it("'Décadas' (sin elegir ninguna) quita la década de la dirección", () => {
     montar({ decada: "1990" });
 
     fireEvent.change(screen.getByRole("combobox", { name: "Década" }), { target: { value: "" } });
@@ -119,5 +119,47 @@ describe("BarraDeFiltros", () => {
     montar();
 
     expect(screen.getByRole("searchbox")).toHaveAttribute("maxlength", "100");
+  });
+
+  it("tiene el selector de géneros, con el elegido marcado, y elegir uno lo pone en la dirección (y vuelve a la primera página)", () => {
+    montar({ genero: "Rock", generos: ["Rock", "Folk"], parametros: { vista: "lista" } });
+
+    const selector = screen.getByRole("combobox", { name: "Géneros" });
+    expect(selector).toHaveValue("Rock");
+    expect(screen.getByRole("option", { name: "Géneros" })).toHaveValue("");
+    fireEvent.change(selector, { target: { value: "Folk" } });
+    expect(empujar).toHaveBeenCalledWith("/archivo?vista=lista&genero=Folk", { scroll: false });
+  });
+
+  it("sin géneros en el catálogo no hay selector de géneros", () => {
+    montar();
+
+    expect(screen.queryByRole("combobox", { name: "Géneros" })).toBeNull();
+  });
+
+  it("buscar o cambiar la década conserva el género del selector", () => {
+    montar({ genero: "Rock", generos: ["Rock"], decada: "1990" });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Ordenar por" }), { target: { value: "newest" } });
+
+    expect(empujar).toHaveBeenCalledWith("/archivo?genero=Rock&decada=1990&orden=newest", { scroll: false });
+  });
+
+  it("sirve a otras páginas del archivo: su dirección, su texto, sus órdenes y su orden de siempre", () => {
+    montar({ ruta: "/archivo/discos", placeholder: "Buscá un disco…", ordenes: [{ valor: "name", etiqueta: "Ordenar por" }, { valor: "year", etiqueta: "Año" }], ordenPorDefecto: "name", orden: "name" });
+
+    expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toHaveAttribute("placeholder", "Buscá un disco…");
+    fireEvent.change(screen.getByRole("combobox", { name: "Ordenar por" }), { target: { value: "year" } });
+    expect(empujar).toHaveBeenLastCalledWith("/archivo/discos?orden=year", { scroll: false });
+    fireEvent.change(screen.getByRole("combobox", { name: "Ordenar por" }), { target: { value: "name" } });
+    expect(empujar).toHaveBeenLastCalledWith("/archivo/discos", { scroll: false });
+  });
+
+  it("sin décadas ni órdenes no muestra esos selectores (la búsqueda de artistas es solo un buscador)", () => {
+    montar({ decadas: [], ordenes: [] });
+
+    expect(screen.queryByRole("combobox", { name: "Década" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Ordenar por" })).toBeNull();
+    expect(screen.getByRole("searchbox", { name: "Buscar en el archivo" })).toBeInTheDocument();
   });
 });

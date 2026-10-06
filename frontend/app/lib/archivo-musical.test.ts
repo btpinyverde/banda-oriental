@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { artistasDestacados, buscarEnElArchivo, fichaDeArtista, filtrosDelArchivo, idDeFicha, listarArtistas, listarCanciones, listarDiscos, rutaDeArtista, rutaDeCancion, rutaDeDisco, slug } from "./archivo-musical";
+import { artistasDestacados, buscarEnElArchivo, fichaDeArtista, filtrosDelArchivo, idDeFicha, listarArtistas, listarCanciones, listarDiscos, rutaDeArtista, rutaDeCancion, rutaDeDisco, rutaDeDiscosDe, slug } from "./archivo-musical";
 
 const ARTISTA = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "" };
 const respuesta = (cuerpo: unknown, estado = 200) => ({ ok: estado >= 200 && estado < 300, status: estado, json: async () => cuerpo });
@@ -27,6 +27,7 @@ describe("slug y rutas de las fichas", () => {
     expect(rutaDeArtista({ id: 7, name: "Jorge Drexler" })).toBe("/archivo/artista/7-jorge-drexler");
     expect(rutaDeDisco({ id: 12, name: "Vaivén" })).toBe("/archivo/disco/12-vaiven");
     expect(rutaDeCancion({ id: 99, title: "Luna negra" })).toBe("/archivo/cancion/99-luna-negra");
+    expect(rutaDeDiscosDe({ id: 7 })).toBe("/archivo/discos?artista=7");
   });
 
   it("sin nombre aprovechable la dirección es solo el id", () => {

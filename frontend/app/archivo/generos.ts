@@ -13,6 +13,8 @@ const DE_SIEMPRE: { etiqueta: string; nombres: string[] }[] = [
   { etiqueta: "Tango", nombres: ["tango"] },
   { etiqueta: "Hip hop", nombres: ["hip hop", "hip-hop", "rap/hip hop", "rap"] },
   { etiqueta: "Electrónica", nombres: ["electrónica", "electronica", "electronic", "electro"] },
+  { etiqueta: "Latino", nombres: ["latino"] },
+  { etiqueta: "Folk", nombres: ["folk"] },
 ];
 
 /**

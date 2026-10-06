@@ -88,6 +88,8 @@ const ruta = (tipo: string, id: number, nombre: string) => {
 };
 export const rutaDeArtista = (a: { id: number; name: string }) => ruta("artista", a.id, a.name);
 export const rutaDeDisco = (d: { id: number; name: string }) => ruta("disco", d.id, d.name);
+/** La lista de los discos de un artista (el explorador de discos filtrado por él). */
+export const rutaDeDiscosDe = (a: { id: number }) => `/archivo/discos?artista=${a.id}`;
 export const rutaDeCancion = (c: { id: number; title: string }) => ruta("cancion", c.id, c.title);
 
 /** El id de una ficha, del tramo de la dirección ("7-jorge-drexler"). Solo se usa el número: lo demás nunca llega a la API. */

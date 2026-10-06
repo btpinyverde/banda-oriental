@@ -1,4 +1,4 @@
-import { artistasDestacados, filtrosDelArchivo, listarArtistas, listarCanciones, rutaDeArtista } from "./lib/archivo-musical";
+import { artistasDestacados, filtrosDelArchivo, listarArtistas, listarCanciones, rutaDeDiscosDe } from "./lib/archivo-musical";
 import { construirJsonLd, serializarJsonLd } from "./lib/seo";
 import { ArchivoArtistas } from "./ui/ArchivoArtistas";
 import { ComoSeJuega } from "./ui/ComoSeJuega";
@@ -53,8 +53,8 @@ export default async function Home() {
         <ArchivoArtistas
           artistas={
             destacados && destacados.length > 0
-              ? destacados.map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a), recorte: a.photo_url || undefined, foto: a.picture_url || undefined }))
-              : (artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeArtista(a), anios: aniosDe(a), foto: a.picture_url || undefined }))
+              ? destacados.map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeDiscosDe(a), anios: aniosDe(a), recorte: a.photo_url || undefined, foto: a.picture_url || undefined }))
+              : (artistas?.results ?? []).map((a) => ({ id: a.id, nombre: a.name, canciones: a.songs, href: rutaDeDiscosDe(a), anios: aniosDe(a), foto: a.picture_url || undefined }))
           }
           generos={(filtros?.genres ?? []).slice(0, GENEROS_EN_LOS_CHIPS).map((g) => g.genre)}
           totalCanciones={canciones?.count ?? 0}

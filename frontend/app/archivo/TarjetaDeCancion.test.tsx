@@ -19,8 +19,10 @@ describe("TarjetaDeCancion", () => {
     render(<ul><TarjetaDeCancion cancion={CANCION} /></ul>);
 
     expect(screen.getByRole("img", { name: /Tapa de El camino más largo/ })).toHaveAttribute("src", "https://cdn.example/tapa.jpg");
-    expect(screen.getByRole("link", { name: "A las nueve" })).toHaveAttribute("href", "/archivo/cancion/5-a-las-nueve");
-    expect(screen.getByRole("link", { name: "No Te Va Gustar" })).toHaveAttribute("href", "/archivo/artista/7-no-te-va-gustar");
+    // Tocar la canción lleva al disco donde está; tocar al artista, a la lista de sus discos.
+    expect(screen.getByRole("link", { name: "A las nueve" })).toHaveAttribute("href", "/archivo/disco/12-el-camino-mas-largo");
+    expect(screen.getByRole("link", { name: "No Te Va Gustar" })).toHaveAttribute("href", "/archivo/discos?artista=7");
+    expect(screen.getByText("El camino más largo")).toHaveClass("tarjeta__disco");
     expect(screen.getByText("2004")).toBeInTheDocument();
     expect(screen.getByText("Rock")).toHaveClass("tarjeta__genero");
   });
@@ -45,7 +47,16 @@ describe("TarjetaDeCancion", () => {
     const { container } = render(<ul><TarjetaDeCancion cancion={{ ...CANCION, album: { ...CANCION.album, cover_art_url: "" } }} /></ul>);
 
     expect(screen.queryByRole("img", { name: /Tapa de/ })).toBeNull();
-    expect(container.querySelector(".tarjeta__tapa--sin")).not.toBeNull();
+    expect(container.querySelector(".tarjeta__tapa--sin .vacia__simbolo")).toHaveAttribute("src", "/assets/icon-note.svg");
+  });
+
+  it("el color del asterisco sale del lugar en la lista (las vecinas no repiten), o del id si no se da", () => {
+    const sinTapa = { ...CANCION, album: { ...CANCION.album, cover_art_url: "" } };
+    const { container, rerender } = render(<ul><TarjetaDeCancion cancion={sinTapa} lugar={4} /></ul>);
+    expect(container.querySelector(".vacia__asterisco--tono-4")).not.toBeNull();
+
+    rerender(<ul><TarjetaDeCancion cancion={{ ...sinTapa, id: 7 }} /></ul>);
+    expect(container.querySelector(".vacia__asterisco--tono-2")).not.toBeNull();
   });
 
   it("si la tapa no se puede cargar, también vuelve al bloque de color", () => {
