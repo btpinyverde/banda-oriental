@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FotoDelArtista } from "./FotoDelArtista";
 import { Ondulada } from "./Ondulada";
 
@@ -46,6 +46,22 @@ const cancionesDe = (n: number) => `${n} ${n === 1 ? "canción" : "canciones"}`;
 /** Vitrina del archivo: un carrusel de artistas del catálogo y atajos a los géneros. */
 export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
   const fila = useRef<HTMLUListElement>(null);
+  // Las flechas solo tienen sentido si las tarjetas no entran todas: se mide la fila y se vuelve a medir si cambia el ancho.
+  const [desborda, setDesborda] = useState(true);
+
+  useEffect(() => {
+    const lista = fila.current;
+    if (!lista) return;
+    const medir = () => setDesborda(lista.scrollWidth > lista.clientWidth + 1);
+    medir();
+    const observador = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(medir);
+    observador?.observe(lista);
+    window.addEventListener("resize", medir);
+    return () => {
+      observador?.disconnect();
+      window.removeEventListener("resize", medir);
+    };
+  }, [artistas.length]);
 
   const mover = (sentido: -1 | 1) => {
     const lista = fila.current;
@@ -80,9 +96,11 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
         <p className="archivo__vacio">Todavía no hay artistas en el archivo.</p>
       ) : (
         <div className="archivo__carrusel">
-          <button type="button" className="archivo__flecha archivo__flecha--anterior" aria-label="Anterior" onClick={() => mover(-1)}>
-            <img src="/assets/arrow-right.svg" alt="" width={20} height={20} />
-          </button>
+          {desborda && (
+            <button type="button" className="archivo__flecha archivo__flecha--anterior" aria-label="Anterior" onClick={() => mover(-1)}>
+              <img src="/assets/arrow-right.svg" alt="" width={20} height={20} />
+            </button>
+          )}
           <ul className="archivo__fila" ref={fila}>
             {artistas.map((artista, lugar) => (
               <li key={artista.id} className="artista">
@@ -95,9 +113,11 @@ export function ArchivoArtistas({ artistas, generos, totalCanciones }: Props) {
               </li>
             ))}
           </ul>
-          <button type="button" className="archivo__flecha archivo__flecha--siguiente" aria-label="Siguiente" onClick={() => mover(1)}>
-            <img src="/assets/arrow-right.svg" alt="" width={20} height={20} />
-          </button>
+          {desborda && (
+            <button type="button" className="archivo__flecha archivo__flecha--siguiente" aria-label="Siguiente" onClick={() => mover(1)}>
+              <img src="/assets/arrow-right.svg" alt="" width={20} height={20} />
+            </button>
+          )}
         </div>
       )}
 

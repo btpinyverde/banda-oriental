@@ -1395,6 +1395,10 @@ button {
   scrollbar-width: none;
 }
 
+/* Con pocas tarjetas quedan en el medio; con muchas, los márgenes automáticos se anulan y se puede recorrer toda la fila. */
+.archivo__fila > .artista:first-child { margin-left: auto; }
+.archivo__fila > .artista:last-child { margin-right: auto; }
+
 .archivo__fila::-webkit-scrollbar {
   display: none;
 }

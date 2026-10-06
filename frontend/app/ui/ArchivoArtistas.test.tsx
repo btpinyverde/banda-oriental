@@ -1,8 +1,17 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ArchivoArtistas, textoCatalogo, type ArtistaArchivo } from "./ArchivoArtistas";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
+/** jsdom no calcula medidas: se fijan las de la fila del carrusel (lo que ocupan las tarjetas y el ancho que hay). */
+function medidas(contenido: number, visible: number) {
+  vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(contenido);
+  vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(visible);
+}
 
 const artista = (nombre: string, canciones: number, anios?: string, id = nombre.length, foto?: string): ArtistaArchivo => ({
   id,
@@ -137,5 +146,21 @@ describe("ArchivoArtistas", () => {
     renderizar({ artistas: [{ ...artista("Indigo", 9, undefined, 4), recorte: "/api/catalog/featured/4/image/?v=1" }] });
 
     expect(screen.getByRole("img", { name: "Foto de Indigo" })).toHaveAttribute("src", "/api/catalog/featured/4/image/?v=1");
+  });
+
+  it("con pocas tarjetas, que entran todas, no hay flechas: no tienen a dónde llevar", () => {
+    medidas(500, 1200);
+    renderizar();
+
+    expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Anterior" })).toBeNull();
+  });
+
+  it("con más tarjetas de las que entran, las flechas están", () => {
+    medidas(2400, 1200);
+    renderizar();
+
+    expect(screen.getByRole("button", { name: "Siguiente" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Anterior" })).toBeInTheDocument();
   });
 });
