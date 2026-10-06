@@ -1245,6 +1245,73 @@ button {
 .como__rayas--paso4-izq { left: -6px; bottom: 0; width: 34px; }
 .como__rayas--paso4-der { right: 6px; bottom: -4px; width: 28px; }
 
+/*
+ * Escritorio: las cuatro tarjetas son un mismo sistema. Mismo ancho y alto, mismo padding, el texto reserva tres líneas (así la demo
+ * arranca a la misma altura en todas), y la demo es una zona de igual alto, de ancho completo y centrada. Cada tarjeta lleva un solo
+ * garabato, siempre en la misma esquina. (El celular tiene sus propias reglas, más abajo.)
+ */
+@media (min-width: 861px) {
+  .como__pasos {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 30px;
+  }
+
+  .como__pasos .paso {
+    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: 18px;
+    min-height: 336px;
+    padding: 26px 24px 26px 26px;
+  }
+
+  .como__pasos .paso__texto p {
+    min-height: calc(3 * 1.35em); /* tres líneas en todas */
+  }
+
+  .como__pasos .paso .paso__demo {
+    position: static; /* los garabatos se ubican respecto de la tarjeta, no de la demo */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-self: end;
+    height: 150px;
+    margin: 0;
+  }
+
+  /* Un garabato por tarjeta, en la esquina de arriba a la derecha (afuera del texto y de la demo). */
+  .como__pasos .paso .como__rayas {
+    top: 20px;
+    right: 18px;
+    bottom: auto;
+    left: auto;
+    width: 24px;
+  }
+
+  .como__pasos .paso .como__rayas--paso4-izq {
+    display: none;
+  }
+
+  /* Las cuatro maquetas ocupan todo el ancho de la tarjeta. */
+  .maqueta-player { height: 56px; }
+  .maqueta-stems { justify-content: space-between; gap: 0; }
+  .maqueta-resultados { gap: 6px; margin-top: 8px; }
+  .maqueta-premios { height: 124px; }
+  .maqueta-premios__trofeo { left: calc(50% - 92px); }
+  .maqueta-premios__nota { left: calc(50% - 8px); }
+
+  .maqueta-buscador {
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
+/* En notebooks angostas el garabato de la esquina pisaría el título: sin garabatos. */
+@media (min-width: 861px) and (max-width: 1279px) {
+  .como__pasos .paso .como__rayas {
+    display: none;
+  }
+}
+
 /* ---------- Explorá el archivo ---------- */
 
 .archivo {
