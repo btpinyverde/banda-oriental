@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from core.human import HasHumanPass
 
 from battles.access import can_create
+from battles.privacy import erase_user
 
 from .authentication import BearerTokenAuthentication
 from .claim import claim_device_games, device_id_from
@@ -295,6 +296,7 @@ class MeView(APIView):
         """Deletes the account and everything tied to it: sessions, games, scores and emailed links."""
         user = request.user
         EmailChallenge.objects.filter(Q(email__iexact=user.email) | Q(email__iexact=user.username)).delete()
+        erase_user(user)  # its name and identity out of the battles (the rest of each room keeps its ranking)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
