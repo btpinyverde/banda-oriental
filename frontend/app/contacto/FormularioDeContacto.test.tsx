@@ -38,7 +38,7 @@ describe("FormularioDeContacto", () => {
     expect(MOTIVOS).toEqual(["Tengo una duda", "Algo no funciona", "Una idea o sugerencia", "Soy artista o titular de derechos", "Otro motivo"]);
   });
 
-  it("envía como mensaje de contacto, con el motivo al principio del texto, y agradece", async () => {
+  it("envía como mensaje de contacto, con el motivo en su propio campo, y agradece", async () => {
     enviar.mockResolvedValue({ ok: true });
     render(<FormularioDeContacto />);
 
@@ -50,7 +50,8 @@ describe("FormularioDeContacto", () => {
       kind: "contacto",
       name: "Ana",
       contact: "ana@correo.com",
-      message: "Motivo: Algo no funciona\n\nSe cuelga la reproducción en el celular.",
+      reason: "Algo no funciona",
+      message: "Se cuelga la reproducción en el celular.",
       website: "",
     });
   });

@@ -187,10 +187,10 @@ class FeaturedArtistAdmin(admin.ModelAdmin):
 class SubmissionAdmin(admin.ModelAdmin):
     """What visitors send from the archive. Only the status is editable: what they wrote stays as it came."""
 
-    list_display = ("created_at", "kind", "target_label", "name", "contact", "status")
+    list_display = ("created_at", "kind", "reason", "target_label", "name", "contact", "status", "notified_at")
     list_filter = ("status", "kind", "target_type")
     search_fields = ("target_label", "name", "contact", "message")
-    readonly_fields = ("kind", "target_type", "target_id", "target_label", "name", "contact", "links", "message", "created_at")
+    readonly_fields = ("kind", "target_type", "target_id", "target_label", "name", "contact", "links", "reason", "message", "created_at", "notified_at")
     actions = ["marcar_visto", "marcar_resuelto"]
 
     def has_add_permission(self, request):

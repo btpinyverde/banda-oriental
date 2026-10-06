@@ -8,7 +8,7 @@ export const MOTIVOS = ["Tengo una duda", "Algo no funciona", "Una idea o sugere
 
 const PARECE_UN_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** El formulario de la página de contacto. Va a la API como mensaje de contacto (con el motivo al principio del texto). */
+/** El formulario de la página de contacto. Va a la API como mensaje de contacto, con el motivo elegido en su propio campo. */
 export function FormularioDeContacto() {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
@@ -30,7 +30,7 @@ export function FormularioDeContacto() {
 
     setAviso("");
     setEnviando(true);
-    const resultado = await enviarReporte({ kind: "contacto", name: nombre, contact: correo, message: `Motivo: ${motivo}\n\n${mensaje}`, website: texto("website") });
+    const resultado = await enviarReporte({ kind: "contacto", name: nombre, contact: correo, reason: motivo, message: mensaje, website: texto("website") });
     setEnviando(false);
     if (resultado.ok) setEnviado(true);
     else setAviso(resultado.error);

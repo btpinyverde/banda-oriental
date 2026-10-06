@@ -9,6 +9,8 @@ export interface Reporte {
   name?: string;
   contact?: string;
   links?: string;
+  /** El motivo elegido en el formulario de contacto. */
+  reason?: string;
   message?: string;
   /** El campo escondido que solo completan los bots: tiene que ir vacío. */
   website?: string;

@@ -203,6 +203,11 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Banda Oriental <no-re
 # Where replies to the account emails go. The sender address (hola@bandaoriental...) cannot receive mail, so set this to a
 # mailbox somebody reads; it also helps the emails reach the inbox. Empty = no Reply-To header.
 REPLY_TO_EMAIL = os.environ.get("REPLY_TO_EMAIL", "")
+# Who is emailed when someone writes from the contact form or asks to add a band (empty: nobody, they are only in the admin).
+# By default the same inbox that receives the replies to the account emails.
+CONTACT_NOTIFY_EMAIL = os.environ.get("CONTACT_NOTIFY_EMAIL", REPLY_TO_EMAIL)
+# At most this many of those emails per day, apart from the account ones (Resend's free plan allows about 100 a day in total).
+CONTACT_NOTIFY_DAILY_CAP = int(os.environ.get("CONTACT_NOTIFY_DAILY_CAP", "15"))
 # There is no email provider yet. The dummy backend sends and logs nothing, so confirmation links never end up
 # in production logs. Development overrides it with the console backend.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.dummy.EmailBackend")
