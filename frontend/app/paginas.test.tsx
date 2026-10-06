@@ -143,8 +143,8 @@ describe("PaginaDeContenido", () => {
 });
 
 describe("ruta [pagina]", () => {
-  it("genera una página estática por cada nombre del registro", async () => {
-    expect((await generateStaticParams()).map((p) => p.pagina).sort()).toEqual([...SLUGS].sort());
+  it("genera una página estática por cada nombre del registro, menos las que tienen ruta propia (contacto)", async () => {
+    expect((await generateStaticParams()).map((p) => p.pagina).sort()).toEqual(SLUGS.filter((s) => s !== "contacto").sort());
   });
 
   it("arma la página de un nombre válido", async () => {
