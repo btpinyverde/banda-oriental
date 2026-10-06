@@ -9,10 +9,10 @@ const ARTISTA: ArtistaFila = { id: 7, name: "Jorge Drexler", albums: 2, songs: 1
 const DISCO: DiscoFila = { id: 12, name: "Vaivén", artist: { id: 7, name: "Jorge Drexler" }, year: 1996, genre: "Folk", release_type: "album", songs: 12, cover_art_url: "https://cdn.example/t.jpg" };
 
 describe("TarjetaDeArtista", () => {
-  it("lleva a la ficha, con las canciones (en singular si es una) y el año único", () => {
+  it("lleva a la lista de sus discos, con las canciones (en singular si es una) y el año único", () => {
     render(<ul><TarjetaDeArtista artista={ARTISTA} lugar={0} /></ul>);
 
-    expect(screen.getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(screen.getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/discos?artista=7");
     expect(screen.getByText("1 canción")).toBeInTheDocument();
     expect(screen.getByText("2004")).toBeInTheDocument();
   });
@@ -35,7 +35,7 @@ describe("TarjetaDeDisco", () => {
     expect(screen.getByRole("img", { name: "Tapa de Vaivén" })).toHaveAttribute("src", "https://cdn.example/t.jpg");
     expect(screen.getByRole("link", { name: "Vaivén" })).toHaveAttribute("href", "/archivo/disco/12-vaiven");
     expect(screen.getByRole("link", { name: "Vaivén" })).toHaveClass("tarjeta__enlace-principal");
-    expect(screen.getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(screen.getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/discos?artista=7");
     expect(screen.getByText("1996")).toBeInTheDocument();
     expect(screen.getByText("12 canciones")).toBeInTheDocument();
     expect(screen.getByText("Folk")).toHaveClass("tarjeta__genero");

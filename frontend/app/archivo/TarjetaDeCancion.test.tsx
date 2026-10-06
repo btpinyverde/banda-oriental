@@ -19,8 +19,9 @@ describe("TarjetaDeCancion", () => {
     render(<ul><TarjetaDeCancion cancion={CANCION} /></ul>);
 
     expect(screen.getByRole("img", { name: /Tapa de El camino más largo/ })).toHaveAttribute("src", "https://cdn.example/tapa.jpg");
-    expect(screen.getByRole("link", { name: "A las nueve" })).toHaveAttribute("href", "/archivo/cancion/5-a-las-nueve");
-    expect(screen.getByRole("link", { name: "No Te Va Gustar" })).toHaveAttribute("href", "/archivo/artista/7-no-te-va-gustar");
+    // Tocar la canción lleva al disco donde está; tocar al artista, a la lista de sus discos.
+    expect(screen.getByRole("link", { name: "A las nueve" })).toHaveAttribute("href", "/archivo/disco/12-el-camino-mas-largo");
+    expect(screen.getByRole("link", { name: "No Te Va Gustar" })).toHaveAttribute("href", "/archivo/discos?artista=7");
     expect(screen.getByText("El camino más largo")).toHaveClass("tarjeta__disco");
     expect(screen.getByText("2004")).toBeInTheDocument();
     expect(screen.getByText("Rock")).toHaveClass("tarjeta__genero");

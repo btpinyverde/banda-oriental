@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { filtrosDelArchivo, listarDiscos } from "../../lib/archivo-musical";
 import { BarraDeFiltros } from "../BarraDeFiltros";
 import { cantidadesDelArchivo } from "../cantidades";
@@ -29,15 +30,16 @@ export default async function PaginaDeDiscos({ searchParams }: { searchParams: P
   const q = textoDe(consulta.q);
   const decada = enteroDe(consulta.decada);
   const genero = textoDe(consulta.genero, 60);
+  const artista = enteroDe(consulta.artista);
   const orden = consulta.orden === "year" || consulta.orden === "name" ? consulta.orden : undefined;
   const numero = enteroDe(consulta.pagina) ?? 1;
   const [filtros, discos, cantidades] = await Promise.all([
     filtrosDelArchivo(),
-    listarDiscos({ q, decada, genero, orden, pagina: numero, porPagina: POR_PAGINA }),
+    listarDiscos({ q, decada, genero, artista, orden, pagina: numero, porPagina: POR_PAGINA }),
     cantidadesDelArchivo(),
   ]);
   const generos = filtros?.genres.map((g) => g.genre) ?? [];
-  const filtrosPuestos = sinVacios({ q, decada, genero, orden: orden && orden !== "name" ? orden : undefined });
+  const filtrosPuestos = sinVacios({ q, decada, genero, artista, orden: orden && orden !== "name" ? orden : undefined });
   return (
     <Marco ancho pie="completo">
       <EncabezadoDelArchivo actual="discos" cantidades={cantidades} />
@@ -52,14 +54,14 @@ export default async function PaginaDeDiscos({ searchParams }: { searchParams: P
         placeholder="Buscá un disco…"
         ordenes={ORDENES}
         ordenPorDefecto="name"
-        parametros={{}}
+        parametros={sinVacios({ artista })}
       />
       <ChipsDeGenero
         conOtros
         ruta="/archivo/discos"
         generos={elegirChips(generos, GENEROS_EN_LOS_CHIPS)}
         actual={genero}
-        parametros={sinVacios({ q, decada, orden: orden && orden !== "name" ? orden : undefined })}
+        parametros={sinVacios({ q, decada, artista, orden: orden && orden !== "name" ? orden : undefined })}
       />
       {discos === null ? (
         <Aviso>No pudimos cargar los discos ahora. Probá de nuevo en un rato.</Aviso>
@@ -67,7 +69,14 @@ export default async function PaginaDeDiscos({ searchParams }: { searchParams: P
         <p className="archivo-aviso">No encontramos discos con ese criterio.</p>
       ) : (
         <>
-          <p className="resultados__cuenta">{`${cantidad(discos.count)} ${discos.count === 1 ? "disco encontrado" : "discos encontrados"}`}</p>
+          {artista ? (
+            <p className="resultados__cuenta">
+              <span>{`${cantidad(discos.count)} ${discos.count === 1 ? "disco" : "discos"} de ${discos.results[0].artist.name}`}</span> ·{" "}
+              <Link href="/archivo/discos">Ver todos los discos</Link>
+            </p>
+          ) : (
+            <p className="resultados__cuenta">{`${cantidad(discos.count)} ${discos.count === 1 ? "disco encontrado" : "discos encontrados"}`}</p>
+          )}
           <ul className="grilla" aria-label="Discos">
             {discos.results.map((d, lugar) => <TarjetaDeDisco key={d.id} disco={d} lugar={lugar} />)}
           </ul>

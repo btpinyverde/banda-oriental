@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { rutaDeArtista, rutaDeCancion, type CancionFila } from "../lib/archivo-musical";
+import { rutaDeDisco, rutaDeDiscosDe, type CancionFila } from "../lib/archivo-musical";
 import { SinImagen } from "./SinImagen";
 
 const TONOS = 5;
@@ -29,10 +29,10 @@ export function TarjetaDeCancion({ cancion, lugar }: { cancion: CancionFila; lug
       ) : (
         <SinImagen tipo="cancion" lugar={lugar ?? cancion.id} />
       )}
-      <Link href={rutaDeCancion(cancion)} className="tarjeta__titulo tarjeta__enlace-principal">
+      <Link href={rutaDeDisco(cancion.album)} className="tarjeta__titulo tarjeta__enlace-principal">
         {cancion.title}
       </Link>
-      <Link href={rutaDeArtista(cancion.artist)} className="tarjeta__artista">
+      <Link href={rutaDeDiscosDe(cancion.artist)} className="tarjeta__artista">
         {cancion.artist.name}
       </Link>
       {cancion.album.name && <span className="tarjeta__disco">{cancion.album.name}</span>}

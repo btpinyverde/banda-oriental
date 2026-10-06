@@ -70,7 +70,7 @@ describe("/archivo (el explorador de canciones)", () => {
     expect(canciones).toHaveBeenCalledWith({ q: "luna", decada: 1990, genero: "Rock", orden: "newest", pagina: 2, porPagina: 15 });
     const lista = screen.getByRole("list", { name: "Canciones" });
     expect(within(lista).getAllByRole("listitem")).toHaveLength(2);
-    expect(within(lista).getByRole("link", { name: "Luna negra" })).toHaveAttribute("href", "/archivo/cancion/5-luna-negra");
+    expect(within(lista).getAllByRole("link", { name: "Luna negra" })[0]).toHaveAttribute("href", "/archivo/disco/12-vaiven");
     expect(within(lista).getAllByRole("img", { name: /Tapa de Vaivén/ })).toHaveLength(2);
   });
 
@@ -168,7 +168,7 @@ describe("/archivo/artistas", () => {
     render(await PaginaArtistas({ searchParams: buscaParams({ letra: "J" }) }));
 
     expect(listar).toHaveBeenCalledWith({ q: undefined, letra: "J", pagina: 1, porPagina: 15 });
-    expect(screen.getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(screen.getByRole("link", { name: /Jorge Drexler/ })).toHaveAttribute("href", "/archivo/discos?artista=7");
     const letras = screen.getByRole("navigation", { name: "Por letra" });
     expect(within(letras).getByRole("link", { name: "J" })).toHaveAttribute("aria-current", "true");
     expect(within(letras).getByRole("link", { name: "K" })).toHaveAttribute("href", "/archivo/artistas?letra=K");
@@ -256,10 +256,34 @@ describe("/archivo/discos", () => {
     expect(screen.getByRole("link", { name: "Rock" })).toHaveAttribute("href", "/archivo/discos?genero=Rock");
     const tarjeta = screen.getByText("Vaivén").closest("li") as HTMLElement;
     expect(tarjeta).toHaveClass("tarjeta");
-    expect(within(tarjeta).getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/artista/7-jorge-drexler");
+    expect(within(tarjeta).getByRole("link", { name: "Jorge Drexler" })).toHaveAttribute("href", "/archivo/discos?artista=7");
     expect(within(tarjeta).getByText("1996")).toBeInTheDocument();
     expect(within(tarjeta).getByText("Folk")).toHaveClass("tarjeta__genero");
     expect(within(tarjeta).getByRole("img", { name: /Tapa de Vaivén/ })).toBeInTheDocument();
+  });
+
+  it("con ?artista=7 muestra solo los discos de ese artista, lo dice, y se puede volver a ver todos", async () => {
+    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
+    const listar = vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO], { count: 2, pages: 2 }));
+
+    render(await PaginaDiscos({ searchParams: buscaParams({ artista: "7" }) }));
+
+    expect(listar).toHaveBeenCalledWith(expect.objectContaining({ artista: 7 }));
+    expect(screen.getByText("2 discos de Jorge Drexler")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver todos los discos" })).toHaveAttribute("href", "/archivo/discos");
+    // El filtro se conserva al paginar y al elegir un género.
+    expect(screen.getByRole("link", { name: "Página 2" }).getAttribute("href")).toContain("artista=7");
+    expect(screen.getByRole("link", { name: "Rock" }).getAttribute("href")).toContain("artista=7");
+  });
+
+  it("un artista inválido se ignora", async () => {
+    vi.spyOn(datos, "filtrosDelArchivo").mockResolvedValue(FILTROS);
+    const listar = vi.spyOn(datos, "listarDiscos").mockResolvedValue(pagina([DISCO]));
+
+    render(await PaginaDiscos({ searchParams: buscaParams({ artista: "abc" }) }));
+
+    expect(listar.mock.calls[0][0].artista).toBeUndefined();
+    expect(screen.queryByRole("link", { name: "Ver todos los discos" })).toBeNull();
   });
 
   it("una década o un orden inválidos se ignoran", async () => {

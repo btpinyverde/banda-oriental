@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { rutaDeArtista, rutaDeDisco, type ArtistaFila, type DiscoFila } from "../lib/archivo-musical";
+import { rutaDeDisco, rutaDeDiscosDe, type ArtistaFila, type DiscoFila } from "../lib/archivo-musical";
 import { FotoDelArtista } from "../ui/FotoDelArtista";
 import { SinImagen } from "./SinImagen";
 
@@ -16,7 +16,7 @@ export function TarjetaDeArtista({ artista, lugar }: { artista: ArtistaFila; lug
   return (
     <li className="tarjeta">
       <FotoDelArtista nombre={artista.name} foto={artista.picture_url || undefined} tono={lugar % TONOS} clase="tarjeta__foto" vacio={<SinImagen tipo="artista" lugar={lugar} />} />
-      <Link href={rutaDeArtista(artista)} className="tarjeta__titulo tarjeta__enlace-principal">
+      <Link href={rutaDeDiscosDe(artista)} className="tarjeta__titulo tarjeta__enlace-principal">
         {artista.name}
       </Link>
       <span className="tarjeta__disco">{plural(artista.songs, "canción", "canciones")}</span>
@@ -43,7 +43,7 @@ export function TarjetaDeDisco({ disco, lugar }: { disco: DiscoFila; lugar: numb
       <Link href={rutaDeDisco(disco)} className="tarjeta__titulo tarjeta__enlace-principal">
         {disco.name}
       </Link>
-      <Link href={rutaDeArtista(disco.artist)} className="tarjeta__artista">
+      <Link href={rutaDeDiscosDe(disco.artist)} className="tarjeta__artista">
         {disco.artist.name}
       </Link>
       {disco.year && <span className="tarjeta__anio">{disco.year}</span>}
