@@ -1,4 +1,3 @@
-import { batallaActiva } from "./funciones";
 /**
  * Contenido de las páginas informativas del sitio (cómo funciona, acerca de, legales...) y de las que todavía
  * están por hacerse. Todo vive acá, en datos, y lo sirve una sola ruta (app/[pagina]/page.tsx): para cambiar un
@@ -371,23 +370,6 @@ const paginas: Pagina[] = [
       },
     ],
   },
-  // El modo batalla no está resuelto: mientras el interruptor esté apagado, la página no existe (ver lib/funciones.ts).
-  ...(batallaActiva()
-    ? [
-        {
-          tipo: "proximamente" as const,
-          slug: "batalla",
-          actual: "/batalla",
-          titulo: "Modo batalla",
-          descripcion:
-            "El modo batalla de Banda Oriental, para competir con amigos, llega pronto.",
-          bajada:
-            "Desafiá a tus amigos con la misma canción y mirá quién la saca primero.",
-          texto:
-            "Estamos terminando de armar el modo batalla. Mientras tanto, podés jugar la canción del día.",
-        },
-      ]
-    : []),
 ];
 
 /** Lo que muestran /login, /cuenta y /cuenta/entrar mientras las cuentas están apagadas (ver cuentas/activas.ts). */

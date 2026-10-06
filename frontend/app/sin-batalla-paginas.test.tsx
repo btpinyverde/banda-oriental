@@ -29,12 +29,13 @@ describe("el modo batalla apagado: páginas y textos", () => {
     expect(todo).not.toContain("batalla");
   });
 
-  it("con el interruptor prendido existe y la descripción vuelve a mencionarla", async () => {
+  it("con el interruptor prendido no hay una página de texto de /batalla (la real es la pantalla de crear) y la descripción la menciona", async () => {
     const { paginas, seo, ruta } = await cargar("1");
 
-    expect(paginas.paginaPorSlug("batalla")?.tipo).toBe("proximamente");
-    const pronto = await ruta.generateMetadata({ params: Promise.resolve({ pagina: "batalla" }) });
-    expect(pronto.robots).toEqual({ index: false, follow: false }); // aunque se prenda, mientras diga "próximamente" no se indexa
+    // Antes había una página "llega pronto"; ahora /batalla es la pantalla de crear la sala (app/batalla), no una página de texto.
+    expect(paginas.paginaPorSlug("batalla")).toBeUndefined();
+    expect((await ruta.generateStaticParams()).map((p: { pagina: string }) => p.pagina)).not.toContain("batalla");
+    expect(JSON.stringify(Object.values(paginas.PAGINAS)).toLowerCase()).not.toContain("llega pronto");
     expect(seo.DESCRIPCION.toLowerCase()).toContain("batalla");
   });
 });
