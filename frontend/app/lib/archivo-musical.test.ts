@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buscarEnElArchivo, fichaDeArtista, filtrosDelArchivo, idDeFicha, listarArtistas, listarCanciones, listarDiscos, rutaDeArtista, rutaDeCancion, rutaDeDisco, slug } from "./archivo-musical";
+import { artistasDestacados, buscarEnElArchivo, fichaDeArtista, filtrosDelArchivo, idDeFicha, listarArtistas, listarCanciones, listarDiscos, rutaDeArtista, rutaDeCancion, rutaDeDisco, slug } from "./archivo-musical";
 
 const ARTISTA = { id: 7, name: "Jorge Drexler", albums: 2, songs: 3, first_year: 1996, last_year: 2004, cover_art_url: "", picture_url: "" };
 const respuesta = (cuerpo: unknown, estado = 200) => ({ ok: estado >= 200 && estado < 300, status: estado, json: async () => cuerpo });
@@ -153,5 +153,42 @@ describe("buscarEnElArchivo (desde el navegador, mientras se escribe)", () => {
     fetchMock.mockResolvedValueOnce(respuesta({ detail: "mal" }, 400));
 
     await expect(buscarEnElArchivo("luna")).rejects.toThrow();
+  });
+});
+
+describe("artistas destacados de la portada", () => {
+  const DESTACADO = { ...ARTISTA, photo_url: "/api/catalog/featured/7/image/?v=123" };
+
+  it("pide la lista y completa la foto con la dirección de la API", async () => {
+    fetchMock.mockResolvedValue(respuesta({ results: [DESTACADO] }));
+
+    const lista = await artistasDestacados();
+
+    expect(urlPedida().pathname).toBe("/api/catalog/featured/");
+    expect(lista).toEqual([{ ...DESTACADO, photo_url: "https://api.example/api/catalog/featured/7/image/?v=123" }]);
+  });
+
+  it("sin dirección base la foto queda relativa (desarrollo con proxy)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "");
+    fetchMock.mockResolvedValue(respuesta({ results: [DESTACADO] }));
+
+    expect((await artistasDestacados())![0].photo_url).toBe("/api/catalog/featured/7/image/?v=123");
+  });
+
+  it("una lista vacía es válida: no hay destacados", async () => {
+    fetchMock.mockResolvedValue(respuesta({ results: [] }));
+    expect(await artistasDestacados()).toEqual([]);
+  });
+
+  it("si la API falla o responde algo raro devuelve null", async () => {
+    fetchMock.mockResolvedValue(respuesta({}, 500));
+    expect(await artistasDestacados()).toBeNull();
+    fetchMock.mockResolvedValue(respuesta({ otra: 1 }));
+    expect(await artistasDestacados()).toBeNull();
+  });
+
+  it("descarta una foto que no sea de la API ni https (nada de javascript: ni datos ajenos)", async () => {
+    fetchMock.mockResolvedValue(respuesta({ results: [{ ...DESTACADO, photo_url: "javascript:alert(1)" }] }));
+    expect((await artistasDestacados())![0].photo_url).toBe("");
   });
 });

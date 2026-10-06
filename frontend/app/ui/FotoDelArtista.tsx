@@ -14,16 +14,23 @@ export function inicialDe(nombre: string): string {
 const tonoDe = (nombre: string) => [...nombre].reduce((suma, c) => suma + c.charCodeAt(0), 0) % TONOS;
 
 /**
+ * `recorte` es la foto sin fondo que se sube desde el admin: va entera, apoyada abajo, sobre el color y sin filtros (ya viene
+ * editada). `tono` fija el color por el lugar de la tarjeta; sin él sale del nombre.
+ *
  * La foto del artista (de Deezer). Si no tiene, o la imagen no se puede cargar, queda la inicial del nombre sobre un color de la
  * marca: nunca una imagen inventada ni una imagen rota. Solo se aceptan fotos por https.
  */
-export function FotoDelArtista({ nombre, foto, clase = "" }: { nombre: string; foto?: string; clase?: string }) {
+export function FotoDelArtista({ nombre, foto, recorte, tono, clase = "" }: { nombre: string; foto?: string; recorte?: string; tono?: number; clase?: string }) {
   // Se recuerda qué foto falló, no un "falló" suelto: con otra foto (otro artista) se vuelve a intentar.
   const [fallida, setFallida] = useState<string | null>(null);
-  const hayFoto = !!foto && foto.startsWith("https://") && fallida !== foto;
+  const hayRecorte = !!recorte && fallida !== recorte;
+  const hayFoto = !hayRecorte && !!foto && foto.startsWith("https://") && fallida !== foto;
+  const clases = `artista__foto artista__foto--tono-${tono ?? tonoDe(nombre)} ${hayFoto ? "artista__foto--con-foto" : ""} ${hayRecorte ? "artista__foto--recorte" : ""} ${clase}`;
   return (
-    <div className={`artista__foto artista__foto--tono-${tonoDe(nombre)} ${hayFoto ? "artista__foto--con-foto" : ""} ${clase}`.replace(/\s+/g, " ").trim()}>
-      {hayFoto ? (
+    <div className={clases.replace(/\s+/g, " ").trim()}>
+      {hayRecorte ? (
+        <img src={recorte} alt={`Foto de ${nombre}`} loading="lazy" onError={() => setFallida(recorte)} />
+      ) : hayFoto ? (
         <img src={foto} alt={`Foto de ${nombre}`} loading="lazy" referrerPolicy="no-referrer" onError={() => setFallida(foto)} />
       ) : (
         <span className="artista__inicial" aria-hidden="true">

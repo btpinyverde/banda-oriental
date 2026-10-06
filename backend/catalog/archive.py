@@ -5,6 +5,7 @@ come); `played_on` lists days that are already over.
 """
 
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.db.models import Case, CharField, Count, F, IntegerField, Max, Min, OuterRef, Q, Subquery, Value, When
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ParseError
@@ -13,7 +14,7 @@ from rest_framework.views import APIView
 
 from gameplay.models import DailySong
 
-from .models import Album, Artist, Song
+from .models import Album, Artist, FeaturedArtist, Song
 from .search import Unaccent, filter_by_text, strip_accents
 
 CACHE_SECONDS = 60
@@ -348,3 +349,30 @@ class FiltersView(ArchiveView):
                 "years": {"min": min(years) if years else None, "max": max(years) if years else None},
             }
         )
+
+
+class FeaturedListView(ArchiveView):
+    """The artists of the landing, in the order set in the admin. Same shape as an artist row, plus `photo_url`."""
+
+    def get(self, request):
+        featured = {f.artist_id: f for f in FeaturedArtist.objects.filter(active=True)}
+        artists = {a.id: a for a in artists_queryset().filter(pk__in=featured)}
+        rows = []
+        for item in sorted(featured.values(), key=lambda f: (f.position, f.id)):
+            artist = artists.get(item.artist_id)  # an artist with no readable songs stays out
+            if artist:
+                photo = f"/api/catalog/featured/{artist.id}/image/?v={int(item.updated_at.timestamp())}"
+                rows.append({**_artist_row(artist), "photo_url": photo})
+        return _answer({"results": rows})
+
+
+class FeaturedImageView(ArchiveView):
+    def get(self, request, pk):
+        item = FeaturedArtist.objects.filter(artist_id=pk, active=True).first()
+        if not item:
+            raise NotFound()
+        # The link carries the update time (`?v=`), so it can be cached for a day: a new photo is a new link.
+        response = HttpResponse(bytes(item.image), content_type=item.image_type)
+        response["Cache-Control"] = "public, max-age=86400"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response

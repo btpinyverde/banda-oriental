@@ -1423,6 +1423,9 @@ button {
 .artista__foto img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Las fotos van en blanco y negro sobre el color del fondo (como en el diseño): al multiplicar, lo claro toma el color. */
 .artista__foto--con-foto img { filter: grayscale(1) contrast(1.08); mix-blend-mode: multiply; }
+/* La foto recortada que sube el admin: entera, apoyada abajo sobre el color y sin filtros (ya viene editada). */
+.artista__foto--recorte { align-items: end; }
+.artista__foto--recorte img { object-fit: contain; object-position: center bottom; }
 .artista__foto--tono-0 { background: #ffb4da; }
 .artista__foto--tono-1 { background: #d9cffb; }
 .artista__foto--tono-2 { background: #fbe889; }

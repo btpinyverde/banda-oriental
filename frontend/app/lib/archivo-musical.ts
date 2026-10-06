@@ -135,6 +135,24 @@ async function lista<T>(ruta: string): Promise<Pagina<T> | null> {
 export const listarArtistas = (f: { q?: string; letra?: string; orden?: "name" | "songs"; pagina?: number; porPagina?: number }) =>
   lista<ArtistaFila>(`/api/catalog/artists/${consulta({ q: f.q, letter: f.letra, sort: f.orden, page: f.pagina, page_size: f.porPagina })}`);
 
+/** Un artista de la portada: igual que en la lista, más su foto recortada (la sube el admin). */
+export type ArtistaDestacado = ArtistaFila & { photo_url: string };
+
+/** La dirección de la foto recortada: la de la API (se completa con su dirección) o https; cualquier otra cosa se descarta. */
+function direccionDeFoto(url: unknown): string {
+  if (typeof url !== "string") return "";
+  if (url.startsWith("/api/catalog/featured/")) return `${base()}${url}`;
+  return url.startsWith("https://") ? url : "";
+}
+
+/** Los artistas que se eligieron para la portada, en su orden. `null` si la API no responde; `[]` si no hay ninguno. */
+export async function artistasDestacados(): Promise<ArtistaDestacado[] | null> {
+  const respuesta = await pedir("/api/catalog/featured/");
+  const cuerpo = respuesta.estado === "ok" ? (respuesta.cuerpo as { results?: unknown } | null) : null;
+  if (!cuerpo || !Array.isArray(cuerpo.results)) return null;
+  return (cuerpo.results as ArtistaDestacado[]).map((a) => ({ ...a, photo_url: direccionDeFoto(a.photo_url) }));
+}
+
 export const listarDiscos = (f: { q?: string; decada?: number; anio?: number; genero?: string; artista?: number; orden?: "name" | "year"; pagina?: number; porPagina?: number }) =>
   lista<DiscoFila>(`/api/catalog/albums/${consulta({ q: f.q, decade: f.decada, year: f.anio, genre: f.genero, artist: f.artista, sort: f.orden, page: f.pagina, page_size: f.porPagina })}`);
 

@@ -18,6 +18,26 @@ class Artist(models.Model):
         return self.name
 
 
+class FeaturedArtist(models.Model):
+    """An artist the landing shows, with a cutout photo uploaded from the admin. The photo lives in the database (a few
+    small files, cached for a day by the image view): the R2 bucket is private, so its links expire."""
+
+    artist = models.OneToOneField(Artist, on_delete=models.CASCADE, related_name="featured")
+    image = models.BinaryField()
+    image_type = models.CharField(max_length=20)
+    position = models.PositiveIntegerField(default=0, help_text="Menor número = aparece primero.")
+    active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        verbose_name = "artista destacado"
+        verbose_name_plural = "artistas destacados"
+
+    def __str__(self):
+        return self.artist.name
+
+
 class Album(models.Model):
     RELEASE_TYPES = [("album", "Álbum"), ("ep", "EP"), ("single", "Single")]
 
