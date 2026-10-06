@@ -8,7 +8,7 @@ Una página para quien opere el juego (hoy, Brandon). Complementa `docs/segurida
 | Parte | Dónde | Notas |
 |---|---|---|
 | Sitio (Next.js) | Vercel, `bandaoriental.xami.uy` | Se despliega solo al mergear a `main`. |
-| API (Django) | Render (plan gratuito), `api.bandaoriental.xami.uy` | Se duerme sin visitas: la primera tarda hasta ~50 s. |
+| API (Django) | Render (plan gratuito), `api.bandaoriental.xami.uy` | Se duerme sin visitas: la primera tarda hasta ~50 s. Para que no se duerma y que avise si se cae: UptimeRobot (ver `docs/lanzamiento-juego.md`). Corre con `gunicorn --threads 4`. |
 | Base de datos | Neon (Postgres) | Guarda partidas, puntajes, estadísticas y cuentas. |
 | Audios | Cloudflare R2, bucket `banda-oriental-stems` | Direcciones firmadas de 1 hora. |
 | Correo | Resend, dominio `bandaoriental.xami.uy` | Remitente `hola@bandaoriental.xami.uy`. |
@@ -19,7 +19,8 @@ Una página para quien opere el juego (hoy, Brandon). Complementa `docs/segurida
 
 **Render (API)**: `DATABASE_URL`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, claves de R2, `FRONTEND_URL`
 (`https://bandaoriental.xami.uy`), `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL`, `TURNSTILE_SECRET_KEY` (opcional),
-`REPLY_TO_EMAIL` (casilla real a la que llegan las respuestas a los correos de la cuenta; ver `docs/entregabilidad-del-correo.md`), `PURGE_ANONYMOUS_AFTER_DAYS` (7 por defecto; `0` apaga el borrado de anónimos).
+`REPLY_TO_EMAIL` (casilla real a la que llegan las respuestas a los correos de la cuenta; ver `docs/entregabilidad-del-correo.md`), `PURGE_ANONYMOUS_AFTER_DAYS` (7 por defecto; `0` apaga el borrado de anónimos),
+`BATTLE_CREATOR_EMAILS` (quién puede crear batallas, separados por coma; por defecto la cuenta de Brandon; `*` = cualquiera, también sin cuenta), `BATTLE_MIN_PLAYERS` (mínimo para empezar; vacío = 1 mientras es restringido y 2 al abrirlo). El borrado de anónimos de los 7 días alcanza también a las batallas.
 
 **Vercel (sitio)**: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_CUENTAS_ACTIVAS=1` (cuentas visibles),
 `NEXT_PUBLIC_BATALLA_ACTIVA=1` (muestra el modo batalla; apagado por defecto: sin la variable no aparece nada de él),
