@@ -42,7 +42,7 @@ export interface PaginaProximamente extends Base {
 
 export type Pagina = PaginaDeTexto | PaginaProximamente;
 
-const FECHA_LEGALES = "3 de octubre de 2026";
+const FECHA_LEGALES = "6 de octubre de 2026";
 
 const paginas: Pagina[] = [
   {
@@ -230,7 +230,7 @@ const paginas: Pagina[] = [
       {
         titulo: "2. El servicio",
         parrafos: [
-          "Banda Oriental es un juego gratuito con una canción por día. Podemos cambiar, suspender o dejar de ofrecer cualquier parte del servicio, y puede haber interrupciones o errores.",
+          "Banda Oriental es un juego gratuito con una canción por día. También tiene un modo para jugar en grupo, las batallas: una persona organiza una sala y otras entran con un enlace. Podemos cambiar, suspender o dejar de ofrecer cualquier parte del servicio, y puede haber interrupciones o errores.",
         ],
       },
       {
@@ -239,6 +239,7 @@ const paginas: Pagina[] = [
           "Banda Oriental es un juego solo para personas. No uses programas automáticos, bots, scripts ni agentes de IA para jugar, crear cuentas, alterar resultados o sobrecargar el servicio, ni rastreadores para copiar su contenido más allá de la portada.",
           "Para cuidar el servicio podemos limitar la cantidad de pedidos, pedirte una comprobación de que sos una persona y bloquear el acceso de programas automáticos.",
           "Los nombres que elijas para el ranking no pueden ser ofensivos, engañosos ni publicitarios. Podemos rechazarlos o quitarlos.",
+          "En una batalla, el nombre con el que entrás a la sala y los títulos y nombres de equipos que pongas al organizarla tienen las mismas reglas. Quien organiza una batalla decide a quién deja entrar y es responsable de lo que arma; las demás personas de la sala ven tu nombre y tus resultados en esa batalla.",
           "No intentes acceder a partes del servicio que no son públicas.",
         ],
       },
@@ -246,6 +247,7 @@ const paginas: Pagina[] = [
         titulo: "4. Música y contenidos",
         parrafos: [
           "Las canciones, grabaciones y marcas mencionadas pertenecen a sus artistas y titulares. El juego las usa para dar a conocer música uruguaya. Si sos titular de derechos y tenés una consulta, escribinos desde la página de contacto.",
+          "En las batallas, las canciones suenan con fragmentos de unos 30 segundos que provee Deezer o con videos de YouTube que reproduce el propio YouTube dentro del sitio. Esos contenidos y sus reproductores se rigen por las condiciones de cada servicio.",
         ],
       },
       {
@@ -293,6 +295,7 @@ const paginas: Pagina[] = [
           "Un identificador anónimo de tu dispositivo, generado al azar y guardado en tu navegador. Nos permite recordar tus intentos del día.",
           "Tus intentos y resultados de cada día, y tus estadísticas (partidas jugadas, aciertos, racha y puntaje total), que calcula y guarda nuestro servidor, asociados a ese identificador anónimo o, si tenés cuenta, a tu cuenta.",
           "El nombre público que elijas para el ranking, solo si decidís guardar tu puntaje: lo elegís la primera vez y después podés cambiarlo una vez cada 7 días, no puede repetirse con el de otra persona, lo ve cualquiera que mire los rankings y se conserva si después creás una cuenta.",
+          "Si jugás u organizás una batalla: el nombre con el que entrás a la sala, tus respuestas y los puntos de cada ronda y, si se juega por equipos, tu equipo; y, si la organizás, la sala (título, canciones elegidas y ajustes). Eso queda asociado al identificador anónimo de tu dispositivo o, si tenés cuenta, a tu cuenta. Lo ven las personas que participaron en esa batalla y quien la organizó, y nadie más: no hay un ranking público de batallas.",
           "Si creás una cuenta: tu correo y tu contraseña (guardada de forma que no podemos leerla), y las partidas y los puntajes asociados a la cuenta, que así te siguen a cualquier dispositivo.",
           "Lo que aceptaste al crear la cuenta: los Términos y la Política de Privacidad (la versión de los textos y la fecha) y, si lo marcaste, que querés recibir novedades por correo (con la fecha de esa elección).",
           "Los enlaces que te mandamos por correo (confirmar, entrar o cambiar la contraseña), hasta que se usan o vencen.",
@@ -304,18 +307,21 @@ const paginas: Pagina[] = [
         parrafos: [
           "Tus estadísticas y tu racha las calcula y guarda nuestro servidor, y tu historial se muestra a partir de lo que guarda; además quedan copiados en tu navegador, en el almacenamiento local, para que el juego responda rápido. Si borrás los datos del navegador se pierde el identificador anónimo, y entonces ya no podemos vincular lo que jugaste sin cuenta a ese dispositivo.",
           "Si iniciás sesión, también se guarda ahí una clave de sesión que identifica tu cuenta en este dispositivo. Al cerrar sesión se borra.",
+          "Si organizás una batalla, se guarda ahí la clave que te permite manejar esa sala (empezarla, aceptar o sacar gente, armar los equipos).",
         ],
       },
       {
         titulo: "Si jugás sin cuenta",
         parrafos: [
           "Tus partidas y estadísticas quedan en nuestro servidor, asociadas al identificador anónimo de tu navegador. Si pasan siete días sin que juegues, las borramos junto con tu nombre del ranking, porque ya no hay forma de saber de quién son. Si creás una cuenta antes, tus partidas pasan a tu cuenta y no se borran; la única excepción es un día que tu cuenta ya había jugado, porque cada día cuenta una sola vez.",
+          "Con las batallas pasa algo parecido: a los siete días sacamos tu nombre y tu dispositivo de las batallas que jugaste sin cuenta. Tus puntos quedan en esa sala con un nombre genérico («Jugador anónimo»), para no cambiar los resultados de las demás personas. Una sala que organizaste sin cuenta pierde también la referencia a tu dispositivo, y una a la que nadie entró se borra.",
         ],
       },
       {
         titulo: "Cookies y seguimiento",
         parrafos: [
           "No usamos cookies de publicidad ni herramientas para seguirte entre sitios. Usamos el almacenamiento del navegador solo para que el juego funcione.",
+          "Cuando una ronda de una batalla usa un video de YouTube, tu navegador carga el reproductor de YouTube (Google), que puede guardar sus propias cookies y recibir datos técnicos como tu dirección IP, según su propia política. Solo pasa en esas rondas.",
           "Medimos las visitas con Vercel Web Analytics, que cuenta páginas vistas sin cookies y sin identificarte personalmente. También usamos Google Search Console, que nos muestra cómo aparece el sitio en las búsquedas; no instalamos Google Analytics ni otras herramientas de Google en el sitio.",
         ],
       },
@@ -349,12 +355,14 @@ const paginas: Pagina[] = [
         titulo: "Borrar tu cuenta",
         parrafos: [
           "Podés borrar tu cuenta cuando quieras desde Mi cuenta, con el botón Borrar mi cuenta: se borran tu correo, tus sesiones, tus partidas, tus puntajes, tus estadísticas y tu nombre del ranking, que queda libre para otra persona. Las partidas jugadas sin cuenta que no llegaron a pasar a ninguna cuenta se borran solas a los siete días sin jugar.",
+          "De las batallas se borra tu nombre y tu identidad: tus jugadores pasan a llamarse «Jugador eliminado» y conservan sus puntos sin tu nombre (para no cambiar los resultados de las demás personas), y las salas que organizaste quedan sin vínculo con tu cuenta (una a la que nadie entró se borra).",
         ],
       },
       {
         titulo: "Proveedores",
         parrafos: [
           "El sitio, la base de datos y los archivos de audio se alojan en servicios de terceros. Esos proveedores pueden procesar datos técnicos para prestarnos el servicio.",
+          "En las batallas, los fragmentos de audio se piden a los servidores de Deezer, que reciben la dirección IP de quien los escucha; y los videos los reproduce YouTube (Google), como se explica más arriba.",
         ],
       },
       {

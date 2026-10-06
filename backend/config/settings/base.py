@@ -241,4 +241,4 @@ PUBLIC_NAME_CHANGE_COOLDOWN_DAYS = 7
 
 # Version of the Terms and the Privacy policy people accept when they create an account. Change it when the texts change
 # in a way people should accept again; each acceptance records the version it was for.
-TERMS_VERSION = "2026-10"
+TERMS_VERSION = "2026-10-b"

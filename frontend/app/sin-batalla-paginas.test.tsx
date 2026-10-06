@@ -25,7 +25,10 @@ describe("el modo batalla apagado: páginas y textos", () => {
   it("no queda ningún texto del sitio que prometa el modo batalla", async () => {
     const { paginas, seo } = await cargar("");
 
-    const todo = JSON.stringify([Object.values(paginas.PAGINAS), seo.DESCRIPCION]).toLowerCase();
+    // Los términos y la privacidad sí lo mencionan aunque el modo esté apagado para el público: a las salas se entra con un
+    // enlace (solo crearlas está restringido), y ahí ya se guardan datos de quien juega, así que tienen que decirlo.
+    const promocionales = Object.entries(paginas.PAGINAS).filter(([slug]) => !["terminos", "privacidad"].includes(slug));
+    const todo = JSON.stringify([promocionales, seo.DESCRIPCION]).toLowerCase();
     expect(todo).not.toContain("batalla");
   });
 
