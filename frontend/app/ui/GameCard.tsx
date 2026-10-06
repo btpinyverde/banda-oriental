@@ -2,32 +2,34 @@ const COLUMNAS = ["Canción", "Año", "Género", "Artista", "Disco"] as const;
 
 type Estado = "acierto" | "cerca" | "error";
 
+// Canciones reales, con su artista, disco y año verdaderos (los del catálogo). El intento que se busca es "A las nueve" (verde =
+// coincide, amarillo = cerca, rojo = no): "Brindis por Pierrot" es de 1985, lejos de 2012; "Yendo a la casa de Damián", de 2006, cerca.
 const INTENTOS: { celdas: [string, Estado][] }[] = [
   {
     celdas: [
-      ["A Don José", "acierto"],
-      ["2002", "acierto"],
+      ["Brindis por Pierrot", "error"],
+      ["1985", "error"],
       ["Rock", "acierto"],
-      ["Tabaré Cardozo", "error"],
-      ["", "error"],
+      ["Jaime Roos", "error"],
+      ["Brindis por Pierrot", "error"],
     ],
   },
   {
     celdas: [
-      ["Brindis por Pierrot", "cerca"],
-      ["2001", "cerca"],
-      ["Rock", "cerca"],
-      ["No Te Va Gustar", "cerca"],
-      ["", "error"],
+      ["Yendo a la casa de Damián", "error"],
+      ["2006", "cerca"],
+      ["Rock", "acierto"],
+      ["El Cuarteto de Nos", "error"],
+      ["Raro", "error"],
     ],
   },
   {
     celdas: [
       ["A las nueve", "acierto"],
-      ["2004", "acierto"],
-      ["Pop", "acierto"],
+      ["2012", "acierto"],
+      ["Rock", "acierto"],
       ["No Te Va Gustar", "acierto"],
-      ["", "acierto"],
+      ["El calor del pleno invierno", "acierto"],
     ],
   },
 ];
@@ -85,7 +87,7 @@ export function GameCard() {
         {INTENTOS.map(({ celdas }, fila) =>
           celdas.map(([texto, estado], col) => (
             <span key={`${fila}-${col}`} className={`celda celda--${estado}`}>
-              {texto}
+              <span className="celda__texto">{texto}</span>
             </span>
           )),
         )}
