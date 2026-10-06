@@ -7,6 +7,7 @@ from django.db.models import Count, Q
 from django.utils.html import format_html
 from PIL import Image, UnidentifiedImageError
 
+from . import verification
 from .models import Album, Artist, FeaturedArtist, Song, SyncState
 from .search import Unaccent, strip_accents, unaccent_available
 
@@ -45,8 +46,24 @@ class SyncStateAdmin(admin.ModelAdmin):
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):
-    list_display = ("name", "mbid", "instagram_handle")
+    list_display = ("name", "mbid", "instagram_handle", "deezer_status", "deezer_source")
+    list_filter = ("deezer_status", "deezer_source")
     search_fields = ("name",)
+    actions = ["confirmar_emparejado", "marcar_equivocado"]
+
+    @admin.action(description="Confirmar a mano el perfil de Deezer (vuelve a mostrar lo que estaba en cuarentena)")
+    def confirmar_emparejado(self, request, queryset):
+        ids = list(queryset.filter(deezer_id__isnull=False).values_list("pk", flat=True))
+        Artist.objects.filter(pk__in=ids).update(deezer_status=verification.VERIFIED, deezer_source="manual", deezer_suggested_id=None)
+        back = verification.restore_quarantine(Artist.objects.filter(pk__in=ids))
+        self.message_user(request, f"{len(ids)} artistas confirmados; {back} canciones vuelven a mostrarse.", level=messages.SUCCESS)
+
+    @admin.action(description="Marcar el perfil de Deezer como equivocado (oculta lo que solo trae Deezer)")
+    def marcar_equivocado(self, request, queryset):
+        ids = list(queryset.filter(deezer_id__isnull=False).values_list("pk", flat=True))
+        Artist.objects.filter(pk__in=ids).update(deezer_status=verification.WRONG, deezer_source="manual")
+        hidden = verification.hide_unverified(Artist.objects.filter(pk__in=ids))
+        self.message_user(request, f"{len(ids)} artistas marcados; {hidden} canciones ocultas.", level=messages.SUCCESS)
 
 
 @admin.register(Album)

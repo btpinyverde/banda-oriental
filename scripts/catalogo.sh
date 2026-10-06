@@ -13,6 +13,10 @@
 #   fotos-prueba     busca la foto de 20 artistas en Deezer SIN guardar nada
 #   fotos            guarda la foto de cada artista emparejado con Deezer (despacio; se puede cortar y seguir)
 #   auditar          mira qué artistas emparejados con Deezer están en riesgo de tener discos ajenos (solo lectura; escribe riesgo-emparejados.csv)
+#   verificar        comprueba cada perfil de Deezer con MusicBrainz y Wikidata (por id, no por nombre); tarda, se puede cortar y seguir
+#   cuarentena       dice cuántas canciones que solo trae Deezer de perfiles sin verificar ocultaría (no cambia nada)
+#   cuarentena-aplicar   las oculta (no borra)
+#   deshacer-cuarentena  vuelve a mostrarlas
 #   limpiar          dice qué ocultaría (repetidas, clásica, géneros) SIN cambiar nada
 #   limpiar-aplicar  lo hace de verdad (oculta, no borra)
 #   deshacer-limpieza   vuelve a mostrar lo que ocultó limpiar-aplicar
@@ -23,7 +27,7 @@ set -euo pipefail
 
 : "${DATABASE_URL:?Falta DATABASE_URL (la URL de conexión de la base de producción)}"
 paso="${1:-}"
-[ -n "$paso" ] || { sed -n '2,25p' "$0"; exit 1; }
+[ -n "$paso" ] || { sed -n '2,29p' "$0"; exit 1; }
 
 cd "$(dirname "$0")/.."
 
@@ -57,6 +61,10 @@ case "$paso" in
   deezer)           confirmar; manage sync_deezer ;;
   fotos-prueba)     manage fill_artist_pictures --dry-run --limit 20 ;;
   fotos)            confirmar; manage fill_artist_pictures ;;
+  verificar)        manage verificar_deezer ;;
+  cuarentena)       manage cuarentena_deezer ;;
+  cuarentena-aplicar) confirmar; manage cuarentena_deezer --aplicar ;;
+  deshacer-cuarentena) confirmar; manage cuarentena_deezer --restaurar --aplicar ;;
   auditar)          manage auditar_emparejados --csv "$(pwd)/riesgo-emparejados.csv" ;;
   limpiar)          manage clean_catalog --duplicadas --clasica --generos ;;
   limpiar-aplicar)  confirmar; manage clean_catalog --duplicadas --clasica --generos --aplicar ;;

@@ -10,6 +10,7 @@ from django.utils import timezone
 from catalog.deezer import DeezerError, get_album, get_artist_releases, search_artists
 from catalog.matching import base_title, is_wanted_release, normalize_text, pick_artist
 from catalog.models import Album, Artist, Song
+from catalog.verification import VERIFIED, check_deezer_link
 
 FULL_RELEASE_TYPES = {"album", "ep"}
 # A run over wifi can last hours and the cloud database sometimes closes the connection ("server closed the connection
@@ -90,23 +91,39 @@ class Command(BaseCommand):
     # --- por artista -----------------------------------------------------------------------------------
 
     def _sync_artist(self, artist):
-        candidates = search_artists(artist.name)
-        chosen = pick_artist(candidates, artist.name)
-
-        if chosen is None:
-            self._mark_unmatched(artist, candidates, "sin emparejar: ningún perfil de Deezer se llama igual")
-            return
-        if Artist.objects.filter(deezer_id=chosen["id"]).exclude(pk=artist.pk).exists():
-            self._mark_unmatched(artist, candidates, f"el perfil de Deezer {chosen['id']} ya está asignado a otro artista")
-            return
-
-        artist.deezer_id = chosen["id"]
-        fields = ["deezer_id"]
-        if not artist.picture_url and chosen.get("picture"):
-            artist.picture_url = chosen["picture"]  # the photo comes with the match: one less request later
-            fields.append("picture_url")
-        artist.save(update_fields=fields)
-        self.stats["artistas emparejados"] += 1
+        if artist.deezer_id and artist.deezer_status == VERIFIED:
+            # Ya verificado: nunca más se busca por nombre, se pide ese perfil.
+            chosen = {"id": artist.deezer_id}
+        else:
+            if artist.deezer_id:
+                candidates, chosen = [], {"id": artist.deezer_id}
+            else:
+                candidates = search_artists(artist.name)
+                chosen = pick_artist(candidates, artist.name)
+            if chosen is None:
+                self._mark_unmatched(artist, candidates, "sin emparejar: ningún perfil de Deezer se llama igual")
+                return
+            if Artist.objects.filter(deezer_id=chosen["id"]).exclude(pk=artist.pk).exists():
+                self._mark_unmatched(artist, candidates, f"el perfil de Deezer {chosen['id']} ya está asignado a otro artista")
+                return
+            # Que el nombre coincida no alcanza (hay homónimos de otros países): MusicBrainz o Wikidata tienen que apuntar al mismo perfil.
+            try:
+                verdict = check_deezer_link(artist.mbid, chosen["id"])
+            except Exception as error:
+                self.stats["artistas con error"] += 1
+                self.log(f"  ERROR verificando el perfil {chosen['id']} ({type(error).__name__}): queda pendiente para la próxima corrida")
+                return
+            if verdict.status != VERIFIED:
+                self._mark_unmatched(artist, candidates, f"sin respaldo: el perfil de Deezer {chosen['id']} no está confirmado por MusicBrainz ni Wikidata ({verdict.status})")
+                return
+            artist.deezer_id = chosen["id"]
+            artist.deezer_status, artist.deezer_source = VERIFIED, verdict.source
+            fields = ["deezer_id", "deezer_status", "deezer_source"]
+            if not artist.picture_url and chosen.get("picture"):
+                artist.picture_url = chosen["picture"]  # the photo comes with the match: one less request later
+                fields.append("picture_url")
+            artist.save(update_fields=fields)
+            self.stats["artistas emparejados"] += 1
 
         releases = [r for r in get_artist_releases(chosen["id"]) if is_wanted_release(r["title"], r["record_type"])]
         full = self._one_per_title([r for r in releases if r["record_type"] in FULL_RELEASE_TYPES])

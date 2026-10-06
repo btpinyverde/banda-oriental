@@ -11,6 +11,14 @@ class Artist(models.Model):
     deezer_checked_at = models.DateTimeField(null=True, blank=True)
     # La foto del artista, de Deezer (https). Vacía si no tiene o todavía no se buscó: nunca se inventa una.
     picture_url = models.URLField(max_length=300, blank=True)
+    # ¿Hay algo más que el nombre que respalde ese perfil de Deezer? "verificado" (MusicBrainz o Wikidata apuntan al mismo perfil,
+    # los discos coinciden o se confirmó a mano), "sin_verificar" (nadie lo respalda) o "equivocado" (apuntan a otro perfil).
+    # Vacío = todavía no se revisó. Lo que solo trae Deezer de un perfil sin verificar queda en cuarentena (oculto).
+    deezer_status = models.CharField(max_length=15, blank=True, db_index=True)
+    # Quién lo respaldó: "musicbrainz", "wikidata", "discos" o "manual".
+    deezer_source = models.CharField(max_length=15, blank=True)
+    # Si se detectó que el perfil es otro, el que MusicBrainz o Wikidata dicen que es el verdadero.
+    deezer_suggested_id = models.PositiveBigIntegerField(null=True, blank=True)
     # Cuándo se buscó su foto en Deezer por última vez (para no volver a pedir la de quien no tiene).
     picture_checked_at = models.DateTimeField(null=True, blank=True)
 
