@@ -41,4 +41,30 @@ describe("enviarReporte", () => {
 
     expect(await enviarReporte({ kind: "contacto", message: "hola" })).toEqual({ ok: false, error: "No se pudo enviar. Revisá tu conexión y probá de nuevo." });
   });
+
+  it("con imágenes manda un formulario (multipart) con los campos y las imágenes, sin fijar el tipo de contenido a mano", async () => {
+    pedirConPase.mockResolvedValue(respuesta({ ok: true }));
+    const captura = new File(["x"], "captura.png", { type: "image/png" });
+    const otra = new File(["y"], "otra.jpg", { type: "image/jpeg" });
+
+    const resultado = await enviarReporte({ kind: "contacto", name: "Ana", contact: "ana@correo.com", reason: "Algo no funciona", message: "Mirá", website: "" }, [captura, otra]);
+
+    expect(resultado).toEqual({ ok: true });
+    const [, opciones] = pedirConPase.mock.calls[0];
+    expect(opciones.body).toBeInstanceOf(FormData);
+    expect(opciones.headers?.["Content-Type"]).toBeUndefined(); // el navegador agrega el suyo, con el límite de las partes
+    const cuerpo = opciones.body as FormData;
+    expect(cuerpo.get("kind")).toBe("contacto");
+    expect(cuerpo.get("reason")).toBe("Algo no funciona");
+    expect(cuerpo.get("website")).toBe("");
+    expect(cuerpo.getAll("images")).toEqual([captura, otra]);
+  });
+
+  it("sin imágenes sigue mandando JSON", async () => {
+    pedirConPase.mockResolvedValue(respuesta({ ok: true }));
+
+    await enviarReporte({ kind: "contacto", message: "hola" }, []);
+
+    expect(pedirConPase.mock.calls[0][1].headers).toMatchObject({ "Content-Type": "application/json" });
+  });
 });

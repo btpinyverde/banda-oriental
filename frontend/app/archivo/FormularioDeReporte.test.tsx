@@ -32,7 +32,7 @@ describe("FormularioDeReporte: algo está mal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
 
     await waitFor(() => expect(screen.getByText(/Gracias/)).toBeInTheDocument());
-    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", target_type: "artist", target_id: 7, target_label: "Fernando Cabrera", message: "Tiene discos de otro Fernando Cabrera.", website: "" }));
+    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", target_type: "artist", target_id: 7, target_label: "Fernando Cabrera", message: "Tiene discos de otro Fernando Cabrera.", website: "" }), []);
   });
 
   it("no envía un mensaje vacío y lo avisa", async () => {
@@ -79,7 +79,7 @@ describe("FormularioDeReporte: sumar un artista", () => {
     fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
 
     await waitFor(() => expect(screen.getByText(/Gracias/)).toBeInTheDocument());
-    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ kind: "alta", name: "Los Nadie", contact: "@losnadie", links: "https://open.spotify.com/artist/xyz" }));
+    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ kind: "alta", name: "Los Nadie", contact: "@losnadie", links: "https://open.spotify.com/artist/xyz" }), []);
   });
 
   it("sin nombre o sin contacto no envía", async () => {
@@ -89,5 +89,28 @@ describe("FormularioDeReporte: sumar un artista", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/nombre/i);
     expect(enviar).not.toHaveBeenCalled();
+  });
+});
+
+describe("FormularioDeReporte: imágenes", () => {
+  it("al avisar de un error también se puede adjuntar una captura", async () => {
+    URL.createObjectURL = vi.fn(() => "blob:x");
+    URL.revokeObjectURL = vi.fn();
+    enviar.mockResolvedValue({ ok: true });
+    render(<FormularioDeReporte tipo="error" objetivo={{ tipo: "artist", id: 7, nombre: "Fernando Cabrera" }} />);
+    const captura = new File(["x"], "pagina.png", { type: "image/png" });
+
+    escribir(/Qué está mal/, "Tiene discos de otro artista.");
+    fireEvent.change(screen.getByLabelText(/Adjuntar imágenes/), { target: { files: [captura] } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+
+    await waitFor(() => expect(screen.getByText(/Gracias/)).toBeInTheDocument());
+    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", target_id: 7 }), [captura]);
+  });
+
+  it("sumar un artista no pide imágenes (se explica con enlaces)", () => {
+    render(<FormularioDeReporte tipo="alta" />);
+
+    expect(screen.queryByLabelText(/Adjuntar imágenes/)).toBeNull();
   });
 });

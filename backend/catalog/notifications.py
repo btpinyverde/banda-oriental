@@ -36,13 +36,16 @@ def _subject(item):
     return _one_line(f"Contacto: {item.reason or 'sin motivo'} ({item.name or 'sin nombre'})")
 
 
-def _body(item):
+def _body(item, images=0):
     lines = [f"Nombre: {item.name or '-'}", f"Contacto: {item.contact or '-'}"]
     if item.kind == "contacto":
         lines.append(f"Motivo: {item.reason or '-'}")
     if item.links:
         lines.append(f"Enlaces: {item.links}")
-    lines += ["", item.message or "(sin mensaje)", "", "Está también en el admin, en Reportes y pedidos."]
+    lines += ["", item.message or "(sin mensaje)"]
+    if images:
+        lines += ["", f"{images} {'imagen adjunta' if images == 1 else 'imágenes adjuntas'}."]
+    lines += ["", "Está también en el admin, en Reportes y pedidos."]
     return "\n".join(lines)
 
 
@@ -65,7 +68,10 @@ def notify_new_submission(item):
         logger.warning("Se alcanzó el límite diario de avisos por correo (%s).", settings.CONTACT_NOTIFY_DAILY_CAP)
         return
     reply_to = _valid_email(item.contact)  # answering goes straight to the visitor, when they left an email
-    message = EmailMessage(_subject(item), _body(item), settings.DEFAULT_FROM_EMAIL, [recipient], reply_to=[reply_to] if reply_to else None)
+    images = list(item.images.all())
+    message = EmailMessage(_subject(item), _body(item, len(images)), settings.DEFAULT_FROM_EMAIL, [recipient], reply_to=[reply_to] if reply_to else None)
+    for number, image in enumerate(images, 1):
+        message.attach(f"imagen-{number}.webp", bytes(image.data), image.content_type)
     if getattr(settings, "EMAIL_SEND_IN_BACKGROUND", False):
         threading.Thread(target=_deliver, args=(item.pk, message), daemon=True).start()
     else:
