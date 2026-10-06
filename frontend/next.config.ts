@@ -20,6 +20,21 @@ const nextConfig: NextConfig = {
       { source: "/generos", destination: "/archivo/discos", permanent: true },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Nadie mete el sitio dentro de otra página (clickjacking). El reproductor de YouTube es lo contrario: el sitio mete el suyo.
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // Se apagan lo que el sitio no usa. No se tocan audio, video ni pantalla completa: el juego, la batalla y la presentación los usan.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     if (!destinoApi) return [];
     return [

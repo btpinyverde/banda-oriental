@@ -60,6 +60,8 @@ if not CORS_ALLOWED_ORIGINS:  # noqa: F405
 # admin's CSRF check reject every real browser's https:// Origin with a
 # 403 — nobody can log in.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Browsers that already visited keep using https for a year (no includeSubDomains: other subdomains are not ours to decide).
+SECURE_HSTS_SECONDS = 31536000
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

@@ -27,6 +27,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    # nosniff and a Referrer-Policy on every answer (and HSTS in prod); and the anti-clickjacking header.
+    "django.middleware.security.SecurityMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.middleware.BlockAiAgentsMiddleware",
     "core.middleware.DailyMaintenanceMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",

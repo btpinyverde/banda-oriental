@@ -249,3 +249,14 @@ def test_the_project_passes_djangos_own_system_checks():
     from django.core.management import call_command
 
     call_command("check")
+
+
+def test_prod_settings_ask_browsers_to_keep_using_https(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgres://u:p@h/db")
+    monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://example.com")
+    for name in ("R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_ENDPOINT_URL"):
+        monkeypatch.setenv(name, "x")
+    prod = _reload_prod_settings()
+
+    assert prod.SECURE_HSTS_SECONDS >= 31536000
