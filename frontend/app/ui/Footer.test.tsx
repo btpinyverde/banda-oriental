@@ -1,15 +1,37 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Footer } from "./Footer";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllEnvs();
+});
+
+const conRedes = () => {
+  vi.stubEnv("NEXT_PUBLIC_INSTAGRAM_URL", "https://www.instagram.com/bandaoriental");
+  vi.stubEnv("NEXT_PUBLIC_TIKTOK_URL", "https://www.tiktok.com/@bandaoriental");
+};
 
 describe("Footer completo", () => {
-  it("lleva las columnas de enlaces y las redes", () => {
+  it("lleva las columnas de enlaces y las redes que existen, con su dirección real y abriendo en otra pestaña", () => {
+    conRedes();
     render(<Footer />);
 
     expect(screen.getByRole("navigation", { name: "Explorar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Instagram" })).toBeInTheDocument();
+    const instagram = screen.getByRole("link", { name: "Instagram" });
+    expect(instagram).toHaveAttribute("href", "https://www.instagram.com/bandaoriental");
+    expect(instagram).toHaveAttribute("target", "_blank");
+    expect(instagram).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    expect(screen.getByRole("link", { name: "TikTok" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Spotify" })).toBeNull();
+  });
+
+  it("sin redes configuradas no muestra ningún botón de red ni deja una lista vacía", () => {
+    const { container } = render(<Footer />);
+
+    expect(screen.queryByRole("link", { name: /Instagram|TikTok|Spotify/ })).toBeNull();
+    expect(container.querySelector(".footer__redes")).toBeNull();
+    expect(container.querySelector('a[href="#"]')).toBeNull();
   });
 });
 
@@ -36,11 +58,12 @@ describe("Footer mínimo", () => {
 
 describe("Footer compacto", () => {
   it("deja el logo, el lema, las redes y los enlaces legales en una sola fila", () => {
+    conRedes();
     const { container } = render(<Footer variante="compacto" />);
 
     expect(screen.getByRole("link", { name: "Banda Oriental, inicio" })).toHaveAttribute("href", "/");
     expect(screen.getByText("El juego de la música uruguaya.")).toBeInTheDocument();
-    for (const red of ["Instagram", "TikTok", "Spotify"]) {
+    for (const red of ["Instagram", "TikTok"]) {
       expect(screen.getByRole("link", { name: red })).toBeInTheDocument();
     }
     for (const [nombre, href] of [["Términos", "/terminos"], ["Privacidad", "/privacidad"], ["Contacto", "/contacto"]]) {
