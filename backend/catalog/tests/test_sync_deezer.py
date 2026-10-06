@@ -8,6 +8,7 @@ from django.core.management import call_command
 
 from catalog.deezer import DeezerError
 from catalog.models import Album, Artist, Song
+from catalog.verification import UNVERIFIED, VERIFIED, WRONG, Verdict
 
 MODULE = "catalog.management.commands.sync_deezer"
 
@@ -45,6 +46,16 @@ def run(*args, **options):
     out = StringIO()
     call_command("sync_deezer", *args, stdout=out, **options)
     return out.getvalue()
+
+
+@pytest.fixture(autouse=True)
+def musicbrainz_vouches(request):
+    """Por omisión MusicBrainz respalda el perfil: lo que se prueba acá es el importador. La puerta de verificación tiene sus pruebas."""
+    if "sin_respaldo" in request.keywords:
+        yield
+        return
+    with patch(f"{MODULE}.check_deezer_link", return_value=Verdict(VERIFIED, "musicbrainz")) as check:
+        yield check
 
 
 @pytest.fixture
@@ -170,12 +181,13 @@ class TestArtistMatching:
         listing.assert_not_called()
 
     def test_skips_artists_that_were_already_checked_unless_asked(self, drexler):
-        with fake_deezer(releases=[]) as (search, _, _):
+        with fake_deezer(releases=[]) as (search, listing, _):
             run()
             run()
-            assert search.call_count == 1
+            assert listing.call_count == 1
             run("--reintentar")
-            assert search.call_count == 2
+            assert listing.call_count == 2  # lo vuelve a procesar, pero sin buscar por nombre: el perfil ya está verificado
+            assert search.call_count == 1
 
     def test_a_deezer_profile_already_used_by_another_artist_is_not_reused(self, drexler):
         Artist.objects.create(mbid="mb-otro", name="Otro Artista", deezer_id=4347)
@@ -348,3 +360,57 @@ class TestWhenTheDatabaseConnectionDrops:
 
         with fake_deezer(), pytest.raises(IntegrityError):
             run()
+
+
+class TestVerificationGate:
+    """Un perfil de Deezer solo se importa si algo más que el nombre lo respalda; uno ya verificado no se vuelve a buscar por nombre."""
+
+    @pytest.mark.sin_respaldo
+    def test_a_name_match_nobody_vouches_for_imports_nothing(self, drexler):
+        with fake_deezer(releases=[release(7, "Eco")], details={7: album_detail(7, "Eco", [(100, "Eco")])}) as (_, listing, _), \
+             patch(f"{MODULE}.check_deezer_link", return_value=Verdict(UNVERIFIED, "")):
+            out = run()
+
+        drexler.refresh_from_db()
+        assert drexler.deezer_id is None and drexler.deezer_checked_at is not None
+        assert Album.objects.count() == 0
+        listing.assert_not_called()
+        assert "sin respaldo" in out.lower()
+
+    @pytest.mark.sin_respaldo
+    def test_a_profile_musicbrainz_says_is_somebody_else_imports_nothing(self, drexler):
+        with fake_deezer(releases=[release(7, "Eco")], details={7: album_detail(7, "Eco", [(100, "Eco")])}), \
+             patch(f"{MODULE}.check_deezer_link", return_value=Verdict(WRONG, "musicbrainz", 999)):
+            run()
+
+        drexler.refresh_from_db()
+        assert drexler.deezer_id is None and Album.objects.count() == 0
+
+    def test_a_vouched_for_profile_is_saved_with_who_vouched(self, drexler):
+        details = {7: album_detail(7, "Eco", [(100, "Eco")])}
+        with fake_deezer(releases=[release(7, "Eco")], details=details):
+            run()
+
+        drexler.refresh_from_db()
+        assert (drexler.deezer_id, drexler.deezer_status, drexler.deezer_source) == (4347, VERIFIED, "musicbrainz")
+
+    @pytest.mark.sin_respaldo
+    def test_a_verified_artist_is_never_searched_by_name_again(self, db):
+        artist = Artist.objects.create(mbid="mb-x", name="Fernando Cabrera", deezer_id=4347, deezer_status=VERIFIED, deezer_source="manual")
+        details = {7: album_detail(7, "Eco", [(100, "Eco")])}
+        with fake_deezer(candidates=(), releases=[release(7, "Eco")], details=details) as (search, listing, _), \
+             patch(f"{MODULE}.check_deezer_link", side_effect=AssertionError("ya estaba verificado")):
+            run("--reintentar")
+
+        search.assert_not_called()
+        listing.assert_called_once_with(4347)
+        assert Album.objects.filter(artist=artist).count() == 1
+
+    @pytest.mark.sin_respaldo
+    def test_a_network_failure_checking_leaves_the_artist_pending(self, drexler):
+        with fake_deezer(releases=[release(7, "Eco")]), patch(f"{MODULE}.check_deezer_link", side_effect=ConnectionError("sin red")):
+            out = run()
+
+        drexler.refresh_from_db()
+        assert drexler.deezer_checked_at is None and drexler.deezer_id is None  # se vuelve a intentar en la próxima corrida
+        assert "error" in out.lower()

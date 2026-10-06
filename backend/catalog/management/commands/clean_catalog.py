@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from catalog.matching import base_title
+from catalog.verification import QUARANTINE_REASON
 from catalog.models import Album, Song
 from gameplay.models import DailySong
 
@@ -59,7 +60,7 @@ class Command(BaseCommand):
     # ---------- tasks ----------
 
     def _restore(self):
-        queryset = Song.objects.filter(hidden=True).exclude(hidden_reason="")
+        queryset = Song.objects.filter(hidden=True).exclude(hidden_reason="").exclude(hidden_reason=QUARANTINE_REASON)
         count = queryset.count()
         if self.apply:
             queryset.update(hidden=False, hidden_reason="")
