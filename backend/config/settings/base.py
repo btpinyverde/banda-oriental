@@ -135,7 +135,8 @@ REST_FRAMEWORK = {
         "guess": "60/min",
         "score": "10/hour",
         "name": "10/hour",
-        "songs": "30/min",
+        "songs": "30/min",  # the whole list (only the old front still asks for it)
+        "song-search": "1500/min",  # searching songs while typing; a bar's phones share one address
         "catalog": "60/min",  # the music archive: search and browse artists, albums and songs
         "human": "30/hour",
         "reports": "8/hour",  # mistakes reported, bands that ask to be added and messages from the archive
