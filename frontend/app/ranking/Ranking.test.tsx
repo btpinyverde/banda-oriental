@@ -54,6 +54,13 @@ describe("Ranking: la página", () => {
     expect(within(fila).getByRole("combobox", { name: "Período" })).toBeInTheDocument();
   });
 
+  it("en todo el tiempo no repite 'desde que arrancó el juego': el título del período ya lo dice", async () => {
+    render(<Ranking />);
+    await screen.findByText("Ana");
+
+    expect(screen.queryByText(/Desde que arrancó el juego/)).toBeNull();
+  });
+
   it("deja elegir el período, y al elegir otro pide ese ranking y lo muestra", async () => {
     pedir.mockImplementation(async (periodo) => (periodo === "week" ? respuesta("week", [fila(1, "Carla", 3000, 4)]) : respuesta("all", [fila(1, "Ana", 950)])));
     render(<Ranking />);

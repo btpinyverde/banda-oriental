@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <title>nota musical</title>
+  <path d="M17 36V9l22-4v28" stroke="#14110f" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17 17l22-4" stroke="#14110f" stroke-width="3.6" stroke-linecap="round"/>
+  <ellipse cx="12" cy="37" rx="6" ry="5" fill="#ff7fbf" stroke="#14110f" stroke-width="3.2"/>
+  <ellipse cx="34" cy="34" rx="6" ry="5" fill="#ff7fbf" stroke="#14110f" stroke-width="3.2"/>
+</svg>

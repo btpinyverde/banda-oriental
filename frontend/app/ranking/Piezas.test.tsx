@@ -142,7 +142,7 @@ describe("EstadisticasGlobalesDelJuego", () => {
     expect(region).toHaveTextContent("5.432");
     expect(region).toHaveTextContent("jugadores");
     expect(region).toHaveTextContent("12.000");
-    expect(region).toHaveTextContent("partidas");
+    expect(region).toHaveTextContent("partidas jugadas");
     expect(region).toHaveTextContent("124");
     expect(region).toHaveTextContent("canciones del diario");
   });
@@ -158,7 +158,7 @@ describe("EstadisticasGlobalesDelJuego", () => {
     render(<EstadisticasGlobalesDelJuego datos={{ players: 1, games: 1, days: 1 }} />);
 
     expect(screen.getByText("jugador")).toBeInTheDocument();
-    expect(screen.getByText("partida")).toBeInTheDocument();
+    expect(screen.getByText("partida jugada")).toBeInTheDocument();
   });
 
   it("sin datos no aparece (no se muestran ceros inventados)", () => {
@@ -185,6 +185,7 @@ describe("HeroDelRanking", () => {
     expect(screen.getByText(/Compará tu puntaje, racha y precisión/)).toBeInTheDocument();
     expect(screen.getByText("Ranking global")).toBeInTheDocument();
     expect(container.querySelector(".ranking-podio")).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector('.ranking-podio img[src="/assets/ranking-podio.webp"]')).not.toBeNull();
   });
 
   it("lleva las cifras del juego debajo de la bajada, dentro del encabezado", () => {
@@ -201,13 +202,13 @@ describe("HeroDelRanking", () => {
 });
 
 describe("ComoSeCalculaElPuntaje", () => {
-  it("es un desplegable que explica el puntaje con lo que de verdad cuenta: los intentos y la rapidez", () => {
+  it("es un desplegable que viene abierto y explica el puntaje", () => {
     render(<ComoSeCalculaElPuntaje />);
 
     const detalle = screen.getByText("¿Cómo se calcula el puntaje?").closest("details") as HTMLDetailsElement;
     expect(detalle).not.toBeNull();
-    expect(detalle.textContent).toMatch(/intentos/);
-    expect(detalle.textContent).toMatch(/rápido/);
+    expect(detalle.open).toBe(true);
+    expect(detalle.textContent).toContain("Sumás más puntos cuanto antes descubrís una canción. La racha y la precisión se muestran aparte.");
   });
 });
 
@@ -226,6 +227,21 @@ describe("OtrosRecords", () => {
     expect(within(screen.getByRole("region", { name: "Mayor racha" })).getByText("Ana")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Mejor precisión" })).toHaveTextContent("100%");
     expect(screen.getByRole("region", { name: "Más canciones descubiertas" })).toHaveTextContent("Beto");
+  });
+
+  it("cada tarjeta muestra los tres primeros, aunque el servidor mande más", () => {
+    const cinco = Array.from({ length: 5 }, (_, i) => ({ display_name: `Jugador${i + 1}`, value: 10 - i }));
+    render(<OtrosRecords datos={{ streaks: cinco, songs: cinco, accuracy: cinco }} />);
+
+    expect(within(screen.getByRole("region", { name: "Mayor racha" })).getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.queryAllByText("Jugador4")).toHaveLength(0);
+  });
+
+  it("la precisión, mientras nadie llega al mínimo de partidas, dice qué hace falta en vez de parecer rota", () => {
+    render(<OtrosRecords datos={{ ...datos, accuracy: [] }} />);
+
+    expect(within(screen.getByRole("region", { name: "Mejor precisión" })).getByText(/al menos 3 partidas/)).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Mayor racha" })).queryByText(/al menos 3 partidas/)).toBeNull();
   });
 
   it("con un servidor que todavía no manda la precisión, quedan las otras dos tarjetas", () => {
