@@ -9,7 +9,9 @@ import { comoJson, pedir } from "./http";
 import { pedirDelJuego } from "./pedir-del-juego";
 
 /** Cliente real: habla con los endpoints del backend. Lo que falta del backend está en docs/contrato-api-jugar.md. */
-export function crearClienteHttp(): ClienteJuego {
+export type ClienteHttp = ClienteJuego & { listarCanciones(): Promise<CancionCatalogo[]> };
+
+export function crearClienteHttp(): ClienteHttp {
   return {
     async estadoDelDia(idDispositivo): Promise<EstadoDelDia | null> {
       const respuesta = await pedirDelJuego("/api/daily/", { headers: { "X-Device-Id": idDispositivo }, cache: "no-store" });
@@ -35,6 +37,14 @@ export function crearClienteHttp(): ClienteJuego {
       return comoJson<ResultadoPuntaje>(respuesta);
     },
 
+    /** Busca en el servidor, de a páginas: nunca se baja el catálogo. */
+    async buscarCanciones(texto, pagina, senial) {
+      const respuesta = await pedir(`/api/songs/?${new URLSearchParams({ q: texto, page: String(pagina) })}`, { signal: senial });
+      const datos = await comoJson<{ results: CancionCatalogo[]; has_more: boolean }>(respuesta);
+      return { canciones: datos.results, hayMas: datos.has_more };
+    },
+
+    /** La lista completa (varios MB): solo para el modo de demostración con el catálogo real, nunca para el juego. */
     async listarCanciones(): Promise<CancionCatalogo[]> {
       const respuesta = await pedir("/api/songs/", { cache: "no-store" });
       const datos = await comoJson<{ songs: CancionCatalogo[] }>(respuesta);

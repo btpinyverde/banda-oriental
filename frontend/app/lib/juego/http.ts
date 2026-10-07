@@ -14,6 +14,12 @@ export const base = () => (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/
 export async function pedir(ruta: string, opciones: RequestInit = {}): Promise<Response> {
   const control = new AbortController();
   const temporizador = setTimeout(() => control.abort(), ESPERA_MAXIMA_MS);
+  // Quien pide también puede cancelar (el buscador, al escribirse otra cosa): se encadena con la espera máxima.
+  const deQuienPide = opciones.signal;
+  if (deQuienPide) {
+    if (deQuienPide.aborted) control.abort();
+    else deQuienPide.addEventListener("abort", () => control.abort(), { once: true });
+  }
   try {
     return await fetch(`${base()}${ruta}`, { ...opciones, signal: control.signal });
   } catch {

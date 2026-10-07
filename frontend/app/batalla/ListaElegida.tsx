@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ItemDeLista, LecturaDeYoutube } from "../lib/batallas/api-batallas";
-import type { CancionCatalogo } from "../lib/juego/tipos";
+import type { BuscarCanciones, CancionCatalogo } from "../lib/juego/tipos";
 import { BuscadorCanciones } from "../jugar/BuscadorCanciones";
 import type { ApiYoutube } from "../lib/batallas/youtube-iframe";
 import { ReproductorYoutube } from "./ReproductorYoutube";
@@ -14,7 +14,8 @@ interface Props {
   items: ItemConDatos[];
   alCambiar: (items: ItemConDatos[]) => void;
   /** El catálogo con el que se busca la canción. */
-  canciones: CancionCatalogo[];
+  /** Busca canciones en el servidor, de a páginas. */
+  buscar: BuscarCanciones;
   leerYoutube: (url: string) => Promise<LecturaDeYoutube>;
   maximo: number;
   /** Para los tests: cómo se carga el reproductor de YouTube con el que se prueba el video. */
@@ -27,7 +28,7 @@ const minutos = (segundos: number) => `${Math.floor(segundos / 60)}:${String(seg
  * La lista de canciones que arma quien organiza, en el orden en que van a salir. Cada una se oye con el preview de Deezer o,
  * si se pega un enlace, con el video de YouTube (la respuesta siempre es una canción del catálogo).
  */
-export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo, cargarVideo }: Props) {
+export function ListaElegida({ items, alCambiar, buscar, leerYoutube, maximo, cargarVideo }: Props) {
   const [errorCatalogo, setErrorCatalogo] = useState<string | null>(null);
   const [enlace, setEnlace] = useState("");
   const [lectura, setLectura] = useState<LecturaDeYoutube | null>(null);
@@ -90,7 +91,7 @@ export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo,
       <section aria-label="Agregar del catálogo" className="batalla__campo">
         <span>Agregar del catálogo (suena con el preview de Deezer)</span>
         <BuscadorCanciones
-          canciones={canciones}
+          buscar={buscar}
           puedeEnviar={!lleno}
           etiquetaDeEnviar="Agregar a la lista"
           alEnviar={(c) => setErrorCatalogo(agregar(c, { source: "deezer" }))}
@@ -132,7 +133,7 @@ export function ListaElegida({ items, alCambiar, canciones, leerYoutube, maximo,
                 Es «{c.title}» de {c.artist}
               </button>
             ))}
-            <BuscadorCanciones canciones={canciones} puedeEnviar={!lleno} etiquetaDeEnviar="Usar esta canción" alEnviar={usarParaYoutube} />
+            <BuscadorCanciones buscar={buscar} puedeEnviar={!lleno} etiquetaDeEnviar="Usar esta canción" alEnviar={usarParaYoutube} />
           </div>
         )}
         {errorYoutube && (

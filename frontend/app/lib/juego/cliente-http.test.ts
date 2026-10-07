@@ -94,7 +94,43 @@ describe("enviarPuntaje", () => {
   });
 });
 
-describe("listarCanciones", () => {
+describe("buscarCanciones", () => {
+  it("busca en el servidor, de a páginas, con el texto bien escapado, y devuelve las canciones y si hay más", async () => {
+    const canciones = [{ id: 1, title: "A las nueve", artist: "No Te Va Gustar", album: "El camino", year: 2004, genre: "Rock" }];
+    const mock = simular(respuesta({ results: canciones, has_more: true, page: 2 }));
+
+    const resultado = await crearClienteHttp().buscarCanciones("no te va & más", 2);
+
+    expect(resultado).toEqual({ canciones, hayMas: true });
+    const url = new URL(String(mock.mock.calls[0][0]));
+    expect(url.pathname).toBe("/api/songs/");
+    expect(url.searchParams.get("q")).toBe("no te va & más");
+    expect(url.searchParams.get("page")).toBe("2");
+  });
+
+  it("pasa la señal de cancelación: cancelar corta el pedido", async () => {
+    const mock = vi.fn((_url: string, opciones: RequestInit) => new Promise((_resolver, rechazar) => opciones.signal?.addEventListener("abort", () => rechazar(new DOMException("cancelado", "AbortError")))));
+    vi.stubGlobal("fetch", mock);
+    const control = new AbortController();
+
+    const pedido = crearClienteHttp().buscarCanciones("luna", 1, control.signal);
+    control.abort();
+
+    await expect(pedido).rejects.toBeInstanceOf(ApiError);
+    expect(mock.mock.calls[0][1].signal?.aborted).toBe(true);
+  });
+
+  it("es público: no lleva el token de la sesión", async () => {
+    guardarSesion({ token: "tok-1", email: "ana@example.com" });
+    const mock = simular(respuesta({ results: [], has_more: false, page: 1 }));
+
+    await crearClienteHttp().buscarCanciones("luna", 1);
+
+    expect(mock.mock.calls[0][1].headers?.Authorization).toBeUndefined();
+  });
+});
+
+describe("listarCanciones (solo para la demostración con el catálogo real)", () => {
   it("devuelve la lista de canciones del catálogo", async () => {
     const canciones = [{ id: 1, title: "A las nueve", artist: "No Te Va Gustar", album: "El camino", year: 2004, genre: "Rock" }];
     const mock = simular(respuesta({ songs: canciones }));

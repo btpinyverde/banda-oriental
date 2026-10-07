@@ -35,7 +35,6 @@ const mensajeDe = (e: unknown, porDefecto: string) => (e instanceof Error && e.m
 export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
   const api = useMemo(() => cliente ?? crearCliente(), [cliente]);
   const [vista, setVista] = useState<Vista>({ tipo: "cargando" });
-  const [canciones, setCanciones] = useState<CancionCatalogo[]>([]);
   const [intentos, setIntentos] = useState<IntentoMostrado[]>([]);
   const [listo, setListo] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -70,7 +69,6 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
         return;
       }
       if (!estado.finished) {
-        setCanciones(await api.listarCanciones());
         setIntentos(intentosDe(estado));
       }
       setVista({ tipo: "listo", estado });
@@ -307,7 +305,7 @@ export function JuegoDiario({ cliente }: { cliente?: ClienteJuego }) {
       <TablaIntentos intentos={intentos} />
       <p className="jugar__intento">Intento {actual.attempt_number} de 6</p>
 
-      <BuscadorCanciones canciones={canciones} puedeEnviar={listo} enviando={enviando} alEnviar={enviar} />
+      <BuscadorCanciones buscar={api.buscarCanciones} puedeEnviar={listo} enviando={enviando} alEnviar={enviar} />
       {errorEnvio && (
         <p className="jugar__error" role="alert">
           {errorEnvio}

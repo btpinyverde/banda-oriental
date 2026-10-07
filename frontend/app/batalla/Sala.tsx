@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { crearApiBatallas, leerHostToken, type ApiBatallas, type EstadoSala, type SalaUnible } from "../lib/batallas/api-batallas";
 import { desbloquearAudio } from "../lib/batallas/audio";
 import { useSala } from "../lib/batallas/useSala";
 import { crearClienteHttp } from "../lib/juego/cliente-http";
-import { ApiError, type CancionCatalogo } from "../lib/juego/tipos";
+import { ApiError, type BuscarCanciones } from "../lib/juego/tipos";
 import { Lobby } from "./Lobby";
 import { Resultados } from "./Resultados";
 import { Ronda } from "./Ronda";
@@ -14,34 +14,22 @@ interface Props {
   code: string;
   api?: ApiBatallas;
   /** Para los tests: de dónde sale el catálogo con el que se busca la canción. */
-  cargarCanciones?: () => Promise<CancionCatalogo[]>;
+  /** Busca canciones en el servidor, de a páginas (por omisión, la API real). */
+  buscarCanciones?: BuscarCanciones;
 }
+
+const buscarEnLaApi: BuscarCanciones = (texto, pagina, senial) => crearClienteHttp().buscarCanciones(texto, pagina, senial);
 
 /**
  * La sala de una batalla: según lo que dice el servidor muestra el formulario para entrar, el lobby, la ronda o los
  * resultados. Todo sale de consultar el estado cada pocos segundos (sin conexiones permanentes).
  */
-export function Sala({ code, api, cargarCanciones = () => crearClienteHttp().listarCanciones() }: Props) {
+export function Sala({ code, api, buscarCanciones = buscarEnLaApi }: Props) {
   const cliente = useMemo(() => api ?? crearApiBatallas(), [api]);
   const { sala, error, ahora, refrescar } = useSala(code, cliente);
   // Un solo <audio> para todas las rondas: el navegador (sobre todo el iPhone) lo desbloquea con un toque y después lo deja sonar.
   const audio = useRef<HTMLAudioElement>(null);
-  const [canciones, setCanciones] = useState<CancionCatalogo[]>([]);
   const [presentacion, setPresentacion] = useState(false);
-  const esJugador = !!sala && !("joinable" in sala) && sala.role === "player";
-
-  useEffect(() => {
-    if (!esJugador || canciones.length > 0) return;
-    let activo = true;
-    cargarCanciones()
-      .then((lista) => activo && setCanciones(lista))
-      .catch(() => {});
-    return () => {
-      activo = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [esJugador]);
-
   const esOrganizador = !!sala && !("joinable" in sala) && sala.role === "host";
 
   // El modo presentación es la pantalla de quien organiza en grande, para proyectarla; intenta pasar a pantalla completa.
@@ -99,7 +87,7 @@ export function Sala({ code, api, cargarCanciones = () => crearClienteHttp().lis
   } else if (sala.phase.name === "reveal" || sala.phase.name === "finished") {
     contenido = <Resultados sala={sala} ahora={ahora} />;
   } else {
-    contenido = <Ronda sala={sala as EstadoSala} ahora={ahora} api={cliente} audio={audio} canciones={canciones} refrescar={refrescar} />;
+    contenido = <Ronda sala={sala as EstadoSala} ahora={ahora} api={cliente} audio={audio} buscar={buscarCanciones} refrescar={refrescar} />;
   }
 
   return (

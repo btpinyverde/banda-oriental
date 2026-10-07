@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { ApiBatallas, EstadoSala } from "../lib/batallas/api-batallas";
-import type { CancionCatalogo } from "../lib/juego/tipos";
+import type { BuscarCanciones, CancionCatalogo } from "../lib/juego/tipos";
 import { BuscadorCanciones } from "../jugar/BuscadorCanciones";
 import { ReproductorYoutube } from "./ReproductorYoutube";
 
@@ -11,7 +11,8 @@ interface Props {
   ahora: () => number;
   api: ApiBatallas;
   audio: RefObject<HTMLAudioElement | null>;
-  canciones: CancionCatalogo[];
+  /** Busca canciones en el servidor, de a páginas. */
+  buscar: BuscarCanciones;
   refrescar: () => void;
 }
 
@@ -21,7 +22,7 @@ const faltan = (iso: string, ahoraMs: number) => Math.max(0, Math.ceil((Date.par
  * Una ronda. El jugador oye la canción y la busca; quien organiza no oye ni busca, solo ve cuántos respondieron. Lo que
  * marca cuándo abre y cierra la ronda es la hora del servidor (`ahora()`), no la de este dispositivo.
  */
-export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) {
+export function Ronda({ sala, ahora, api, audio, buscar, refrescar }: Props) {
   const ronda = sala.round;
   const organiza = sala.role === "host";
   const modoAnfitrion = sala.audio_mode === "host";
@@ -144,7 +145,7 @@ export function Ronda({ sala, ahora, api, audio, canciones, refrescar }: Props) 
           ) : (
             <>
               {modoAnfitrion && <p className="batalla__bajada">Escuchá la canción en la pantalla del anfitrión.</p>}
-              <BuscadorCanciones canciones={canciones} puedeEnviar={!enviando} enviando={enviando} alEnviar={enviar} />
+              <BuscadorCanciones buscar={buscar} puedeEnviar={!enviando} enviando={enviando} alEnviar={enviar} />
               {error && (
                 <p className="batalla__error" role="alert">
                   {error}
