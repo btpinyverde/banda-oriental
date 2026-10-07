@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <title>diana</title>
-  <circle cx="22" cy="26" r="16" stroke="#14110f" stroke-width="3.5"/>
-  <circle cx="22" cy="26" r="9" stroke="#14110f" stroke-width="3.5"/>
-  <circle cx="22" cy="26" r="3" fill="#ff7fbf" stroke="#14110f" stroke-width="2.5"/>
-  <path d="M24 24 40 8M33 5l-1 8 8 1" stroke="#6c4ff0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="22" cy="27" r="16" stroke="#14110f" stroke-width="3.6"/>
+  <circle cx="22" cy="27" r="9.5" stroke="#14110f" stroke-width="3.4"/>
+  <circle cx="22" cy="27" r="3.4" fill="#ff7fbf" stroke="#14110f" stroke-width="2.6"/>
+  <path d="M25 24 41 8" stroke="#14110f" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M34 4l-1 9 9 1" stroke="#14110f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -143,7 +143,7 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
           </select>
         </label>
       </div>
-      {ranking && <p className="ranking__rotulo">{rotulo(ranking)}</p>}
+      {ranking && ranking.period !== "all" && <p className="ranking__rotulo">{rotulo(ranking)}</p>}
 
       <div className="ranking__cuerpo">
         <div className="ranking__principal" aria-live="polite">

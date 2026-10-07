@@ -1,18 +1,19 @@
 /* ---------- Ranking (funcional; el diseño se afina después) ---------- */
 @font-face { font-family: "Caveat Brush"; src: url("/fonts/CaveatBrush-subset.ttf") format("truetype"); font-display: swap; }
 
-.ranking { max-width: 1240px; margin: 0 auto; padding: 24px var(--gutter) 64px; display: grid; gap: 26px; }
+.ranking { max-width: 1240px; margin: 0 auto; padding: 44px var(--gutter) 64px; display: grid; gap: 26px; }
 .ranking h2 { margin: 0; font-size: 22px; font-weight: 800; }
 
 /* Encabezado y collage */
-.ranking-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: center; padding: 8px 0; }
-.ranking-hero__etiqueta { margin: 0 0 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tinta-suave); }
-.ranking-hero h1 { margin: 0; font-size: clamp(38px, 4.9vw, 66px); font-weight: 900; line-height: 0.98; letter-spacing: -0.045em; }
+.ranking-hero { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 0; align-items: center; padding: 8px 0; }
+.ranking-hero__etiqueta { margin: 0 0 18px; font-size: 14.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tinta-suave); }
+.ranking-hero h1 { margin: 0; font-size: clamp(38px, 5.3vw, 76px); font-weight: 900; line-height: 0.98; letter-spacing: -0.045em; }
 .ranking-hero__resaltado { background: linear-gradient(transparent 66%, var(--amarillo) 66%, var(--amarillo) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
 .ranking-hero__sin-corte { white-space: nowrap; }
-.ranking-hero__bajada { margin: 22px 0 0; max-width: 430px; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.4; color: var(--tinta-suave); }
-.ranking-podio { display: flex; justify-content: flex-end; }
-.ranking-podio img { display: block; width: 100%; max-width: 520px; height: auto; }
+.ranking-hero__bajada { margin: 24px 0 0; max-width: 460px; font-size: clamp(17px, 1.8vw, 26px); line-height: 1.4; color: var(--tinta-suave); }
+.ranking-podio { position: relative; justify-self: end; width: 528px; max-width: 135%; }
+.ranking-podio__dibujo { position: relative; display: block; width: 100%; height: auto; }
+.ranking-podio__mancha { position: absolute; left: 22%; top: 18%; width: 72%; height: auto; }
 
 /* Cifras del juego, en fila bajo la bajada */
 .ranking-hero .globales { margin-top: 30px; }
@@ -21,19 +22,19 @@
 .globales li:first-child { padding-left: 0; }
 .globales li + li { border-left: 1px solid #ddd8cf; }
 .globales li svg { flex: none; color: var(--tinta); }
-.globales strong { display: block; font-size: 22px; font-weight: 800; line-height: 1.1; }
-.globales span { font-size: 14px; color: var(--tinta-suave); }
+.globales strong { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
+.globales span { font-size: 16px; color: var(--tinta-suave); }
 
 /* Controles: título, pestañas y período en una misma fila */
 .resaltado-titulo { background: linear-gradient(transparent 68%, var(--amarillo) 68%, var(--amarillo) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
 .ranking__controles { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 18px; }
-.ranking .ranking__titulo { margin: 0 4px 0 0; font-size: clamp(44px, 5vw, 64px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+.ranking .ranking__titulo { margin: 0 4px 0 0; font-size: clamp(44px, 5.2vw, 75px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
 .ranking__periodo { margin-left: auto; }
-.ranking__periodo select { height: 48px; padding: 0 44px 0 22px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 15px; font-weight: 600; color: var(--tinta); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 18px center; cursor: pointer; }
-.ranking__rotulo { margin: -14px 0 0; font-size: 14px; color: var(--tinta-suave); }
+.ranking__periodo select { height: 50px; padding: 0 48px 0 26px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 15.5px; font-weight: 600; color: var(--tinta); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 18px center; cursor: pointer; }
+.ranking__rotulo { margin: -6px 0 0; font-size: 14px; color: var(--tinta-suave); }
 
 /* Cuerpo: tabla + lateral */
-.ranking__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.ranking__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 376px; gap: 26px; align-items: start; }
 .ranking__principal { display: grid; gap: 18px; min-width: 0; }
 .ranking__lateral { display: grid; gap: 16px; position: sticky; top: 24px; }
 .ranking__mensaje, .ranking__vacio { padding: 36px 20px; border-radius: 24px; background: var(--violeta-claro); text-align: center; font-weight: 600; }
@@ -42,19 +43,20 @@
 
 /* Tabla */
 .ranking__tabla { width: 100%; border-collapse: separate; border-spacing: 0; padding: 10px 12px 16px; border-radius: 26px; background: #fff; box-shadow: 0 8px 28px rgba(60, 40, 20, 0.07); }
-.ranking__tabla th { padding: 14px 12px 12px; text-align: left; font-size: 13px; font-weight: 600; color: var(--tinta-suave); }
+.ranking__tabla th { padding: 16px 14px 14px; text-align: left; font-size: 13.5px; font-weight: 600; color: var(--tinta-suave); }
 .ranking__tabla th:nth-child(n + 3), .ranking__tabla td:nth-child(n + 3) { text-align: center; }
-.ranking__tabla td { padding: 12px; font-size: 15px; font-variant-numeric: tabular-nums; border-bottom: 1px solid #efece6; }
+.ranking__tabla td { padding: 12px 14px; font-size: 16px; font-variant-numeric: tabular-nums; border-bottom: 1px solid #efece6; }
 .ranking__tabla tbody tr:last-child td { border-bottom: 0; }
-.ranking__fila--top1 td, .ranking__fila--top2 td, .ranking__fila--top3 td { border-bottom: 0; padding-top: 14px; padding-bottom: 14px; }
+.ranking__fila--top1 td, .ranking__fila--top2 td, .ranking__fila--top3 td { border-bottom: 0; padding-top: 12px; padding-bottom: 12px; }
 .ranking__tabla tbody tr.ranking__fila--top1 + tr td, .ranking__tabla tbody tr.ranking__fila--top2 + tr td, .ranking__tabla tbody tr.ranking__fila--top3 + tr td { border-top: 0; }
 .ranking__fila--top1 td { background: #fdf0b4; }
-.ranking__fila--top2 td, .ranking__fila--top3 td { background: #ece9fc; }
+.ranking__fila--top2 td, .ranking__fila--top3 td { background: #efecfd; }
 .ranking__fila--top2 td, .ranking__fila--top3 td, .ranking__fila--top1 td { box-shadow: 0 6px 0 #fff; }
 .ranking__fila--top1 td:first-child, .ranking__fila--top2 td:first-child, .ranking__fila--top3 td:first-child { border-radius: 16px 0 0 16px; }
 .ranking__fila--top1 td:last-child, .ranking__fila--top2 td:last-child, .ranking__fila--top3 td:last-child { border-radius: 0 16px 16px 0; }
 .ranking__fila--mia td { background: var(--violeta-claro); }
-.ranking__puesto { width: 64px; font-weight: 700; color: var(--tinta-suave); }
+.ranking__puesto { width: 64px; font-weight: 500; color: var(--tinta); }
+.ranking__fila--top2 .ranking__puesto, .ranking__fila--top3 .ranking__puesto { font-weight: 800; }
 .ranking__corona { display: block; }
 .ranking__corona { color: #f2b705; }
 .ranking__jugador { display: flex; align-items: center; gap: 12px; }
@@ -66,18 +68,18 @@
 
 /* Avatares (los jugadores no tienen foto: la inicial sobre un color de la marca) */
 .avatar { display: inline-grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; font-weight: 800; font-size: 16px; color: var(--tinta); }
-.avatar--tono-0 { background: var(--rosa); }
-.avatar--tono-1 { background: #bff0d3; }
-.avatar--tono-2 { background: var(--amarillo); }
-.avatar--tono-3 { background: #d6d0f7; }
-.avatar--tono-4 { background: #ffc6bf; }
+.avatar--tono-0 { background: radial-gradient(circle at 50% 38%, #e7e1fd, #d3c9f7); }
+.avatar--tono-1 { background: radial-gradient(circle at 50% 38%, #efebfe, #dcd4f9); }
+.avatar--tono-2 { background: radial-gradient(circle at 50% 38%, #d4f5e3, #b4ebcb); }
+.avatar--tono-3 { background: radial-gradient(circle at 50% 38%, #efedf1, #e0dde4); }
+.avatar--tono-4 { background: radial-gradient(circle at 50% 38%, #e3dcfc, #cdc2f5); }
 
 /* Tu posición */
-.posicion { position: relative; display: grid; gap: 14px; padding: 24px 26px; border-radius: 26px; background: #ece9fc; }
-.posicion h2 { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; }
-.posicion p { margin: 0; font-weight: 500; line-height: 1.45; }
-.posicion .boton { width: 100%; justify-content: center; }
-.posicion__flecha { position: absolute; top: 14px; right: 18px; width: 40px; height: 40px; transform: rotate(60deg) scaleX(-1); }
+.posicion { position: relative; display: grid; gap: 16px; padding: 28px 30px; border-radius: 26px; background: #ece9fc; }
+.posicion h2 { font-size: 29px; font-weight: 900; letter-spacing: -0.02em; }
+.posicion p { max-width: 88%; margin: 0; font-size: 17px; font-weight: 500; line-height: 1.45; }
+.posicion .boton { width: 100%; min-height: 56px; justify-content: center; font-size: 17px; }
+.posicion__flecha { position: absolute; top: 20px; right: 30px; width: 36px; height: 64px; }
 .posicion__puesto { display: flex; align-items: center; gap: 14px; }
 .posicion__puesto .avatar { width: 56px; height: 56px; font-size: 24px; }
 .posicion__puesto strong { display: block; font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
@@ -88,26 +90,29 @@
 .posicion__numeros div { display: flex; flex-direction: column; }
 
 /* ¿Cómo se calcula el puntaje? */
-.como-puntaje { padding: 18px 22px; border: 1px solid #e8e4ee; border-radius: 22px; background: #fff; }
-.como-puntaje summary { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; list-style: none; }
+.como-puntaje { padding: 20px 24px; border: 1px solid #ebe7ee; border-radius: 24px; background: transparent; }
+.como-puntaje summary { display: flex; align-items: center; gap: 10px; font-size: 16.5px; font-weight: 700; cursor: pointer; list-style: none; }
 .como-puntaje summary::-webkit-details-marker { display: none; }
 .como-puntaje summary::after { content: ""; width: 9px; height: 9px; margin: -4px 4px 0 auto; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 0.15s; }
 .como-puntaje[open] summary::after { margin-top: 4px; transform: rotate(225deg); }
-.como-puntaje p { margin: 12px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--tinta-suave); }
+.como-puntaje p { margin: 14px 0 0; font-size: 16px; line-height: 1.5; color: var(--tinta-suave); }
 
 /* Otros récords */
-.records { display: grid; gap: 18px; margin-top: 18px; }
-.ranking .records__titulo { margin: 0; font-size: 34px; font-weight: 900; letter-spacing: -0.03em; }
+.records { position: relative; display: grid; gap: 18px; margin-top: 18px; }
+.records__rayitas { position: absolute; top: 12px; right: 22px; width: 44px; height: 36px; }
+.ranking .records__titulo { margin: 0; font-size: 36px; font-weight: 900; letter-spacing: -0.03em; }
 .records__lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.destacada { display: grid; align-content: start; gap: 14px; padding: 22px 26px; border-radius: 24px; }
-.destacada--racha, .destacada--canciones { background: #ece9fc; }
-.destacada--precision { background: #fdf0b4; }
-.destacada h3 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 800; }
+.destacada { position: relative; display: grid; align-content: start; gap: 14px; padding: 22px 26px 24px; border-radius: 24px; }
+.destacada__adorno { position: absolute; top: 20px; right: 40px; width: 44px; height: 42px; }
+.destacada--racha, .destacada--canciones { background: #efecfd; }
+.destacada--precision { background: #fdf2c4; }
+.destacada h3 { display: flex; align-items: center; gap: 14px; margin: 0; font-size: 18.5px; font-weight: 800; }
+.destacada h3 img { width: 38px; height: 38px; }
 .destacada ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.destacada li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; }
+.destacada li { display: flex; align-items: center; gap: 12px; font-size: 16.5px; }
 .destacada li strong { font-weight: 800; }
-.destacada .avatar { width: 30px; height: 30px; font-size: 13px; }
-.destacada__puesto { width: 14px; font-weight: 600; }
+.destacada .avatar { width: 34px; height: 34px; font-size: 14px; }
+.destacada__puesto { width: 14px; font-weight: 700; }
 .destacada__nombre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .destacada__vacia { margin: 0; font-size: 14px; color: var(--tinta-suave); }
 
@@ -124,9 +129,29 @@
 .llamado__nota { position: relative; margin: 0 8px 0 auto; padding: 14px 20px; max-width: 190px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(-7deg); font-family: "Caveat Brush", cursive; font-size: 22px; line-height: 1.15; text-transform: uppercase; color: var(--tinta); }
 
 @media (max-width: 1000px) {
+  .ranking-hero__etiqueta { font-size: 13px; }
+  .ranking-hero__bajada { max-width: 430px; }
+  .globales strong { font-size: 20px; }
+  .globales span { font-size: 14px; }
+  .ranking .ranking__titulo { font-size: clamp(44px, 9vw, 64px); }
+  .ranking__vista { padding: 12px 24px; font-size: 15px; }
+  .ranking__periodo select { height: 48px; padding: 0 44px 0 22px; font-size: 15px; }
+  .ranking__tabla th { padding: 14px 10px 12px; font-size: 12.5px; }
+  .ranking__tabla td { padding: 8px 10px; font-size: 14.5px; }
+  .ranking__fila--top1 td, .ranking__fila--top2 td, .ranking__fila--top3 td { padding-top: 9px; padding-bottom: 9px; }
+  .ranking__tabla .avatar { width: 36px; height: 36px; font-size: 14px; }
+  .posicion { padding: 24px 26px; }
+  .posicion h2 { font-size: 24px; }
+  .posicion p { font-size: 15px; }
+  .posicion .boton { min-height: 50px; font-size: 16px; }
+  .como-puntaje summary { font-size: 15px; }
+  .como-puntaje p { font-size: 14.5px; }
+  .ranking .records__titulo { font-size: 30px; }
+  .destacada h3 { font-size: 17px; }
+  .destacada h3 img { width: 34px; height: 34px; }
+  .destacada li { font-size: 15px; }
   .ranking-hero { grid-template-columns: 1fr; }
-  .ranking-podio { justify-content: center; }
-  .ranking-podio img { max-width: 400px; }
+  .ranking-podio { justify-self: center; width: 100%; max-width: 400px; }
   .ranking__cuerpo { grid-template-columns: 1fr; }
   .ranking__lateral { position: static; }
   .records__lista { grid-template-columns: 1fr; }
@@ -154,7 +179,7 @@
 
 /* El selector Diario | Mis batallas (solo con el modo batalla encendido) y la lista de Mis batallas. */
 .ranking__vistas { display: flex; gap: 8px; }
-.ranking__vista { padding: 12px 26px; border: 0; border-radius: 999px; background: var(--violeta-claro); font: inherit; font-weight: 700; color: var(--tinta); cursor: pointer; }
+.ranking__vista { padding: 14px 34px; font-size: 16px; border: 0; border-radius: 999px; background: var(--violeta-claro); font: inherit; font-weight: 700; color: var(--tinta); cursor: pointer; }
 .ranking__vista[aria-pressed="true"] { background: var(--violeta); color: #fff; }
 .mis-batallas { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .mis-batallas__item { padding: 4px; border-radius: 16px; background: #fff; box-shadow: 0 2px 10px rgba(60, 40, 120, 0.08); }
@@ -165,3 +190,5 @@
 .mis-batallas__tabla { width: 100%; margin: 6px 0 8px; border-collapse: collapse; font-size: 15px; }
 .mis-batallas__tabla th { text-align: left; font-size: 12px; text-transform: uppercase; color: var(--tinta-suave); }
 .mis-batallas__tabla th, .mis-batallas__tabla td { padding: 6px 12px; border-bottom: 1px solid #ebe7f4; }
+
+.ranking__tabla .avatar { width: 38px; height: 38px; font-size: 15px; }

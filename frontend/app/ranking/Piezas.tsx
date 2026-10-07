@@ -8,6 +8,8 @@ const TONOS = 5;
 const tonoDe = (nombre: string) => [...nombre].reduce((suma, c) => suma + c.charCodeAt(0), 0) % TONOS;
 const plural = (n: number, uno: string, varios: string) => (n === 1 ? uno : varios);
 const SIN_DATO = "—";
+/** Cuántos jugadores muestra cada tarjeta de récords. */
+const FILAS_DE_RECORD = 3;
 
 /** La inicial del jugador sobre un color de la marca (los jugadores no tienen foto), siempre el mismo para el mismo nombre. */
 export function AvatarDeJugador({ nombre }: { nombre: string }) {
@@ -79,7 +81,7 @@ export function TuPosicion({ ranking }: { ranking: RankingServidor }) {
   const { me, players } = ranking;
   return (
     <section className="posicion" aria-label="Tu posición">
-      <img className="posicion__flecha" src="/assets/doodle-arrow-curve.svg" alt="" width={44} height={44} aria-hidden="true" />
+      <img className="posicion__flecha" src="/assets/flecha-posicion.svg" alt="" width={36} height={64} aria-hidden="true" />
       <h2>Tu posición</h2>
       {me ? (
         <>
@@ -111,18 +113,19 @@ export function TuPosicion({ ranking }: { ranking: RankingServidor }) {
 }
 
 /** Una lista corta (mayor racha, mejor precisión, más canciones): los primeros con su valor. */
-export function ListaDestacada({ titulo, filas, clase = "", icono, sufijo = "" }: { titulo: string; filas: Destacados["streaks"]; clase?: string; icono?: string; sufijo?: string }) {
+export function ListaDestacada({ titulo, filas, clase = "", icono, sufijo = "", adorno, vacio = "Todavía no hay datos." }: { titulo: string; filas: Destacados["streaks"]; clase?: string; icono?: string; sufijo?: string; adorno?: string; vacio?: string }) {
   return (
     <section className={`destacada ${clase}`.trim()} aria-label={titulo}>
       <h3>
         {icono && <img src={icono} alt="" width={30} height={30} aria-hidden="true" />}
         {titulo}
       </h3>
+      {adorno && <img className="destacada__adorno" src={adorno} alt="" width={44} height={42} aria-hidden="true" />}
       {filas.length === 0 ? (
-        <p className="destacada__vacia">Todavía no hay datos.</p>
+        <p className="destacada__vacia">{vacio}</p>
       ) : (
         <ol>
-          {filas.map((fila, indice) => (
+          {filas.slice(0, FILAS_DE_RECORD).map((fila, indice) => (
             <li key={`${indice}-${fila.display_name}`}>
               <span className="destacada__puesto">{indice + 1}</span>
               <AvatarDeJugador nombre={fila.display_name} />
@@ -144,19 +147,20 @@ export function OtrosRecords({ datos }: { datos: Destacados | null }) {
       <h2 className="records__titulo">
         <span className="resaltado-titulo">Otros récords</span>
       </h2>
+      <img className="records__rayitas" src="/assets/rayitas-records.svg" alt="" width={44} height={36} aria-hidden="true" />
       <div className="records__lista">
-        <ListaDestacada titulo="Mayor racha" filas={datos.streaks} clase="destacada--racha" icono="/assets/streak-fire.svg" />
-        {datos.accuracy && <ListaDestacada titulo="Mejor precisión" filas={datos.accuracy} clase="destacada--precision" icono="/assets/icon-diana.svg" sufijo="%" />}
-        <ListaDestacada titulo="Más canciones descubiertas" filas={datos.songs} clase="destacada--canciones" icono="/assets/music-note.svg" />
+        <ListaDestacada titulo="Mayor racha" filas={datos.streaks} clase="destacada--racha" icono="/assets/icon-llama.svg" adorno="/assets/corona-trazo.svg" />
+        {datos.accuracy && <ListaDestacada titulo="Mejor precisión" filas={datos.accuracy} clase="destacada--precision" icono="/assets/icon-diana.svg" sufijo="%" vacio="Jugá al menos 3 partidas para aparecer acá." />}
+        <ListaDestacada titulo="Más canciones descubiertas" filas={datos.songs} clase="destacada--canciones" icono="/assets/icon-nota.svg" />
       </div>
     </section>
   );
 }
 
-/** Cómo se arma el puntaje, en un desplegable. Lo que dice es lo que calcula el servidor: puntos por intento y bonus por rapidez. */
+/** Cómo se arma el puntaje, en un desplegable que viene abierto. El servidor da más puntos cuanto antes se acierta (menos intentos y menos tiempo). */
 export function ComoSeCalculaElPuntaje() {
   return (
-    <details className="como-puntaje">
+    <details className="como-puntaje" open>
       <summary>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="9.5" />
@@ -164,7 +168,7 @@ export function ComoSeCalculaElPuntaje() {
         </svg>
         ¿Cómo se calcula el puntaje?
       </summary>
-      <p>Sumás más puntos cuanto menos intentos necesitás y cuanto más rápido descubrís la canción. La racha y la precisión se muestran aparte.</p>
+      <p>Sumás más puntos cuanto antes descubrís una canción. La racha y la precisión se muestran aparte.</p>
     </details>
   );
 }
@@ -198,7 +202,7 @@ export function EstadisticasGlobalesDelJuego({ datos }: { datos: EstadisticasGlo
   if (!datos) return null;
   const tarjetas = [
     { valor: datos.players, etiqueta: plural(datos.players, "jugador", "jugadores"), icono: ICONOS_GLOBALES.jugadores },
-    { valor: datos.games, etiqueta: plural(datos.games, "partida", "partidas"), icono: ICONOS_GLOBALES.partidas },
+    { valor: datos.games, etiqueta: plural(datos.games, "partida jugada", "partidas jugadas"), icono: ICONOS_GLOBALES.partidas },
     { valor: datos.days, etiqueta: `${plural(datos.days, "canción", "canciones")} del diario`, icono: ICONOS_GLOBALES.dias },
   ];
   return (
@@ -240,7 +244,7 @@ export function LlamadoACuenta() {
   );
 }
 
-/** El encabezado: título grande, bajada, las cifras del juego y el podio dibujado (decorativo). */
+/** El encabezado: título grande, bajada, las cifras del juego y la ilustración del podio (decorativa). */
 export function HeroDelRanking({ globales = null }: { globales?: EstadisticasGlobales | null }) {
   return (
     <section className="ranking-hero">
@@ -253,7 +257,8 @@ export function HeroDelRanking({ globales = null }: { globales?: EstadisticasGlo
         <EstadisticasGlobalesDelJuego datos={globales} />
       </div>
       <div className="ranking-podio" aria-hidden="true">
-        <img src="/assets/ranking-podio.svg" alt="" width={520} height={380} />
+        <img className="ranking-podio__mancha" src="/assets/ranking-mancha-podio.svg" alt="" />
+        <img className="ranking-podio__dibujo" src="/assets/ranking-podio.webp" alt="" width={1120} height={806} />
       </div>
     </section>
   );
