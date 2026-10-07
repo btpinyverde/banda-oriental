@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { cuentasActivas } from "../lib/cuenta/activas";
 import { useSesion } from "../lib/cuenta/useSesion";
 import { idDeDispositivo } from "../lib/juego/dispositivo";
 import { pedirDestacados, pedirGlobales, pedirRanking } from "../lib/juego/estadisticas-servidor";
-import type { Destacados, EstadisticasGlobales, PeriodoRanking, RankingServidor } from "../lib/juego/tipos";
+import type { Destacados, EstadisticasGlobales, FilaRanking, PeriodoRanking, RankingServidor } from "../lib/juego/tipos";
+import { FinDeLaLista } from "./FinDeLaLista";
 import { EstadisticasGlobalesDelJuego, HeroDelRanking, ListaDestacada, LlamadoACuenta, TablaDelRanking, TuPosicion } from "./Piezas";
 
 const PERIODOS: { periodo: PeriodoRanking; etiqueta: string; nombre: string }[] = [
@@ -42,21 +43,60 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
   const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
   const [intento, setIntento] = useState(0);
   const [tardando, setTardando] = useState(false);
+  // La lista se va sumando de a una página al scrollear. `generacion` descarta lo que llega de un período que ya no se mira.
+  const [filas, setFilas] = useState<FilaRanking[]>([]);
+  const [pagina, setPagina] = useState(1);
+  const [hayMas, setHayMas] = useState(false);
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const [errorMas, setErrorMas] = useState(false);
+  const generacion = useRef(0);
+  const pidiendo = useRef(false);
   const [destacados, setDestacados] = useState<Destacados | null>(null);
   const [globales, setGlobales] = useState<EstadisticasGlobales | null>(null);
   const { sesion, lista } = useSesion();
 
   useEffect(() => {
-    let activo = true;
+    const mia = ++generacion.current;
+    pidiendo.current = false;
     setEstado({ tipo: "cargando" });
-    pedirRanking(periodo, idDeDispositivo())
-      .then((ranking) => activo && setEstado({ tipo: "listo", ranking }))
-      .catch(() => activo && setEstado({ tipo: "error" }));
-    // Si cambió el período mientras tanto, la respuesta vieja se descarta.
-    return () => {
-      activo = false;
-    };
+    setFilas([]);
+    setPagina(1);
+    setHayMas(false);
+    setCargandoMas(false);
+    setErrorMas(false);
+    pedirRanking(periodo, idDeDispositivo(), 1)
+      .then((ranking) => {
+        // Si cambió el período mientras tanto, la respuesta vieja se descarta.
+        if (generacion.current !== mia) return;
+        setEstado({ tipo: "listo", ranking });
+        setFilas(ranking.entries);
+        setHayMas(ranking.has_more === true);
+      })
+      .catch(() => generacion.current === mia && setEstado({ tipo: "error" }));
   }, [periodo, intento]);
+
+  const traerMas = useCallback(async () => {
+    if (pidiendo.current || !hayMas) return;
+    pidiendo.current = true;
+    const mia = generacion.current;
+    const siguiente = pagina + 1;
+    setCargandoMas(true);
+    setErrorMas(false);
+    try {
+      const traida = await pedirRanking(periodo, idDeDispositivo(), siguiente);
+      if (generacion.current !== mia) return;
+      setFilas((antes) => [...antes, ...traida.entries]);
+      setPagina(siguiente);
+      setHayMas(traida.has_more === true);
+    } catch {
+      if (generacion.current === mia) setErrorMas(true);
+    } finally {
+      if (generacion.current === mia) {
+        pidiendo.current = false;
+        setCargandoMas(false);
+      }
+    }
+  }, [hayMas, pagina, periodo]);
 
   // Las listas laterales y las cifras globales no dependen del período: se piden una vez, y si fallan simplemente no se muestran.
   useEffect(() => {
@@ -81,7 +121,7 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
 
   const actual = PERIODOS.find((p) => p.periodo === periodo)!;
   const ranking = estado.tipo === "listo" ? estado.ranking : null;
-  const meEnLista = ranking?.me ? ranking.entries.some((e) => e.rank === ranking.me!.rank && e.display_name === ranking.me!.display_name) : false;
+  const meEnLista = ranking?.me ? filas.some((e) => e.rank === ranking.me!.rank && e.display_name === ranking.me!.display_name) : false;
 
   return (
     <main className="ranking">
@@ -122,7 +162,7 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
 
           {ranking && (
             <>
-              {ranking.entries.length === 0 ? (
+              {filas.length === 0 ? (
                 <div className="ranking__vacio">
                   <p>Todavía nadie guardó su puntaje {actual.periodo === "all" ? "" : actual.nombre}. ¡Podés ser la primera persona!</p>
                   <Link href="/jugar" className="boton boton--grande boton--violeta">
@@ -130,7 +170,10 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
                   </Link>
                 </div>
               ) : (
-                <TablaDelRanking filas={ranking.entries} me={ranking.me} />
+                <>
+                  <TablaDelRanking filas={filas} me={ranking.me} />
+                  <FinDeLaLista hayMas={hayMas} cargando={cargandoMas} error={errorMas} filas={filas.length} alVer={traerMas} />
+                </>
               )}
 
               {ranking.me && !meEnLista && (

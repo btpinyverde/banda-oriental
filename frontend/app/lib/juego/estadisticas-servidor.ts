@@ -11,9 +11,16 @@ export async function pedirEstadisticas(idDispositivo: string): Promise<Estadist
   return comoJson<EstadisticasServidor>(respuesta);
 }
 
-/** El ranking de un período. Con sesión o identificador de dispositivo, el servidor suma el puesto propio (`me`). */
-export async function pedirRanking(periodo: PeriodoRanking, idDispositivo?: string): Promise<RankingServidor> {
-  const respuesta = await pedirDelJuego(`/api/leaderboard/?period=${periodo}`, {
+/** Cuántos jugadores trae cada página del ranking. */
+export const JUGADORES_POR_PAGINA = 20;
+
+/**
+ * El ranking de un período, de a una página (la lista se va sumando al scrollear). Con sesión o identificador de
+ * dispositivo, el servidor suma el puesto propio (`me`) en cada página.
+ */
+export async function pedirRanking(periodo: PeriodoRanking, idDispositivo?: string, pagina?: number): Promise<RankingServidor> {
+  const paginado = pagina === undefined ? "" : `&page=${pagina}&page_size=${JUGADORES_POR_PAGINA}`;
+  const respuesta = await pedirDelJuego(`/api/leaderboard/?period=${periodo}${paginado}`, {
     headers: idDispositivo ? { "X-Device-Id": idDispositivo } : {},
     cache: "no-store",
   });

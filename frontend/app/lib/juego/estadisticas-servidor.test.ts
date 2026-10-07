@@ -98,6 +98,14 @@ describe("pedirRanking", () => {
     expect(mock.mock.calls[0][1].headers["X-Device-Id"]).toBe(ID);
   });
 
+  it("pide una página: el número y el tamaño van en la dirección", async () => {
+    const mock = simular(respuesta(RANKING));
+
+    await pedirRanking("week", ID, 3);
+
+    expect(mock.mock.calls[0][0]).toBe("https://api.example/api/leaderboard/?period=week&page=3&page_size=20");
+  });
+
   it("sin identificador de dispositivo no manda el encabezado (y no hay 'me')", async () => {
     const mock = simular(respuesta(RANKING));
 
