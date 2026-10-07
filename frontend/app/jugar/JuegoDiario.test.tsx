@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { JuegoDiario } from "./JuegoDiario";
-import { CANCION_DEL_DIA_DEMO, crearClienteDemo } from "../lib/juego/cliente-demo";
+import { CANCION_DEL_DIA_DEMO, crearClienteDemo, CATALOGO_DEMO } from "../lib/juego/cliente-demo";
 import { leerHistorial } from "../lib/juego/almacen-historial";
 import { ApiError, type ClienteJuego } from "../lib/juego/tipos";
 import { archivoFalso, contextoActual, instalarAudioFalso } from "../lib/juego/audio-falso";
@@ -41,7 +41,7 @@ async function escuchar() {
 async function responder(titulo: string) {
   await escuchar();
   fireEvent.change(campo(), { target: { value: titulo } });
-  fireEvent.click(screen.getByRole("option", { name: new RegExp(titulo) }));
+  fireEvent.click(await screen.findByRole("option", { name: new RegExp(titulo) }));
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Enviar intento" })));
 }
 
@@ -307,7 +307,7 @@ describe("JuegoDiario: jugar", () => {
     await cargado();
 
     fireEvent.change(campo(), { target: { value: "sin sa" } });
-    fireEvent.click(screen.getByRole("option", { name: /Sin saber/ }));
+    fireEvent.click(await screen.findByRole("option", { name: /Sin saber/ }));
 
     expect(screen.getByRole("button", { name: "Enviar intento" })).toBeDisabled();
   });
@@ -344,7 +344,7 @@ describe("JuegoDiario: jugar", () => {
 
   it("al errar seis veces muestra la pantalla de derrota", async () => {
     const demo = crearClienteDemo();
-    const canciones = (await demo.listarCanciones()).filter((c) => c.id !== CANCION_DEL_DIA_DEMO.id);
+    const canciones = CATALOGO_DEMO.filter((c) => c.id !== CANCION_DEL_DIA_DEMO.id);
     await cargado(demo);
 
     for (let n = 1; n <= 6; n++) {
@@ -408,7 +408,7 @@ describe("JuegoDiario: historial en el dispositivo", () => {
 
   it("al perder guarda la partida como no ganada, con los seis intentos", async () => {
     const demo = crearClienteDemo();
-    const canciones = (await demo.listarCanciones()).filter((c) => c.id !== CANCION_DEL_DIA_DEMO.id);
+    const canciones = CATALOGO_DEMO.filter((c) => c.id !== CANCION_DEL_DIA_DEMO.id);
     await cargado(demo);
 
     for (let n = 1; n <= 6; n++) {

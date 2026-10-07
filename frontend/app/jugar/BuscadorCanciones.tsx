@@ -1,25 +1,33 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type KeyboardEvent, type UIEvent } from "react";
-import { normalizarTexto as normalizar } from "../lib/juego/logica";
-import type { CancionCatalogo } from "../lib/juego/tipos";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
+import type { BuscarCanciones, CancionCatalogo } from "../lib/juego/tipos";
 
-// Se dibuja de a tandas: al llegar al final del scroll aparecen más. Así el catálogo entero no se pinta de golpe.
-const TANDA = 30;
 const MARGEN_SCROLL = 48;
+// Con menos letras el servidor no busca (devolvería casi todo el catálogo): no se pide nada.
+const MINIMO_DE_LETRAS = 2;
+const ESPERA_AL_TECLEAR_MS = 250;
 
 interface Props {
-  canciones: CancionCatalogo[];
+  /** Busca en el servidor, de a páginas. El buscador nunca tiene el catálogo entero. */
+  buscar: BuscarCanciones;
   /** Falso mientras no se pueda responder (el audio todavía no sonó, hay un envío en curso, etc.). */
   puedeEnviar: boolean;
   enviando?: boolean;
   alEnviar: (cancion: CancionCatalogo) => void;
   /** Cómo se llama el botón de enviar para quien usa un lector de pantalla (por ejemplo "Agregar a la lista"). */
   etiquetaDeEnviar?: string;
+  /** Cuánto se espera después de la última tecla para buscar (solo cambia en las pruebas). */
+  esperaMs?: number;
 }
 
-/** Buscador de canciones con lista de opciones (combobox accesible) y botón para enviar el intento. */
-export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, alEnviar, etiquetaDeEnviar = "Enviar intento" }: Props) {
+type Estado = "ocioso" | "buscando" | "error";
+
+/**
+ * Buscador de canciones con lista de opciones (combobox accesible) y botón para enviar el intento. Busca en el servidor mientras se
+ * escribe (esperando a que se deje de teclear) y trae la lista de a páginas: la siguiente se pide al llegar al final del scroll.
+ */
+export function BuscadorCanciones({ buscar, puedeEnviar, enviando = false, alEnviar, etiquetaDeEnviar = "Enviar intento", esperaMs = ESPERA_AL_TECLEAR_MS }: Props) {
   const idBase = useId();
   const idLista = `${idBase}-lista`;
   const [texto, setTexto] = useState("");
@@ -27,34 +35,68 @@ export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, al
   const [activa, setActiva] = useState(-1);
   const [elegida, setElegida] = useState<CancionCatalogo | null>(null);
 
-  const [cargadas, setCargadas] = useState(TANDA);
+  const [opciones, setOpciones] = useState<CancionCatalogo[]>([]);
+  const [hayMas, setHayMas] = useState(false);
+  const [estado, setEstado] = useState<Estado>("ocioso");
+  // Con qué texto se hizo la búsqueda cuyos resultados se muestran: así "no encontramos nada" solo sale cuando de verdad terminó de buscar.
+  const [buscadoCon, setBuscadoCon] = useState("");
+  const pagina = useRef(1);
+  const control = useRef<AbortController | null>(null);
+  // La función de buscar se guarda en una referencia: si quien usa el buscador pasa una función nueva en cada dibujo, no se vuelve a buscar.
+  const buscarActual = useRef(buscar);
+  buscarActual.current = buscar;
 
-  // El catálogo ordenado una sola vez: por artista, luego por disco (año y nombre) y luego por título. El texto
-  // en el que se busca (título, artista y disco, normalizados) también se calcula una sola vez.
-  const indice = useMemo(
-    () =>
-      canciones
-        .map((cancion) => ({
-          cancion,
-          orden: [normalizar(cancion.artist), String(cancion.year ?? 9999).padStart(4, "0"), normalizar(cancion.album), normalizar(cancion.title)],
-          texto: normalizar(`${cancion.title} ${cancion.artist} ${cancion.album}`),
-        }))
-        .sort((a, b) => {
-          for (let i = 0; i < a.orden.length; i++) {
-            if (a.orden[i] !== b.orden[i]) return a.orden[i] < b.orden[i] ? -1 : 1;
-          }
-          return a.cancion.id - b.cancion.id;
-        }),
-    [canciones],
+  const consulta = elegida ? "" : texto.trim().replace(/\s+/g, " ");
+  const buscable = consulta.length >= MINIMO_DE_LETRAS;
+
+  // Trae una página. Si llega una respuesta vieja (se escribió otra cosa mientras tanto) se descarta.
+  const traer = useCallback(
+    async (texto: string, numero: number) => {
+      control.current?.abort();
+      const actual = new AbortController();
+      control.current = actual;
+      setEstado("buscando");
+      try {
+        const resultado = await buscarActual.current(texto, numero, actual.signal);
+        if (actual.signal.aborted) return;
+        pagina.current = numero;
+        setOpciones((previas) => {
+          if (numero === 1) return resultado.canciones;
+          const ya = new Set(previas.map((c) => c.id));
+          return [...previas, ...resultado.canciones.filter((c) => !ya.has(c.id))];
+        });
+        setHayMas(resultado.hayMas);
+        setBuscadoCon(texto);
+        setEstado("ocioso");
+      } catch {
+        if (actual.signal.aborted) return;
+        setEstado("error");
+      }
+    },
+    [],
   );
 
-  const consulta = normalizar(texto.trim());
-  // Sin texto no se busca ni se muestra nada: recién al escribir aparecen canciones.
-  const coincidencias = elegida || consulta === "" ? [] : indice.filter((entrada) => entrada.texto.includes(consulta));
-  const opciones = coincidencias.slice(0, cargadas).map((entrada) => entrada.cancion);
-  const hayMas = opciones.length < coincidencias.length;
-  const listaVisible = abierta && opciones.length > 0;
-  const sinResultados = abierta && consulta !== "" && !elegida && coincidencias.length === 0;
+  // Cada vez que cambia lo que se busca: espera a que se deje de teclear y pide la primera página. Sin texto suficiente, no hay nada.
+  useEffect(() => {
+    if (!buscable) {
+      control.current?.abort();
+      setOpciones([]);
+      setHayMas(false);
+      setBuscadoCon("");
+      setEstado("ocioso");
+      return;
+    }
+    const temporizador = setTimeout(() => void traer(consulta, 1), esperaMs);
+    return () => clearTimeout(temporizador);
+  }, [consulta, buscable, traer, esperaMs]);
+
+  // Al cerrar la pantalla no queda ningún pedido en vuelo.
+  useEffect(() => () => control.current?.abort(), []);
+
+  const mostrando = buscable && opciones.length > 0;
+  const listaVisible = abierta && mostrando;
+  const sinResultados = abierta && buscable && estado === "ocioso" && buscadoCon === consulta && opciones.length === 0;
+  const buscandoDeCero = abierta && buscable && estado === "buscando" && opciones.length === 0;
   const idOpcion = (i: number) => `${idBase}-opcion-${i}`;
   const puedeMandar = !!elegida && puedeEnviar && !enviando;
 
@@ -64,12 +106,12 @@ export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, al
   }, [activa]);
 
   function cargarMas() {
-    setCargadas((actual) => actual + TANDA);
+    if (hayMas && estado !== "buscando" && buscable) void traer(consulta, pagina.current + 1);
   }
 
   function alScrollear(evento: UIEvent<HTMLUListElement>) {
     const lista = evento.currentTarget;
-    if (hayMas && lista.scrollTop + lista.clientHeight >= lista.scrollHeight - MARGEN_SCROLL) cargarMas();
+    if (lista.scrollTop + lista.clientHeight >= lista.scrollHeight - MARGEN_SCROLL) cargarMas();
   }
 
   function elegir(cancion: CancionCatalogo) {
@@ -91,14 +133,9 @@ export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, al
     if (evento.key === "ArrowDown" && opciones.length > 0) {
       evento.preventDefault();
       setAbierta(true);
-      setActiva((actual) => {
-        if (actual + 1 < opciones.length) return actual + 1;
-        if (hayMas) {
-          cargarMas(); // al pasar la última opción cargada se piden más y se sigue bajando
-          return actual + 1;
-        }
-        return 0;
-      });
+      if (activa + 1 < opciones.length) setActiva(activa + 1);
+      else if (hayMas) cargarMas(); // en la última cargada: se pide la página siguiente y, cuando llega, se puede seguir bajando
+      else setActiva(0);
     } else if (evento.key === "ArrowUp" && opciones.length > 0) {
       evento.preventDefault();
       setAbierta(true);
@@ -148,7 +185,6 @@ export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, al
             setElegida(null);
             setAbierta(true);
             setActiva(-1);
-            setCargadas(TANDA);
           }}
           onKeyDown={alTeclear}
         />
@@ -175,12 +211,29 @@ export function BuscadorCanciones({ canciones, puedeEnviar, enviando = false, al
               <span className="buscador__artista">{[cancion.artist, cancion.album, cancion.year].filter(Boolean).join(" · ")}</span>
             </li>
           ))}
+          {estado === "buscando" && (
+            <li className="buscador__cargando" aria-hidden="true">
+              Cargando más…
+            </li>
+          )}
         </ul>
+      )}
+
+      {buscandoDeCero && (
+        <p className="buscador__vacio" role="status">
+          Buscando…
+        </p>
       )}
 
       {sinResultados && (
         <p className="buscador__vacio" role="status">
           No encontramos esa canción.
+        </p>
+      )}
+
+      {estado === "error" && (
+        <p className="buscador__vacio" role="alert">
+          No pudimos buscar. Revisá tu conexión y escribí de nuevo.
         </p>
       )}
     </form>

@@ -10,12 +10,13 @@ const ID = "11111111-2222-4333-8444-555555555555";
 
 describe("crearCliente", () => {
   it("usa la API real por defecto", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ songs: [] }) });
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ results: [], has_more: false, page: 1 }) });
     vi.stubGlobal("fetch", fetchMock);
 
-    await crearCliente().listarCanciones();
+    await crearCliente().buscarCanciones("luna", 1);
 
     expect(fetchMock).toHaveBeenCalled();
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/songs/?q=luna&page=1");
   });
 
   it("con NEXT_PUBLIC_JUEGO_DEMO=1 usa todo de ejemplo, sin red", async () => {
@@ -23,7 +24,7 @@ describe("crearCliente", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const canciones = await crearCliente().listarCanciones();
+    const { canciones } = await crearCliente().buscarCanciones("a", 1);
 
     expect(canciones.length).toBeGreaterThan(0);
     expect(fetchMock).not.toHaveBeenCalled();
@@ -36,7 +37,7 @@ describe("crearCliente", () => {
     vi.stubGlobal("fetch", fetchMock);
     const cliente = crearCliente();
 
-    expect(await cliente.listarCanciones()).toEqual(real);
+    expect((await cliente.buscarCanciones("tema", 1)).canciones).toEqual(real);
     expect(String(fetchMock.mock.calls[0][0])).toContain("/api/songs/");
     // El estado del día sigue siendo de ejemplo: no hay ningún pedido de /api/daily/.
     expect((await cliente.estadoDelDia(ID))?.finished).toBe(false);

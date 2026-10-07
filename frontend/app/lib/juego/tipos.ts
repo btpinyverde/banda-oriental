@@ -100,8 +100,21 @@ export interface ClienteJuego {
   estadoDelDia(idDispositivo: string): Promise<EstadoDelDia | null>;
   enviarIntento(idDispositivo: string, numeroDeIntento: number, idCancion: number): Promise<ResultadoIntento>;
   enviarPuntaje(idDispositivo: string, nombre: string, segundosTotales: number): Promise<ResultadoPuntaje>;
-  listarCanciones(): Promise<CancionCatalogo[]>;
+  buscarCanciones: BuscarCanciones;
 }
+
+/** Una página de resultados de la búsqueda de canciones. */
+export interface PaginaDeCanciones {
+  canciones: CancionCatalogo[];
+  /** Hay una página siguiente: el buscador la pide al llegar al final de la lista. */
+  hayMas: boolean;
+}
+
+/**
+ * Busca canciones en el servidor, de a páginas (nadie baja el catálogo entero). `senial` cancela el pedido cuando ya no hace falta
+ * (se escribió otra cosa o se cerró la pantalla).
+ */
+export type BuscarCanciones = (texto: string, pagina: number, senial?: AbortSignal) => Promise<PaginaDeCanciones>;
 
 /** Lo que el servidor calculó y guardó de un jugador (`GET /api/stats/`). El front solo lo muestra. */
 export interface EstadisticasServidor {

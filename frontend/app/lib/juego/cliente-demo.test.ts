@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { crearClienteDemo, CANCION_DEL_DIA_DEMO } from "./cliente-demo";
+import { CANCION_DEL_DIA_DEMO, CATALOGO_DEMO, crearClienteDemo } from "./cliente-demo";
 import type { CancionCatalogo, EstadoEnCurso, EstadoTerminado } from "./tipos";
 
 const ID = "11111111-2222-4333-8444-555555555555";
 
 async function conCatalogo() {
   const cliente = crearClienteDemo();
-  const canciones = await cliente.listarCanciones();
-  return { cliente, canciones };
+  return { cliente, canciones: CATALOGO_DEMO };
 }
 
 describe("catálogo de demostración", () => {
@@ -119,10 +118,10 @@ describe("demo con el catálogo real", () => {
     { id: 9003, title: "Luna Llena", artist: "Bárbara Jorcin", album: "Luna Llena", year: 2025, genre: "" },
   ];
 
-  it("lista las canciones que da la fuente en vez de las de ejemplo", async () => {
+  it("busca en las canciones que da la fuente en vez de las de ejemplo", async () => {
     const cliente = crearClienteDemo(async () => REAL);
 
-    expect(await cliente.listarCanciones()).toEqual(REAL);
+    expect((await cliente.buscarCanciones("luna", 1)).canciones).toEqual([REAL[2]]);
   });
 
   it("acierta cuando se elige la canción de ejemplo aunque tenga otro id y otro formato de nombre", async () => {
@@ -155,5 +154,32 @@ describe("demo con el catálogo real", () => {
     const cliente = crearClienteDemo(async () => REAL);
 
     await expect(cliente.enviarIntento(ID, 1, 1)).rejects.toMatchObject({ status: 400, message: "Canción no encontrada." });
+  });
+});
+
+describe("buscarCanciones de demostración", () => {
+  const CATALOGO = Array.from({ length: 45 }, (_, i) => ({ id: i + 1, title: `Tema ${String(i + 1).padStart(2, "0")}`, artist: "Artista", album: "Disco", year: 2000, genre: "" }));
+
+  it("busca como la API: todas las palabras, sin tildes ni mayúsculas, en título, artista o disco", async () => {
+    const cliente = crearClienteDemo(async () => [
+      { id: 1, title: "Candombe para Gardel", artist: "Rubén Rada", album: "Candombe", year: 1985, genre: "" },
+      { id: 2, title: "Zafar", artist: "La Vela Puerca", album: "A contraluz", year: 2001, genre: "" },
+    ]);
+
+    expect((await cliente.buscarCanciones("RUBEN candombe", 1)).canciones.map((c) => c.id)).toEqual([1]);
+    expect((await cliente.buscarCanciones("contraluz", 1)).canciones.map((c) => c.id)).toEqual([2]);
+    expect((await cliente.buscarCanciones("zzz", 1)).canciones).toEqual([]);
+  });
+
+  it("devuelve de a páginas y dice si hay más", async () => {
+    const cliente = crearClienteDemo(async () => CATALOGO);
+
+    const primera = await cliente.buscarCanciones("artista", 1);
+    const tercera = await cliente.buscarCanciones("artista", 3);
+
+    expect(primera.canciones).toHaveLength(20);
+    expect(primera.hayMas).toBe(true);
+    expect(tercera.canciones).toHaveLength(5);
+    expect(tercera.hayMas).toBe(false);
   });
 });

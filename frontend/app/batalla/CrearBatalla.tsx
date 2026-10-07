@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { crearApiBatallas, guardarHostToken, type ApiBatallas, type FiltrosAzar } from "../lib/batallas/api-batallas";
 import { filtrosDelArchivo, listarArtistas } from "../lib/archivo-musical";
 import { crearClienteHttp } from "../lib/juego/cliente-http";
-import type { CancionCatalogo } from "../lib/juego/tipos";
+import type { BuscarCanciones } from "../lib/juego/tipos";
 import { FiltrosDelAzar } from "./FiltrosDelAzar";
 import { ListaElegida, type ItemConDatos } from "./ListaElegida";
 
@@ -17,7 +17,8 @@ const hayFiltros = (f: FiltrosAzar) => Object.keys(f.include).length > 0 || Obje
 interface Props {
   api?: ApiBatallas;
   /** Para los tests: de dónde salen el catálogo, los géneros y la búsqueda de artistas. */
-  cargarCanciones?: () => Promise<CancionCatalogo[]>;
+  /** Busca canciones en el servidor, de a páginas (por omisión, la API real). */
+  buscarCanciones?: BuscarCanciones;
   cargarGeneros?: () => Promise<string[]>;
   buscarArtistas?: (texto: string) => Promise<{ id: number; name: string }[]>;
 }
@@ -25,10 +26,12 @@ interface Props {
 const generosDelArchivo = async () => (await filtrosDelArchivo())?.genres.map((g) => g.genre) ?? [];
 const artistasDelArchivo = async (texto: string) => ((await listarArtistas({ q: texto, porPagina: 8 }))?.results ?? []).map((a) => ({ id: a.id, name: a.name }));
 
+const buscarEnLaApi: BuscarCanciones = (texto, pagina, senial) => crearClienteHttp().buscarCanciones(texto, pagina, senial);
+
 /** Crea la sala de una batalla: quien la crea la organiza (no juega) y comparte el enlace con los demás. */
 export function CrearBatalla({
   api,
-  cargarCanciones = () => crearClienteHttp().listarCanciones(),
+  buscarCanciones = buscarEnLaApi,
   cargarGeneros = generosDelArchivo,
   buscarArtistas = artistasDelArchivo,
 }: Props) {
@@ -47,7 +50,6 @@ export function CrearBatalla({
   const [cantidadDeEquipos, setCantidadDeEquipos] = useState("2");
   const [nombresDeEquipos, setNombresDeEquipos] = useState<string[]>([]);
   const [generos, setGeneros] = useState<string[]>([]);
-  const [canciones, setCanciones] = useState<CancionCatalogo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
 
@@ -61,19 +63,6 @@ export function CrearBatalla({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // El catálogo (para buscar canciones) solo hace falta si se arma la lista a mano.
-  useEffect(() => {
-    if (modoDeCanciones !== "list" || canciones.length > 0) return;
-    let activo = true;
-    cargarCanciones()
-      .then((c) => activo && setCanciones(c))
-      .catch(() => {});
-    return () => {
-      activo = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modoDeCanciones]);
 
   // Cuenta cuántas canciones cumplen los filtros (sin pedir en cada tecla). Sin filtros no hay nada que contar.
   useEffect(() => {
@@ -188,7 +177,7 @@ export function CrearBatalla({
             </details>
           </>
         ) : (
-          <ListaElegida items={lista} alCambiar={setLista} canciones={canciones} leerYoutube={(url) => cliente.youtube(url)} maximo={RONDAS.max} />
+          <ListaElegida items={lista} alCambiar={setLista} buscar={buscarCanciones} leerYoutube={(url) => cliente.youtube(url)} maximo={RONDAS.max} />
         )}
 
         <label className="batalla__campo">

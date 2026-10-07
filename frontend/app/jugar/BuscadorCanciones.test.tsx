@@ -1,11 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BuscadorCanciones } from "./BuscadorCanciones";
-import type { CancionCatalogo } from "../lib/juego/tipos";
+import type { BuscarCanciones, CancionCatalogo } from "../lib/juego/tipos";
 
 afterEach(cleanup);
 
-const cancion = (id: number, title: string, artist: string): CancionCatalogo => ({ id, title, artist, album: "Disco", year: 2000, genre: "Rock" });
+const cancion = (id: number, title: string, artist: string, extra: Partial<CancionCatalogo> = {}): CancionCatalogo => ({ id, title, artist, album: "Disco", year: 2000, genre: "Rock", ...extra });
 
 const CANCIONES = [
   cancion(1, "A las nueve", "No Te Va Gustar"),
@@ -14,10 +14,25 @@ const CANCIONES = [
   cancion(4, "Candombe para Gardel", "Rubén Rada"),
 ];
 
-function montar(extra: Partial<Parameters<typeof BuscadorCanciones>[0]> = {}) {
+const POR_PAGINA = 20;
+const sinTildes = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** Un servidor de mentira: busca (todas las palabras, sin tildes ni mayúsculas) y devuelve de a páginas, como la API. */
+function servidor(catalogo: CancionCatalogo[]) {
+  const buscar = vi.fn<BuscarCanciones>(async (texto, pagina) => {
+    const palabras = sinTildes(texto).split(/\s+/).filter(Boolean);
+    const todas = catalogo.filter((c) => palabras.every((p) => sinTildes(`${c.title} ${c.artist} ${c.album}`).includes(p)));
+    const desde = (pagina - 1) * POR_PAGINA;
+    return { canciones: todas.slice(desde, desde + POR_PAGINA), hayMas: todas.length > desde + POR_PAGINA };
+  });
+  return buscar;
+}
+
+function montar(extra: Partial<Parameters<typeof BuscadorCanciones>[0]> = {}, catalogo = CANCIONES) {
   const alEnviar = vi.fn();
-  render(<BuscadorCanciones canciones={CANCIONES} puedeEnviar alEnviar={alEnviar} {...extra} />);
-  return { alEnviar, campo: screen.getByRole("combobox") as HTMLInputElement };
+  const buscar = extra.buscar ?? servidor(catalogo);
+  render(<BuscadorCanciones buscar={buscar} esperaMs={0} puedeEnviar alEnviar={alEnviar} {...extra} />);
+  return { alEnviar, buscar: buscar as ReturnType<typeof servidor>, campo: screen.getByRole("combobox") as HTMLInputElement };
 }
 
 /** Simula llegar al final de la lista con scroll (jsdom no calcula medidas, hay que fijarlas). */
@@ -30,208 +45,299 @@ function alFinalDelScroll(lista: HTMLElement, medidas: { scrollTop?: number } = 
 
 const escribir = (campo: HTMLElement, texto: string) => fireEvent.change(campo, { target: { value: texto } });
 const enviar = () => screen.getByRole("button", { name: "Enviar intento" });
+const opciones = () => screen.getAllByRole("option");
+const muchas = (n: number) => Array.from({ length: n }, (_, i) => cancion(i + 1, `Tema ${String(i + 1).padStart(2, "0")}`, "Artista"));
 
-describe("BuscadorCanciones", () => {
-  it("no muestra la lista hasta que se enfoca el campo", () => {
-    montar();
-
-    expect(screen.queryByRole("listbox")).toBeNull();
-  });
-
-  it("enfocar el campo sin escribir no muestra nada", () => {
-    const { campo } = montar();
+describe("BuscadorCanciones: buscar en el servidor, de a páginas", () => {
+  it("no muestra la lista ni busca hasta que se escribe; enfocar el campo no alcanza", () => {
+    const { campo, buscar } = montar();
 
     fireEvent.focus(campo);
     fireEvent.click(campo);
 
     expect(screen.queryByRole("listbox")).toBeNull();
+    expect(buscar).not.toHaveBeenCalled();
   });
 
-  it("borrar lo escrito cierra la lista en vez de mostrar el catálogo", () => {
-    const { campo } = montar();
+  it("con una sola letra o solo espacios no busca nada (no se pide el catálogo entero)", async () => {
+    const { campo, buscar } = montar();
 
-    escribir(campo, "candombe");
-    expect(screen.getByRole("listbox")).toBeInTheDocument();
-    escribir(campo, "");
+    escribir(campo, "c");
+    escribir(campo, "    ");
+    await new Promise((r) => setTimeout(r, 30));
 
-    expect(screen.queryByRole("listbox")).toBeNull();
-  });
-
-  it("la lista se cierra cuando el campo pierde el foco, pero elegir una opción con el mouse sigue andando", () => {
-    const { campo } = montar();
-
-    escribir(campo, "sin sa");
-    fireEvent.blur(campo);
-    expect(screen.queryByRole("listbox")).toBeNull();
-
-    fireEvent.focus(campo);
-    expect(screen.getByRole("listbox")).toBeInTheDocument();
-    // Tocar una opción no le quita el foco al campo (mousedown se cancela): se elige antes de cerrar.
-    const opcion = screen.getByRole("option", { name: /Sin saber/ });
-    expect(fireEvent.mouseDown(opcion)).toBe(false);
-    fireEvent.click(opcion);
-    expect(campo.value).toBe("Sin saber");
-  });
-
-  it("escribir solo espacios tampoco muestra nada", () => {
-    const { campo } = montar();
-
-    escribir(campo, "   ");
-
+    expect(buscar).not.toHaveBeenCalled();
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("si el campo ya tenía el foco y la lista estaba cerrada, un clic la vuelve a abrir", () => {
-    const { campo } = montar();
+  it("al escribir pide la primera página de lo escrito y muestra lo que vuelve", async () => {
+    const { campo, buscar } = montar();
 
     escribir(campo, "candombe");
-    fireEvent.keyDown(campo, { key: "Escape" });
-    expect(screen.queryByRole("listbox")).toBeNull();
 
-    fireEvent.click(campo);
-
-    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(await screen.findByRole("option", { name: /Candombe para Gardel/ })).toBeInTheDocument();
+    expect(buscar).toHaveBeenCalledTimes(1);
+    expect(buscar).toHaveBeenCalledWith("candombe", 1, expect.any(AbortSignal));
   });
 
-  it("busca por título sin importar mayúsculas ni tildes", () => {
-    const { campo } = montar();
+  it("espera a que se deje de teclear: varias teclas seguidas son un solo pedido, con lo último escrito", async () => {
+    const { campo, buscar } = montar({ esperaMs: 40 });
 
-    escribir(campo, "CANDOMBE");
-    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([expect.stringContaining("Candombe para Gardel")]);
+    escribir(campo, "ca");
+    escribir(campo, "can");
+    escribir(campo, "cand");
+    await screen.findByRole("option", { name: /Candombe para Gardel/ });
 
-    escribir(campo, "ruben");
-    expect(screen.getByRole("option")).toHaveTextContent("Candombe para Gardel");
+    expect(buscar).toHaveBeenCalledTimes(1);
+    expect(buscar.mock.calls[0][0]).toBe("cand");
   });
 
-  it("también busca por artista", () => {
-    const { campo } = montar();
+  it("le pasa al servidor el texto sin espacios de más", async () => {
+    const { campo, buscar } = montar();
 
-    escribir(campo, "no te va");
+    escribir(campo, "  no   te va ");
+    await screen.findAllByRole("option");
 
-    expect(screen.getAllByRole("option")).toHaveLength(2);
+    expect(buscar.mock.calls[0][0]).toBe("no te va");
   });
 
-  it("muestra una primera tanda de 30 y sigue cargando más al llegar al final del scroll", () => {
-    const muchas = Array.from({ length: 70 }, (_, i) => cancion(i + 1, `Tema ${i + 1}`, "Artista"));
-    const { campo } = montar({ canciones: muchas });
+  it("muestra el artista, el disco y el año de cada opción, sin separadores sueltos cuando falta algo", async () => {
+    const { campo } = montar({}, [cancion(4, "Candombe para Gardel", "Rubén Rada"), cancion(5, "Candombe sin datos", "Rubén Rada", { year: null, album: "" })]);
+
+    escribir(campo, "candombe");
+    await screen.findAllByRole("option");
+
+    expect(opciones()[0]).toHaveTextContent("Rubén Rada · Disco · 2000");
+    expect(opciones()[1]).toHaveTextContent(/^Candombe sin datosRubén Rada$/);
+  });
+
+  it("respeta el orden que manda el servidor (ya viene con las mejores coincidencias primero)", async () => {
+    const { campo } = montar({}, [cancion(1, "Zeta", "A"), cancion(2, "Alfa", "A"), cancion(3, "Beta", "A")]);
+
+    escribir(campo, "disco");
+    await waitFor(() => expect(opciones()).toHaveLength(3));
+
+    expect(opciones().map((o) => o.querySelector(".buscador__titulo")?.textContent)).toEqual(["Zeta", "Alfa", "Beta"]);
+  });
+
+  it("al llegar al final del scroll pide la página siguiente y la suma a lo que ya había", async () => {
+    const { campo, buscar } = montar({}, muchas(45));
 
     escribir(campo, "artista");
-    expect(screen.getAllByRole("option")).toHaveLength(30);
+    await waitFor(() => expect(opciones()).toHaveLength(20));
 
     alFinalDelScroll(screen.getByRole("listbox"));
-    expect(screen.getAllByRole("option")).toHaveLength(60);
+    await waitFor(() => expect(opciones()).toHaveLength(40));
+    expect(buscar).toHaveBeenLastCalledWith("artista", 2, expect.any(AbortSignal));
 
     alFinalDelScroll(screen.getByRole("listbox"));
-    expect(screen.getAllByRole("option")).toHaveLength(70);
+    await waitFor(() => expect(opciones()).toHaveLength(45));
+    expect(new Set(opciones().map((o) => o.id)).size).toBe(45); // nada repetido
   });
 
-  it("no carga más mientras el scroll todavía está lejos del final", () => {
-    const muchas = Array.from({ length: 70 }, (_, i) => cancion(i + 1, `Tema ${i + 1}`, "Artista"));
-    const { campo } = montar({ canciones: muchas });
+  it("no pide más mientras el scroll está lejos del final, ni cuando ya no hay más", async () => {
+    const { campo, buscar } = montar({}, muchas(25));
 
     escribir(campo, "artista");
+    await waitFor(() => expect(opciones()).toHaveLength(20));
     alFinalDelScroll(screen.getByRole("listbox"), { scrollTop: 0 });
+    expect(buscar).toHaveBeenCalledTimes(1);
 
-    expect(screen.getAllByRole("option")).toHaveLength(30);
+    alFinalDelScroll(screen.getByRole("listbox"));
+    await waitFor(() => expect(opciones()).toHaveLength(25));
+    alFinalDelScroll(screen.getByRole("listbox"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(buscar).toHaveBeenCalledTimes(2); // la segunda página era la última
   });
 
-  it("una búsqueda nueva vuelve a empezar desde la primera tanda", () => {
-    const muchas = Array.from({ length: 70 }, (_, i) => cancion(i + 1, `Tema ${i + 1}`, "Artista"));
-    const { campo } = montar({ canciones: muchas });
+  it("no pide la misma página dos veces si se scrollea varias veces seguidas mientras carga", async () => {
+    const { campo, buscar } = montar({}, muchas(60));
 
     escribir(campo, "artista");
+    await waitFor(() => expect(opciones()).toHaveLength(20));
+    const lista = screen.getByRole("listbox");
+    alFinalDelScroll(lista);
+    alFinalDelScroll(lista);
+    alFinalDelScroll(lista);
+    await waitFor(() => expect(opciones()).toHaveLength(40));
+
+    expect(buscar.mock.calls.filter(([, pagina]) => pagina === 2)).toHaveLength(1);
+  });
+
+  it("una búsqueda nueva vuelve a empezar desde la primera página", async () => {
+    const { campo, buscar } = montar({}, [...muchas(45), cancion(100, "Otro", "Otra banda")]);
+
+    escribir(campo, "artista");
+    await waitFor(() => expect(opciones()).toHaveLength(20));
     alFinalDelScroll(screen.getByRole("listbox"));
+    await waitFor(() => expect(opciones()).toHaveLength(40));
     escribir(campo, "tema");
 
-    expect(screen.getAllByRole("option")).toHaveLength(30);
+    await waitFor(() => expect(opciones()).toHaveLength(20));
+    expect(buscar).toHaveBeenLastCalledWith("tema", 1, expect.any(AbortSignal));
   });
 
-  it("con el teclado, al pasar la última opción cargada se cargan más y se sigue bajando", () => {
-    const muchas = Array.from({ length: 70 }, (_, i) => cancion(i + 1, `Tema ${i + 1}`, "Artista"));
-    const { campo } = montar({ canciones: muchas });
+  it("con el teclado, al llegar a la última opción cargada se pide la página siguiente y se puede seguir bajando", async () => {
+    const { campo } = montar({}, muchas(45));
 
     escribir(campo, "artista");
-    for (let i = 0; i < 31; i++) fireEvent.keyDown(campo, { key: "ArrowDown" });
+    await waitFor(() => expect(opciones()).toHaveLength(20));
+    for (let i = 0; i < 20; i++) fireEvent.keyDown(campo, { key: "ArrowDown" });
+    expect(campo).toHaveAttribute("aria-activedescendant", opciones()[19].id);
 
-    expect(screen.getAllByRole("option")).toHaveLength(60);
-    expect(campo).toHaveAttribute("aria-activedescendant", screen.getAllByRole("option")[30].id);
-  });
-
-  it("ordena las coincidencias por artista, luego por disco (por año) y luego por título", () => {
-    const disco = (id: number, title: string, album: string, year: number) => ({ ...cancion(id, title, "Artista"), album, year });
-    const { campo } = montar({
-      canciones: [disco(1, "Beta", "Segundo disco", 2010), disco(2, "Alfa", "Segundo disco", 2010), disco(3, "Zeta", "Primer disco", 2001)],
-    });
-
-    escribir(campo, "artista");
-
-    expect(screen.getAllByRole("option").map((o) => o.querySelector(".buscador__titulo")?.textContent)).toEqual([
-      "Zeta",
-      "Alfa",
-      "Beta",
-    ]);
-  });
-
-  it("al buscar un disco muestra todas sus canciones", () => {
-    const { campo } = montar({
-      canciones: [
-        { ...cancion(1, "Uno", "A"), album: "Eco" },
-        { ...cancion(2, "Dos", "A"), album: "Eco" },
-        { ...cancion(3, "Tres", "A"), album: "Otro" },
-      ],
-    });
-
-    escribir(campo, "eco");
-
-    expect(screen.getAllByRole("option").map((o) => o.querySelector(".buscador__titulo")?.textContent)).toEqual(["Dos", "Uno"]);
-  });
-
-  it("al moverse con el teclado lleva la opción activa a la vista dentro de la lista", () => {
-    const scroll = vi.fn();
-    window.HTMLElement.prototype.scrollIntoView = scroll;
-    const { campo } = montar();
-
-    escribir(campo, "no te va");
+    fireEvent.keyDown(campo, { key: "ArrowDown" }); // en la última: pide más
+    await waitFor(() => expect(opciones()).toHaveLength(40));
     fireEvent.keyDown(campo, { key: "ArrowDown" });
 
-    expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
+    expect(campo).toHaveAttribute("aria-activedescendant", opciones()[20].id);
   });
 
-  it("avisa cuando nada coincide", () => {
+  it("si una respuesta vieja llega tarde no pisa a la nueva", async () => {
+    let soltarLenta!: () => void;
+    const buscar = vi.fn<BuscarCanciones>((texto) =>
+      texto === "lenta"
+        ? new Promise((resolver) => {
+            soltarLenta = () => resolver({ canciones: [cancion(1, "De la búsqueda lenta", "X")], hayMas: false });
+          })
+        : Promise.resolve({ canciones: [cancion(2, "De la búsqueda rápida", "Y")], hayMas: false }),
+    );
+    const { campo } = montar({ buscar });
+
+    escribir(campo, "lenta");
+    await waitFor(() => expect(buscar).toHaveBeenCalledWith("lenta", 1, expect.any(AbortSignal)));
+    escribir(campo, "rapida");
+    await screen.findByRole("option", { name: /rápida/ });
+    soltarLenta();
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(opciones()).toHaveLength(1);
+    expect(screen.queryByRole("option", { name: /lenta/ })).toBeNull();
+  });
+
+  it("cancela el pedido anterior cuando se escribe otra cosa y al desmontarse", async () => {
+    const senales: AbortSignal[] = [];
+    const buscar = vi.fn<BuscarCanciones>((_t, _p, senial) => {
+      if (senial) senales.push(senial);
+      return new Promise(() => {}); // nunca responde
+    });
+    const { campo } = montar({ buscar });
+
+    escribir(campo, "uno");
+    await waitFor(() => expect(senales).toHaveLength(1));
+    escribir(campo, "dos");
+    await waitFor(() => expect(senales).toHaveLength(2));
+    expect(senales[0].aborted).toBe(true);
+
+    cleanup();
+    expect(senales[1].aborted).toBe(true);
+  });
+
+  it("mientras busca lo avisa, y si no hay nada que mostrar todavía no dice que no encontró", async () => {
+    let responder!: () => void;
+    const buscar = vi.fn<BuscarCanciones>(() => new Promise((r) => (responder = () => r({ canciones: [cancion(1, "Listo", "X")], hayMas: false }))));
+    const { campo } = montar({ buscar });
+
+    escribir(campo, "algo");
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Buscando");
+    expect(screen.queryByText(/No encontramos/)).toBeNull();
+    responder();
+    await screen.findByRole("option");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("avisa cuando nada coincide", async () => {
     const { campo } = montar();
 
     escribir(campo, "zzzz");
 
-    expect(screen.getByRole("status")).toHaveTextContent("No encontramos esa canción");
+    expect(await screen.findByText("No encontramos esa canción.")).toBeInTheDocument();
   });
 
-  it("al elegir una opción completa el campo y habilita enviar", () => {
-    const { campo } = montar();
-    expect(enviar()).toBeDisabled();
+  it("si la búsqueda falla lo dice, sin romper, y escribir de nuevo vuelve a intentar", async () => {
+    const buscar = vi.fn<BuscarCanciones>().mockRejectedValueOnce(new Error("sin red")).mockResolvedValue({ canciones: [cancion(1, "Ahora sí", "X")], hayMas: false });
+    const { campo } = montar({ buscar });
 
+    escribir(campo, "algo");
+    expect(await screen.findByRole("alert")).toHaveTextContent(/No pudimos buscar/);
+
+    escribir(campo, "algo más");
+    expect(await screen.findByRole("option", { name: /Ahora sí/ })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});
+
+describe("BuscadorCanciones: elegir y enviar", () => {
+  it("borrar lo escrito cierra la lista, y no vuelve a pedir nada", async () => {
+    const { campo, buscar } = montar();
+    escribir(campo, "candombe");
+    await screen.findByRole("listbox");
+
+    escribir(campo, "");
+
+    expect(screen.queryByRole("listbox")).toBeNull();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(buscar).toHaveBeenCalledTimes(1);
+  });
+
+  it("la lista se cierra cuando el campo pierde el foco, pero elegir una opción con el mouse sigue andando", async () => {
+    const { campo } = montar();
     escribir(campo, "sin sa");
+    await screen.findByRole("listbox");
+
+    fireEvent.blur(campo);
+    expect(screen.queryByRole("listbox")).toBeNull();
+    fireEvent.focus(campo);
+    const opcion = screen.getByRole("option", { name: /Sin saber/ });
+    // Tocar una opción no le quita el foco al campo (mousedown se cancela): se elige antes de cerrar.
+    expect(fireEvent.mouseDown(opcion)).toBe(false);
+    fireEvent.click(opcion);
+
+    expect(campo.value).toBe("Sin saber");
+  });
+
+  it("Escape cierra la lista sin borrar lo escrito, y un clic en el campo la vuelve a abrir", async () => {
+    const { campo } = montar();
+    escribir(campo, "no te va");
+    await screen.findByRole("listbox");
+
+    fireEvent.keyDown(campo, { key: "Escape" });
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(campo.value).toBe("no te va");
+
+    fireEvent.click(campo);
+    expect(opciones()).toHaveLength(2);
+  });
+
+  it("al elegir una opción completa el campo, habilita enviar y NO vuelve a buscar", async () => {
+    const { campo, buscar } = montar();
+    expect(enviar()).toBeDisabled();
+    escribir(campo, "sin sa");
+    await screen.findByRole("option", { name: /Sin saber/ });
+
     fireEvent.click(screen.getByRole("option", { name: /Sin saber/ }));
+    await new Promise((r) => setTimeout(r, 20));
 
     expect(campo.value).toBe("Sin saber");
     expect(enviar()).toBeEnabled();
     expect(screen.queryByRole("listbox")).toBeNull();
+    expect(buscar).toHaveBeenCalledTimes(1);
   });
 
-  it("no permite enviar mientras no se pueda (el audio no sonó) aunque haya una canción elegida", () => {
+  it("no permite enviar mientras no se pueda (el audio no sonó) aunque haya una canción elegida", async () => {
     const { campo } = montar({ puedeEnviar: false });
-
     escribir(campo, "sin sa");
-    fireEvent.click(screen.getByRole("option", { name: /Sin saber/ }));
+    fireEvent.click(await screen.findByRole("option", { name: /Sin saber/ }));
 
     expect(enviar()).toBeDisabled();
   });
 
-  it("al enviar entrega la canción elegida y limpia el campo", () => {
+  it("al enviar entrega la canción elegida completa y limpia el campo", async () => {
     const { campo, alEnviar } = montar();
-
     escribir(campo, "sin sa");
-    fireEvent.click(screen.getByRole("option", { name: /Sin saber/ }));
+    fireEvent.click(await screen.findByRole("option", { name: /Sin saber/ }));
+
     fireEvent.click(enviar());
 
     expect(alEnviar).toHaveBeenCalledWith(CANCIONES[1]);
@@ -239,63 +345,46 @@ describe("BuscadorCanciones", () => {
     expect(enviar()).toBeDisabled();
   });
 
-  it("editar el texto después de elegir invalida la elección", () => {
+  it("editar el texto después de elegir invalida la elección", async () => {
     const { campo } = montar();
-
     escribir(campo, "sin sa");
-    fireEvent.click(screen.getByRole("option", { name: /Sin saber/ }));
+    fireEvent.click(await screen.findByRole("option", { name: /Sin saber/ }));
+
     escribir(campo, "Sin sabe");
 
     expect(enviar()).toBeDisabled();
   });
 
-  it("se maneja con el teclado: flechas para moverse y Enter para elegir", () => {
+  it("se maneja con el teclado: flechas para moverse y Enter para elegir", async () => {
     const { campo } = montar();
-
     escribir(campo, "no te va");
-    fireEvent.keyDown(campo, { key: "ArrowDown" });
-    fireEvent.keyDown(campo, { key: "ArrowDown" });
-    expect(campo).toHaveAttribute("aria-activedescendant", screen.getAllByRole("option")[1].id);
+    await waitFor(() => expect(opciones()).toHaveLength(2));
 
+    fireEvent.keyDown(campo, { key: "ArrowDown" });
+    fireEvent.keyDown(campo, { key: "ArrowDown" });
+    expect(campo).toHaveAttribute("aria-activedescendant", opciones()[1].id);
     fireEvent.keyDown(campo, { key: "Enter" });
 
     expect(campo.value).toBe("Sin saber");
   });
 
-  it("Escape cierra la lista sin borrar lo escrito", () => {
+  it("al moverse con el teclado lleva la opción activa a la vista dentro de la lista", async () => {
+    const scroll = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scroll;
     const { campo } = montar();
-
     escribir(campo, "no te va");
-    fireEvent.keyDown(campo, { key: "Escape" });
+    await waitFor(() => expect(opciones()).toHaveLength(2));
 
-    expect(screen.queryByRole("listbox")).toBeNull();
-    expect(campo.value).toBe("no te va");
+    fireEvent.keyDown(campo, { key: "ArrowDown" });
+
+    expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
   });
 
-  it("mientras se envía bloquea el botón", () => {
+  it("mientras se envía bloquea el botón", async () => {
     const { campo } = montar({ enviando: true });
-
     escribir(campo, "sin sa");
-    fireEvent.click(screen.getByRole("option", { name: /Sin saber/ }));
+    fireEvent.click(await screen.findByRole("option", { name: /Sin saber/ }));
 
     expect(enviar()).toBeDisabled();
-  });
-
-  it("en cada opción muestra el artista, el disco y el año", () => {
-    const { campo } = montar();
-
-    escribir(campo, "candombe");
-
-    const opcion = screen.getByRole("option");
-    expect(opcion).toHaveTextContent("Candombe para Gardel");
-    expect(opcion).toHaveTextContent("Rubén Rada · Disco · 2000");
-  });
-
-  it("omite el año cuando no se conoce y no deja separadores sueltos", () => {
-    const { campo } = montar({ canciones: [{ ...CANCIONES[3], year: null, album: "" }] });
-
-    escribir(campo, "candombe");
-
-    expect(screen.getByRole("option")).toHaveTextContent(/^Candombe para GardelRubén Rada$/);
   });
 });

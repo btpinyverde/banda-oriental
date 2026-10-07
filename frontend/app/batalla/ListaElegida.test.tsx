@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { buscarEn } from "../lib/juego/prueba-buscar";
 import { ApiError, type CancionCatalogo } from "../lib/juego/tipos";
 import { ListaElegida, type ItemConDatos } from "./ListaElegida";
 
@@ -29,7 +30,7 @@ function montar(extra: { inicial?: ItemConDatos[]; maximo?: number; leerYoutube?
   function Contenedor() {
     const [items, setItems] = useState<ItemConDatos[]>(extra.inicial ?? []);
     ultimo.valor = items;
-    return <ListaElegida items={items} alCambiar={setItems} canciones={CANCIONES} leerYoutube={leerYoutube} cargarVideo={extra.cargarVideo ?? videoQue()} maximo={extra.maximo ?? 30} />;
+    return <ListaElegida items={items} alCambiar={setItems} buscar={buscarEn(CANCIONES)} leerYoutube={leerYoutube} cargarVideo={extra.cargarVideo ?? videoQue()} maximo={extra.maximo ?? 30} />;
   }
   render(<Contenedor />);
   return { ultimo, leerYoutube };
@@ -38,20 +39,20 @@ function montar(extra: { inicial?: ItemConDatos[]; maximo?: number; leerYoutube?
 const catalogo = () => within(screen.getByRole("region", { name: /agregar del catálogo/i }));
 const youtube = () => within(screen.getByRole("region", { name: /agregar un enlace de youtube/i }));
 
-function agregarDelCatalogo(titulo: string, busqueda: string) {
+async function agregarDelCatalogo(titulo: string, busqueda: string) {
   fireEvent.change(catalogo().getByRole("combobox"), { target: { value: busqueda } });
-  fireEvent.click(catalogo().getByRole("option", { name: new RegExp(titulo, "i") }));
+  fireEvent.click(await catalogo().findByRole("option", { name: new RegExp(titulo, "i") }));
   fireEvent.click(catalogo().getByRole("button", { name: /agregar a la lista/i }));
 }
 
 const item = (id: number, titulo: string, extra: Partial<ItemConDatos> = {}): ItemConDatos => ({ song_id: id, source: "deezer", titulo, artista: "X", ...extra });
 
 describe("ListaElegida", () => {
-  it("agrega canciones del catálogo, en el orden en que se eligen", () => {
+  it("agrega canciones del catálogo, en el orden en que se eligen", async () => {
     const { ultimo } = montar();
 
-    agregarDelCatalogo("Chau", "chau");
-    agregarDelCatalogo("Zafar", "zafar");
+    await agregarDelCatalogo("Chau", "chau");
+    await agregarDelCatalogo("Zafar", "zafar");
 
     expect(ultimo.valor.map((i) => [i.song_id, i.source])).toEqual([[2, "deezer"], [1, "deezer"]]);
     const filas = screen.getAllByRole("listitem");
@@ -60,9 +61,9 @@ describe("ListaElegida", () => {
     expect(screen.getByText(/2 canciones en la lista/i)).toBeInTheDocument();
   });
 
-  it("no deja repetir una canción", () => {
+  it("no deja repetir una canción", async () => {
     const { ultimo } = montar({ inicial: [item(1, "Zafar")] });
-    agregarDelCatalogo("Zafar", "zafar");
+    await agregarDelCatalogo("Zafar", "zafar");
     expect(ultimo.valor).toHaveLength(1);
     expect(screen.getByRole("alert")).toHaveTextContent(/ya está en la lista/i);
   });
@@ -115,7 +116,7 @@ describe("ListaElegida", () => {
     await youtube().findByText(/elegí qué canción es/i);
 
     fireEvent.change(youtube().getByRole("combobox"), { target: { value: "chau" } });
-    fireEvent.click(youtube().getByRole("option", { name: /chau/i }));
+    fireEvent.click(await youtube().findByRole("option", { name: /chau/i }));
     fireEvent.click(youtube().getByRole("button", { name: /usar esta canción/i }));
 
     expect(ultimo.valor).toEqual([expect.objectContaining({ song_id: 2, source: "youtube", youtube_id: "dQw4w9WgXcQ", start_seconds: 0 })]);

@@ -18,7 +18,7 @@ import {
  * NEXT_PUBLIC_JUEGO_DEMO=1 y nunca en un build de producción (ver cliente.ts).
  * Los audios `/demo/etapa-N.mp3` no están en el repositorio: hay que ponerlos a mano en public/demo/.
  */
-const CATALOGO_DEMO: CancionCatalogo[] = [
+export const CATALOGO_DEMO: CancionCatalogo[] = [
   { id: 1, title: "A las nueve", artist: "No Te Va Gustar", album: "El camino más largo", year: 2004, genre: "Rock" },
   { id: 2, title: "Sin saber", artist: "No Te Va Gustar", album: "Aunque cueste ver el sol", year: 2008, genre: "Rock" },
   { id: 3, title: "Cuando sea grande", artist: "El Cuarteto de Nos", album: "Raro", year: 2006, genre: "Rock" },
@@ -35,6 +35,8 @@ export const CANCION_DEL_DIA_DEMO = CATALOGO_DEMO[0];
 
 const ORDEN_STEMS: TipoStem[] = ["drums", "bass", "other", "vocals"];
 const PUNTAJE_BASE: Record<number, number> = { 1: 100, 2: 85, 3: 70, 4: 55, 5: 40, 6: 20 };
+
+const POR_PAGINA_DEMO = 20;
 
 const mismoTexto = (a: string, b: string) => normalizarTexto(a) === normalizarTexto(b);
 
@@ -134,8 +136,15 @@ export function crearClienteDemo(fuenteCanciones?: () => Promise<CancionCatalogo
       return puntaje;
     },
 
-    async listarCanciones(): Promise<CancionCatalogo[]> {
-      return obtenerCatalogo();
+    /** Igual que la API real: todas las palabras en título, artista o disco, de a páginas. */
+    async buscarCanciones(texto, pagina) {
+      const palabras = normalizarTexto(texto).split(/\s+/).filter(Boolean);
+      const todas = (await obtenerCatalogo()).filter((c) => {
+        const alMenos = normalizarTexto(`${c.title} ${c.artist} ${c.album}`);
+        return palabras.every((palabra) => alMenos.includes(palabra));
+      });
+      const desde = (pagina - 1) * POR_PAGINA_DEMO;
+      return { canciones: todas.slice(desde, desde + POR_PAGINA_DEMO), hayMas: todas.length > desde + POR_PAGINA_DEMO };
     },
   };
 }

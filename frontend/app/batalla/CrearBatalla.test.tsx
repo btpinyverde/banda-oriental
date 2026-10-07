@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { buscarEn } from "../lib/juego/prueba-buscar";
 import { ApiError } from "../lib/juego/tipos";
 import type { ApiBatallas } from "../lib/batallas/api-batallas";
 import { leerHostToken } from "../lib/batallas/api-batallas";
@@ -14,7 +15,7 @@ const CANCIONES = [
 ];
 const apiCon = (crear: ReturnType<typeof vi.fn>, extra: Partial<Record<keyof ApiBatallas, ReturnType<typeof vi.fn>>> = {}) => ({ crear, ...extra }) as unknown as ApiBatallas;
 const montar = (api: ApiBatallas) =>
-  render(<CrearBatalla api={api} cargarCanciones={() => Promise.resolve(CANCIONES)} cargarGeneros={() => Promise.resolve(["Rock", "Pop"])} buscarArtistas={() => Promise.resolve([])} />);
+  render(<CrearBatalla api={api} buscarCanciones={buscarEn(CANCIONES)} cargarGeneros={() => Promise.resolve(["Rock", "Pop"])} buscarArtistas={() => Promise.resolve([])} />);
 const campo = (nombre: RegExp) => screen.getByLabelText(nombre);
 
 afterEach(cleanup);

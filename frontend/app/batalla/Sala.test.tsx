@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { buscarEn } from "../lib/juego/prueba-buscar";
 import { ApiError } from "../lib/juego/tipos";
 import type { ApiBatallas } from "../lib/batallas/api-batallas";
 import { guardarHostToken } from "../lib/batallas/api-batallas";
@@ -33,9 +34,9 @@ const CANCIONES: CancionCatalogo[] = [
   { id: 7, title: "Zafar", artist: "La Vela Puerca", album: "A contraluz", year: 2001, genre: "Rock" },
   { id: 8, title: "Chau", artist: "No Te Va Gustar", album: "Por lo menos hoy", year: 2007, genre: "Rock" },
 ];
-const cargarCanciones = () => Promise.resolve(CANCIONES);
+const buscarCanciones = buscarEn(CANCIONES);
 const apiCon = (metodos: Partial<Record<keyof ApiBatallas, ReturnType<typeof vi.fn>>>) => metodos as unknown as ApiBatallas;
-const montar = (api: ApiBatallas = apiCon({})) => render(<Sala code="ABC234" api={api} cargarCanciones={cargarCanciones} />);
+const montar = (api: ApiBatallas = apiCon({})) => render(<Sala code="ABC234" api={api} buscarCanciones={buscarCanciones} />);
 
 beforeEach(() => {
   youtube.opciones = null;
