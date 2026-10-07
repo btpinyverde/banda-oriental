@@ -106,3 +106,69 @@ def test_keeps_titles_that_have_at_least_a_letter_or_digit(client, title):
     songs = client.get(reverse("catalog:songs")).json()["songs"]
 
     assert [s["id"] for s in songs] == [song.id]
+
+
+# --- La lista completa pesaba ~9 MB con el catálogo de verdad y armarla con objetos del ORM llevaba el servidor (512 MB) al límite de
+# memoria: cada visitante nuevo podía reiniciarlo. Ahora se arma con una sola consulta liviana, se guarda comprimida y se sirve con gzip.
+
+
+@pytest.mark.django_db
+def test_it_is_built_with_a_single_light_query(client, django_assert_num_queries):
+    _song("s1", "Uno")
+    _song("s2", "Dos", artist_name="Rubén Rada", album_name="Candombe")
+
+    with django_assert_num_queries(1):
+        response = client.get(reverse("catalog:songs"))
+
+    assert len(response.json()["songs"]) == 2
+
+
+@pytest.mark.django_db
+def test_the_second_request_does_not_touch_the_database(client, django_assert_num_queries):
+    _song("s1", "Uno")
+    client.get(reverse("catalog:songs"))
+
+    with django_assert_num_queries(0):
+        response = client.get(reverse("catalog:songs"))
+
+    assert response.status_code == 200 and len(response.json()["songs"]) == 1
+
+
+@pytest.mark.django_db
+def test_it_is_sent_compressed_to_whoever_accepts_gzip_and_the_content_is_the_same(client):
+    import gzip
+
+    _song("s1", "Uno")
+    _song("s2", "Dos")
+    plain = client.get(reverse("catalog:songs"))
+
+    zipped = client.get(reverse("catalog:songs"), HTTP_ACCEPT_ENCODING="gzip, deflate, br")
+
+    assert zipped["Content-Encoding"] == "gzip"
+    assert "Accept-Encoding" in zipped["Vary"]
+    assert zipped["Content-Type"] == "application/json"
+    assert zipped["Cache-Control"].startswith("public, max-age=")
+    assert gzip.decompress(zipped.content) == plain.content
+    assert "Content-Encoding" not in plain  # without gzip support the answer goes as plain JSON
+
+
+@pytest.mark.django_db
+def test_a_symbol_only_title_and_hidden_songs_stay_out(client):
+    _song("s1", "Real")
+    _song("s2", "- ...")
+    hidden = _song("s3", "Oculta")
+    Song.objects.filter(pk=hidden.pk).update(hidden=True)
+
+    titles = [s["title"] for s in client.get(reverse("catalog:songs")).json()["songs"]]
+
+    assert titles == ["Real"]
+
+
+@pytest.mark.django_db
+def test_a_new_song_shows_up_after_the_cache_is_cleared_by_the_signal(client):
+    _song("s1", "Uno")
+    assert len(client.get(reverse("catalog:songs")).json()["songs"]) == 1
+
+    _song("s2", "Dos")
+
+    assert len(client.get(reverse("catalog:songs")).json()["songs"]) == 2
