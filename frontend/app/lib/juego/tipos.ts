@@ -153,6 +153,8 @@ export interface FilaRanking {
 export interface Destacados {
   streaks: { display_name: string; value: number }[];
   songs: { display_name: string; value: number }[];
+  /** Mejor precisión (porcentaje de partidas ganadas). Falta si el servidor es anterior. */
+  accuracy?: { display_name: string; value: number }[];
 }
 
 /** `GET /api/stats/global/`: cifras de todo el juego. */
@@ -171,4 +173,7 @@ export interface RankingServidor {
   /** Cuántos jugadores tiene el ranking en total (no solo los que se muestran). Falta si el servidor es anterior. */
   players?: number;
   me: FilaRanking | null;
+  /** Qué página es esta, y si después hay más. Faltan si el servidor es anterior (entonces es una sola página). */
+  page?: number;
+  has_more?: boolean;
 }

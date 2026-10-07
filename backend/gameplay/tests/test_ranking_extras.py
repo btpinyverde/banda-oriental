@@ -103,7 +103,30 @@ class TestHighlights:
         assert "secreto-device-id" not in client.get(self.url()).content.decode()
 
     def test_empty_is_an_empty_answer(self, client, db):
-        assert client.get(self.url()).json() == {"streaks": [], "songs": []}
+        assert client.get(self.url()).json() == {"streaks": [], "songs": [], "accuracy": []}
+
+    def test_the_best_accuracy_is_the_percentage_won_top_five(self, client, song):
+        for i, won in enumerate([3, 4, 5, 6, 7, 8, 9]):
+            stats(f"d{i}", f"Jugador{i}", played=10, won=won)
+
+        body = client.get(self.url()).json()
+
+        assert [(r["display_name"], r["value"]) for r in body["accuracy"]] == [(f"Jugador{i}", 30 + 10 * i) for i in (6, 5, 4, 3, 2)]
+
+    def test_one_lucky_game_does_not_top_the_accuracy(self, client, song):
+        stats("suerte", "Suerte", played=1, won=1)
+        stats("firme", "Firme", played=20, won=15)
+
+        body = client.get(self.url()).json()
+
+        assert [r["display_name"] for r in body["accuracy"]] == ["Firme"]
+
+    def test_a_tie_in_accuracy_goes_to_whoever_played_more_then_by_name(self, client, song):
+        stats("d1", "Beto", played=4, won=2)
+        stats("d2", "Ana", played=10, won=5)
+        stats("d3", "Cata", played=4, won=2)
+
+        assert [r["display_name"] for r in client.get(self.url()).json()["accuracy"]] == ["Ana", "Beto", "Cata"]
 
 
 class TestGlobalNumbers:

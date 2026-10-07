@@ -252,3 +252,59 @@ class TestNamesAreLookedUpInBulk:
 
         with django_assert_max_num_queries(10):
             board(client, "day")
+
+
+class TestPagesOfTheRanking:
+    """The ranking page scrolls: it asks for a page at a time and the server says whether there are more."""
+
+    def players(self, song, how_many):
+        for index in range(how_many):
+            score(song, TODAY, 1000 - index, f"J{index}", f"{index:08d}-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+
+    def page(self, client, number, size, device=None):
+        headers = {"HTTP_X_DEVICE_ID": device} if device else {}
+        return client.get(reverse("gameplay:leaderboard"), {"period": "day", "page": number, "page_size": size}, **headers).json()
+
+    def test_each_page_has_the_next_rows_and_says_if_there_are_more(self, client, song):
+        self.players(song, 5)
+
+        first, second, third = (self.page(client, n, 2) for n in (1, 2, 3))
+
+        assert [e["display_name"] for e in first["entries"]] == ["J0", "J1"] and first["has_more"] is True
+        assert [e["display_name"] for e in second["entries"]] == ["J2", "J3"] and second["has_more"] is True
+        assert [e["display_name"] for e in third["entries"]] == ["J4"] and third["has_more"] is False
+        assert third["page"] == 3 and third["players"] == 5
+
+    def test_the_ranks_keep_counting_across_pages(self, client, song):
+        self.players(song, 4)
+
+        assert [e["rank"] for e in self.page(client, 2, 2)["entries"]] == [3, 4]
+
+    def test_a_page_past_the_end_is_empty_not_an_error(self, client, song):
+        self.players(song, 2)
+
+        body = self.page(client, 9, 2)
+
+        assert body["entries"] == [] and body["has_more"] is False
+
+    def test_the_page_size_is_capped_and_a_bad_page_falls_back_to_the_first(self, client, song):
+        self.players(song, 3)
+
+        assert len(self.page(client, 1, 5000)["entries"]) == 3
+        body = client.get(reverse("gameplay:leaderboard"), {"period": "day", "page": "abc", "page_size": "x"}).json()
+        assert body["page"] == 1 and len(body["entries"]) == 3
+
+    def test_the_players_own_row_comes_on_every_page(self, client, song):
+        self.players(song, 4)
+
+        me = self.page(client, 2, 2, device="00000003-aaaa-4aaa-8aaa-aaaaaaaaaaaa")["me"]
+
+        assert me["display_name"] == "J3" and me["rank"] == 4
+
+    def test_without_asking_for_a_page_it_still_answers_the_top_as_before(self, client, song, monkeypatch):
+        monkeypatch.setattr(views, "LEADERBOARD_LIMIT", 2)
+        self.players(song, 3)
+
+        body = board(client, "day").json()
+
+        assert len(body["entries"]) == 2 and body["has_more"] is True

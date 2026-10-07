@@ -81,10 +81,12 @@ def _stats(players: list[dict]) -> dict:
     return found
 
 
-def build(period: str, today: date, *, limit: int, me_key=None) -> dict:
+def build(period: str, today: date, *, limit: int, page: int = 1, me_key=None) -> dict:
+    """One page of the ranking: `limit` rows starting at row `(page - 1) * limit`. The ranks keep counting across pages."""
     start, end = period_range(period, today)
     players = _totals(start, end)
-    shown = players[:limit]
+    first = (page - 1) * limit
+    shown = players[first : first + limit]
     me = next((p for p in players if p["key"] == me_key), None) if me_key else None
     visible = shown + ([me] if me and me not in shown else [])
     names = _names(visible)
@@ -108,6 +110,8 @@ def build(period: str, today: date, *, limit: int, me_key=None) -> dict:
         "from": str(start) if start else None,
         "to": str(end) if end else None,
         "entries": [public(p) for p in shown],
+        "page": page,
+        "has_more": first + limit < len(players),
         # How many players the ranking has in all, not only the ones shown: "you are 3rd of 128".
         "players": len(players),
         "me": public(me) if me else None,

@@ -16,7 +16,7 @@ const respuesta = (periodo: PeriodoRanking, entries: FilaRanking[], me: FilaRank
   players,
 });
 
-const DESTACADOS = { streaks: [{ display_name: "CampeónDelPrado", value: 21 }], songs: [{ display_name: "TitoStereo", value: 342 }] };
+const DESTACADOS = { streaks: [{ display_name: "CampeónDelPrado", value: 21 }], songs: [{ display_name: "TitoStereo", value: 342 }], accuracy: [{ display_name: "Afinada", value: 95 }] };
 const GLOBALES = { players: 5432, games: 12000, days: 124 };
 
 let pedir: MockInstance<typeof servidor.pedirRanking>;
@@ -40,8 +40,18 @@ describe("Ranking: la página", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: /Quién sabe más de música uruguaya/ })).toBeInTheDocument();
     expect(await screen.findByRole("table", { name: "Ranking" })).toHaveTextContent("Ana");
-    expect(pedir).toHaveBeenCalledWith("all", expect.any(String));
+    expect(pedir).toHaveBeenCalledWith("all", expect.any(String), 1);
     expect(screen.getByRole("combobox", { name: "Período" })).toHaveValue("all");
+  });
+
+  it("pone el título Ranking, las pestañas (si las hay) y el período en una misma fila de controles", async () => {
+    const { container } = render(<Ranking selector={<div role="group" aria-label="Qué ranking ver" />} />);
+    await screen.findByText("Ana");
+
+    const fila = container.querySelector(".ranking__controles") as HTMLElement;
+    expect(within(fila).getByRole("heading", { level: 2, name: "Ranking" })).toBeInTheDocument();
+    expect(within(fila).getByRole("group", { name: "Qué ranking ver" })).toBeInTheDocument();
+    expect(within(fila).getByRole("combobox", { name: "Período" })).toBeInTheDocument();
   });
 
   it("deja elegir el período, y al elegir otro pide ese ranking y lo muestra", async () => {
@@ -55,7 +65,7 @@ describe("Ranking: la página", () => {
 
     expect(await screen.findByText("Carla")).toBeInTheDocument();
     expect(screen.queryByText("Ana")).toBeNull();
-    expect(pedir).toHaveBeenLastCalledWith("week", expect.any(String));
+    expect(pedir).toHaveBeenLastCalledWith("week", expect.any(String), 1);
   });
 
   it("dice qué días cubre el período elegido", async () => {
@@ -83,11 +93,12 @@ describe("Ranking: la página", () => {
     expect(tarjeta).toHaveTextContent("de 5.432 jugadores");
   });
 
-  it("muestra las listas de mejores rachas y de más canciones, y las estadísticas globales", async () => {
+  it("muestra los otros récords (racha, precisión y canciones) y las estadísticas globales", async () => {
     render(<Ranking />);
 
-    expect(await screen.findByRole("region", { name: "Mejores rachas" })).toHaveTextContent("CampeónDelPrado");
-    expect(screen.getByRole("region", { name: "Más canciones" })).toHaveTextContent("TitoStereo");
+    expect(await screen.findByRole("region", { name: "Mayor racha" })).toHaveTextContent("CampeónDelPrado");
+    expect(screen.getByRole("region", { name: "Mejor precisión" })).toHaveTextContent("Afinada");
+    expect(screen.getByRole("region", { name: "Más canciones descubiertas" })).toHaveTextContent("TitoStereo");
     expect(screen.getByRole("region", { name: "Estadísticas globales" })).toHaveTextContent("5.432");
   });
 
@@ -98,7 +109,7 @@ describe("Ranking: la página", () => {
 
     expect(await screen.findByRole("table", { name: "Ranking" })).toBeInTheDocument();
     await waitFor(() => expect(servidor.pedirGlobales).toHaveBeenCalled());
-    expect(screen.queryByRole("region", { name: "Mejores rachas" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Otros récords" })).toBeNull();
     expect(screen.queryByRole("region", { name: "Estadísticas globales" })).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -147,6 +158,105 @@ describe("Ranking: la página", () => {
 
     expect(screen.getByText("Nueva")).toBeInTheDocument();
     expect(screen.queryByText("Vieja")).toBeNull();
+  });
+});
+
+describe("Ranking: scroll infinito", () => {
+  // jsdom no trae IntersectionObserver: se simula uno y el test dice cuándo "se ve" el final de la lista.
+  let verElFinal: () => void;
+  beforeEach(() => {
+    class Observador {
+      constructor(alVer: (entradas: { isIntersecting: boolean }[]) => void) {
+        verElFinal = () => alVer([{ isIntersecting: true }]);
+      }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    vi.stubGlobal("IntersectionObserver", Observador);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  const pagina = (numero: number, filas: FilaRanking[], hayMas: boolean): RankingServidor => ({ ...respuesta("all", filas, null, 3), page: numero, has_more: hayMas });
+
+  it("al llegar al final de la lista pide la página siguiente y la suma debajo, sin sacar lo que ya estaba", async () => {
+    pedir.mockImplementation(async (_periodo, _id, numero = 1) => (numero === 1 ? pagina(1, [fila(1, "Ana", 950), fila(2, "Beto", 900)], true) : pagina(2, [fila(3, "Cata", 800)], false)));
+    render(<Ranking />);
+    await screen.findByText("Beto");
+    expect(screen.queryByText("Cata")).toBeNull();
+
+    await act(async () => verElFinal());
+
+    expect(await screen.findByText("Cata")).toBeInTheDocument();
+    expect(screen.getByText("Ana")).toBeInTheDocument();
+    expect(pedir).toHaveBeenLastCalledWith("all", expect.any(String), 2);
+  });
+
+  it("cuando no hay más páginas deja de pedir aunque se siga mirando el final", async () => {
+    pedir.mockResolvedValue(pagina(1, [fila(1, "Ana", 950)], false));
+    render(<Ranking />);
+    await screen.findByText("Ana");
+
+    await act(async () => verElFinal());
+
+    expect(pedir).toHaveBeenCalledTimes(1);
+  });
+
+  it("no pide dos veces la misma página si el final se ve de nuevo mientras carga", async () => {
+    let terminar!: (r: RankingServidor) => void;
+    pedir.mockResolvedValueOnce(pagina(1, [fila(1, "Ana", 950)], true));
+    pedir.mockImplementationOnce(() => new Promise((resolver) => (terminar = resolver)));
+    render(<Ranking />);
+    await screen.findByText("Ana");
+
+    await act(async () => verElFinal());
+    await act(async () => verElFinal());
+
+    expect(pedir).toHaveBeenCalledTimes(2);
+    await act(async () => terminar(pagina(2, [fila(2, "Beto", 900)], false)));
+    expect(await screen.findByText("Beto")).toBeInTheDocument();
+  });
+
+  it("al cambiar de período vuelve a empezar desde la primera página", async () => {
+    pedir.mockImplementation(async (periodo, _id, numero = 1) =>
+      periodo === "day" ? { ...respuesta("day", [fila(1, "Hoy1", 10)], null, 1), page: 1, has_more: false } : numero === 1 ? pagina(1, [fila(1, "Ana", 950)], true) : pagina(2, [fila(2, "Beto", 900)], false),
+    );
+    render(<Ranking />);
+    await screen.findByText("Ana");
+    await act(async () => verElFinal());
+    await screen.findByText("Beto");
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Período" }), { target: { value: "day" } });
+
+    expect(await screen.findByText("Hoy1")).toBeInTheDocument();
+    expect(screen.queryByText("Ana")).toBeNull();
+    expect(screen.queryByText("Beto")).toBeNull();
+  });
+
+  it("si falla una página siguiente lo dice al final de la lista y deja reintentar, sin perder lo ya cargado", async () => {
+    pedir.mockResolvedValueOnce(pagina(1, [fila(1, "Ana", 950)], true));
+    pedir.mockRejectedValueOnce(new ApiError("sin red", 0));
+    pedir.mockResolvedValueOnce(pagina(2, [fila(2, "Beto", 900)], false));
+    render(<Ranking />);
+    await screen.findByText("Ana");
+
+    await act(async () => verElFinal());
+    expect(await screen.findByRole("alert")).toHaveTextContent(/No pudimos cargar más jugadores/);
+    expect(screen.getByText("Ana")).toBeInTheDocument();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Reintentar" })));
+
+    expect(await screen.findByText("Beto")).toBeInTheDocument();
+  });
+
+  it("si el navegador no puede observar el scroll, ofrece un botón para ver más", async () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    pedir.mockImplementation(async (_p, _i, numero = 1) => (numero === 1 ? pagina(1, [fila(1, "Ana", 950)], true) : pagina(2, [fila(2, "Beto", 900)], false)));
+    render(<Ranking />);
+    await screen.findByText("Ana");
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Ver más jugadores" })));
+
+    expect(await screen.findByText("Beto")).toBeInTheDocument();
   });
 });
 
