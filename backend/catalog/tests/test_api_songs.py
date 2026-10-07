@@ -172,3 +172,97 @@ def test_a_new_song_shows_up_after_the_cache_is_cleared_by_the_signal(client):
     _song("s2", "Dos")
 
     assert len(client.get(reverse("catalog:songs")).json()["songs"]) == 2
+
+
+# --- Buscar en el servidor, de a páginas: nadie baja el catálogo entero. `GET /api/songs/?q=...&page=...` (sin `q` ni `page` sigue la lista
+# completa, solo para el front viejo mientras se actualiza).
+
+
+def _search(client, q, **extra):
+    return client.get(reverse("catalog:songs"), {"q": q, **extra})
+
+
+@pytest.mark.django_db
+class TestSearch:
+    def test_it_finds_by_title_artist_or_record_ignoring_accents_and_case(self, client):
+        _song("s1", "Al otro lado del río", artist_name="Jorge Drexler", album_name="Eco")
+        _song("s2", "Zafar", artist_name="La Vela Puerca", album_name="A contraluz")
+
+        assert [s["title"] for s in _search(client, "RIO").json()["results"]] == ["Al otro lado del río"]
+        assert [s["title"] for s in _search(client, "vela puerca").json()["results"]] == ["Zafar"]
+        assert [s["title"] for s in _search(client, "contraluz").json()["results"]] == ["Zafar"]
+
+    def test_several_words_must_all_match_in_any_order(self, client):
+        _song("s1", "Luna negra", artist_name="Jorge Drexler")
+        _song("s2", "Luna negra", artist_name="Los Traidores", album_name="Noches")
+
+        assert [s["artist"] for s in _search(client, "negra drexler").json()["results"]] == ["Jorge Drexler"]
+
+    def test_the_answer_has_what_the_guess_table_needs(self, client):
+        song = _song("s1", "Eco del mar", year=2004, genre="Pop")
+
+        result = _search(client, "eco").json()["results"][0]
+
+        assert result == {"id": song.id, "title": "Eco del mar", "artist": "Jorge Drexler", "album": "Eco", "year": 2004, "genre": "Pop"}
+
+    def test_hidden_songs_and_titles_made_of_symbols_never_show_up(self, client):
+        _song("s1", "Luna real")
+        _song("s2", "- ...", artist_name="Luna Band", album_name="Otro")  # matches by artist, but its title is only symbols
+        hidden = _song("s3", "Luna oculta")
+        Song.objects.filter(pk=hidden.pk).update(hidden=True)
+
+        assert [s["title"] for s in _search(client, "luna").json()["results"]] == ["Luna real"]
+
+    def test_what_starts_like_the_search_comes_first(self, client):
+        _song("s1", "El mar de la luna", artist_name="Zeta")
+        _song("s2", "Luna llena", artist_name="Beta")
+        _song("s3", "Luna", artist_name="Alfa")
+
+        titles = [s["title"] for s in _search(client, "luna").json()["results"]]
+
+        assert titles == ["Luna", "Luna llena", "El mar de la luna"]
+
+    def test_it_is_paged_and_says_whether_there_is_more_without_counting_everything(self, client, django_assert_max_num_queries):
+        for i in range(45):
+            _song(f"s{i}", f"Canción {i:02d}")
+
+        with django_assert_max_num_queries(2):
+            first = _search(client, "canción", page_size=20).json()
+        second = _search(client, "canción", page=2, page_size=20).json()
+        third = _search(client, "canción", page=3, page_size=20).json()
+
+        assert (len(first["results"]), first["has_more"], first["page"]) == (20, True, 1)
+        assert (len(second["results"]), second["has_more"]) == (20, True)
+        assert (len(third["results"]), third["has_more"]) == (5, False)
+        ids = [s["id"] for page in (first, second, third) for s in page["results"]]
+        assert len(ids) == len(set(ids)) == 45  # nothing repeated, nothing missing
+
+    def test_a_search_that_is_too_short_or_empty_finds_nothing_instead_of_everything(self, client):
+        _song("s1", "Luna")
+
+        for q in ("", " ", "l"):
+            assert _search(client, q).json() == {"results": [], "has_more": False, "page": 1}
+
+    @pytest.mark.parametrize("params", [{"page": "0"}, {"page": "abc"}, {"page": "9999"}, {"page_size": "0"}, {"page_size": "500"}])
+    def test_bad_paging_is_a_clear_error(self, client, params):
+        assert _search(client, "luna", **params).status_code == 400
+
+    def test_a_very_long_search_is_rejected(self, client):
+        assert _search(client, "x" * 200).status_code == 400
+
+    def test_the_answer_can_be_cached_for_a_minute(self, client):
+        assert _search(client, "luna")["Cache-Control"] == "public, max-age=60"
+
+    def test_the_full_list_is_still_there_for_the_old_front_when_no_search_or_page_is_asked(self, client):
+        _song("s1", "Uno")
+
+        assert len(client.get(reverse("catalog:songs")).json()["songs"]) == 1
+
+    def test_searching_has_its_own_limit_apart_from_the_global_one(self):
+        from catalog.views import SongListView
+
+        view = SongListView()
+        view.request = type("R", (), {"query_params": {"q": "luna"}})()
+        assert (view.throttle_scope, view.skip_global_throttle) == ("song-search", True)
+        view.request = type("R", (), {"query_params": {}})()
+        assert (view.throttle_scope, view.skip_global_throttle) == ("songs", False)

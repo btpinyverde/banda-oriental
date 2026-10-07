@@ -9,7 +9,9 @@ from rest_framework.views import APIView
 
 from django.db.models import Count, Q
 
+from .archive import _best_first, _int, _text
 from .models import Album, Song
+from .search import filter_by_text
 
 # El catálogo cambia poco (solo cuando se corre una importación): unos minutos de caché alcanzan para que
 # el buscador del juego no vuelva a pedirlo en cada visita.
@@ -49,8 +51,17 @@ def _build_songs_gzip() -> bytes:
     return gzip.compress(body, compresslevel=6)
 
 
+SEARCH_MIN_CHARS = 2
+SEARCH_DEFAULT_SIZE, SEARCH_MAX_SIZE, SEARCH_MAX_PAGE = 20, 50, 200
+SEARCH_CACHE_SECONDS = 60
+
+
 class SongListView(APIView):
-    """Todas las canciones del catálogo, para el buscador del juego.
+    """Las canciones del catálogo, para el buscador del juego.
+
+    `GET /api/songs/?q=luna&page=1&page_size=20` busca en el servidor y devuelve de a páginas (`results`, `has_more`, `page`): quien juega
+    nunca baja el catálogo entero; el buscador pide la página siguiente a medida que se baja por la lista. Sin `q` ni `page` devuelve
+    todo (`songs`), solo para el front viejo mientras se actualiza.
 
     No dice cuál es la canción del día: eso solo lo sabe `/api/daily/`, y nunca por este camino.
 
@@ -59,9 +70,45 @@ class SongListView(APIView):
     navegadores; a los demás, como JSON común. Además de la caché de los navegadores (Cache-Control).
     """
 
-    throttle_scope = "songs"
+    # Buscar tiene su propio límite, más alto, y no cuenta contra el global: se pide mientras se escribe, y un bar entero juega desde una
+    # misma dirección. La lista completa conserva el suyo, bajo.
+    def _searching(self) -> bool:
+        params = self.request.query_params
+        return "q" in params or "page" in params
+
+    @property
+    def throttle_scope(self):
+        return "song-search" if self._searching() else "songs"
+
+    @property
+    def skip_global_throttle(self):
+        return self._searching()
 
     def get(self, request):
+        if self._searching():
+            return self._search(request)
+        return self._everything(request)
+
+    def _search(self, request):
+        text = _text(request)
+        page = _int(request, "page", default=1, minimum=1, maximum=SEARCH_MAX_PAGE)
+        size = _int(request, "page_size", default=SEARCH_DEFAULT_SIZE, minimum=1, maximum=SEARCH_MAX_SIZE)
+        results, has_more = [], False
+        if len(text) >= SEARCH_MIN_CHARS:
+            songs = Song.objects.filter(hidden=False, title__regex=r"\w").select_related("album__artist")
+            songs = _best_first(filter_by_text(songs, text, ["title", "album__name", "album__artist__name"]), text, "title")
+            start = (page - 1) * size
+            rows = list(songs[start : start + size + 1])  # one more than asked: that is how it is known whether there is a next page, without counting
+            has_more = len(rows) > size
+            results = [
+                {"id": s.id, "title": s.title, "artist": s.album.artist.name, "album": s.album.name, "year": s.album.year, "genre": s.album.genre}
+                for s in rows[:size]
+            ]
+        response = Response({"results": results, "has_more": has_more, "page": page})
+        response["Cache-Control"] = f"public, max-age={SEARCH_CACHE_SECONDS}"
+        return response
+
+    def _everything(self, request):
         packed = cache.get(SONGS_CACHE_KEY)
         if packed is None:
             # Un solo armado a la vez: si varias visitas nuevas llegan juntas, esperan y reusan el resultado (armarlo varias
