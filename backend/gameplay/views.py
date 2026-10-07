@@ -7,8 +7,8 @@ import logging
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
-from django.db.models.functions import Lower
+from django.db.models import FloatField, Sum
+from django.db.models.functions import Cast, Lower
 from django.conf import settings
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -31,6 +31,8 @@ from .stats import owner_of, recompute_stats, serialize
 logger = logging.getLogger(__name__)
 
 LEADERBOARD_LIMIT = 50
+LEADERBOARD_PAGE_MAX = 50  # most rows a page of the ranking can ask for
+ACCURACY_MIN_GAMES = 3  # fewer games than this and a perfect percentage is luck, not accuracy
 
 
 def get_device_id(request):
@@ -432,7 +434,18 @@ class LeaderboardView(APIView):
             device_id = device_id_from(request)
             if device_id:
                 me_key = ("d", device_id)
-        return Response(leaderboards.build(period, timezone.localdate(), limit=LEADERBOARD_LIMIT, me_key=me_key))
+        # Asking for a page (the ranking page scrolls) gives that page; without it, the top as always.
+        paged = "page" in request.query_params or "page_size" in request.query_params
+        page = self._number(request.query_params.get("page"), default=1, highest=10_000)
+        size = self._number(request.query_params.get("page_size"), default=LEADERBOARD_LIMIT, highest=LEADERBOARD_PAGE_MAX) if paged else LEADERBOARD_LIMIT
+        return Response(leaderboards.build(period, timezone.localdate(), limit=size, page=page, me_key=me_key))
+
+    @staticmethod
+    def _number(raw, *, default, highest):
+        try:
+            return min(max(int(raw), 1), highest)
+        except (TypeError, ValueError):
+            return default
 
 
 class PublicNameView(APIView):
@@ -500,7 +513,7 @@ class PublicNameView(APIView):
 
 
 class LeaderboardHighlightsView(APIView):
-    """The side lists of the ranking page: the best current streaks and who has played the most songs, top five of each.
+    """The side lists of the ranking page: the best current streaks, the best accuracy and who has played the most songs, top five of each.
     Public and read-only; only players with a public name and at least one game."""
 
     http_method_names = ["get", "head", "options"]
@@ -513,7 +526,15 @@ class LeaderboardHighlightsView(APIView):
             rows = named.filter(**{f"{field}__gt": 0}).order_by(f"-{field}", Lower("public_name"))[:5]
             return [{"display_name": row.public_name, "value": getattr(row, field)} for row in rows]
 
-        response = Response({"streaks": top("current_streak"), "songs": top("played")})
+        # Accuracy is the share of games won; someone with very few games would top it by luck, so a minimum applies.
+        by_accuracy = (
+            named.filter(played__gte=ACCURACY_MIN_GAMES, won__gt=0)
+            .annotate(share=Cast("won", FloatField()) / Cast("played", FloatField()))
+            .order_by("-share", "-played", Lower("public_name"))[:5]
+        )
+        accuracy = [{"display_name": row.public_name, "value": round(row.won * 100 / row.played)} for row in by_accuracy]
+
+        response = Response({"streaks": top("current_streak"), "songs": top("played"), "accuracy": accuracy})
         response["Cache-Control"] = "public, max-age=60"
         return response
 
