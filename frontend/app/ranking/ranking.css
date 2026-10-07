@@ -5,51 +5,58 @@
 .ranking h2 { margin: 0; font-size: 22px; font-weight: 800; }
 
 /* Encabezado y collage */
-.ranking-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 24px; align-items: center; padding: 8px 0; }
+.ranking-hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: center; padding: 8px 0; }
 .ranking-hero__etiqueta { margin: 0 0 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tinta-suave); }
-.ranking-hero h1 { margin: 0; font-size: clamp(40px, 5.2vw, 70px); font-weight: 900; line-height: 0.98; letter-spacing: -0.045em; }
+.ranking-hero h1 { margin: 0; font-size: clamp(38px, 4.9vw, 66px); font-weight: 900; line-height: 0.98; letter-spacing: -0.045em; }
 .ranking-hero__resaltado { background: linear-gradient(transparent 66%, var(--amarillo) 66%, var(--amarillo) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
+.ranking-hero__sin-corte { white-space: nowrap; }
 .ranking-hero__bajada { margin: 22px 0 0; max-width: 430px; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.4; color: var(--tinta-suave); }
-.ranking-colage { position: relative; min-height: 290px; }
-.ranking-colage__mancha { position: absolute; left: 8%; top: 6%; width: 52%; }
-.ranking-colage__foto { position: absolute; right: 2%; top: 4%; width: 56%; margin: 0; padding: 9px 9px 13px; background: #fff; box-shadow: 0 10px 28px rgba(60, 40, 20, 0.2); transform: rotate(2deg); }
-.ranking-colage__foto img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 35%; filter: grayscale(1) contrast(1.05); }
-.ranking-colage__copa { position: absolute; left: 16%; top: 4%; width: 210px; }
-.ranking-colage__copa img { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 10px rgba(60, 40, 20, 0.25)); }
-.ranking-colage__copa span { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%) rotate(-5deg); padding: 3px 18px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-family: "Caveat Brush", cursive; font-size: 30px; }
-.ranking-colage__nota { position: absolute; right: 8%; top: -2%; display: grid; padding: 14px 20px 16px; background: #f8a8d2; box-shadow: 0 8px 20px rgba(60, 40, 20, 0.18); transform: rotate(-9deg); font-family: "Caveat Brush", cursive; font-size: clamp(17px, 1.8vw, 24px); line-height: 1.12; text-transform: uppercase; }
-.ranking-colage__estrella { position: absolute; right: 0; bottom: 6%; width: 64px; color: var(--violeta); }
+.ranking-podio { display: flex; justify-content: flex-end; }
+.ranking-podio img { display: block; width: 100%; max-width: 520px; height: auto; }
 
-/* Controles */
-.ranking__controles { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+/* Cifras del juego, en fila bajo la bajada */
+.ranking-hero .globales { margin-top: 30px; }
+.globales ul { display: flex; flex-wrap: wrap; gap: 0; margin: 0; padding: 0; list-style: none; }
+.globales li { display: flex; align-items: center; gap: 12px; padding: 0 28px; }
+.globales li:first-child { padding-left: 0; }
+.globales li + li { border-left: 1px solid #ddd8cf; }
+.globales li svg { flex: none; color: var(--tinta); }
+.globales strong { display: block; font-size: 22px; font-weight: 800; line-height: 1.1; }
+.globales span { font-size: 14px; color: var(--tinta-suave); }
+
+/* Controles: título, pestañas y período en una misma fila */
+.resaltado-titulo { background: linear-gradient(transparent 68%, var(--amarillo) 68%, var(--amarillo) 92%, transparent 92%); padding: 0 4px; margin: 0 -4px; }
+.ranking__controles { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; margin-top: 18px; }
+.ranking .ranking__titulo { margin: 0 4px 0 0; font-size: clamp(44px, 5vw, 64px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+.ranking__periodo { margin-left: auto; }
 .ranking__periodo select { height: 48px; padding: 0 44px 0 22px; border: 2px solid #e4e0ee; border-radius: 999px; background: #fff; font: inherit; font-size: 15px; font-weight: 600; color: var(--tinta); appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2314110f' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 18px center; cursor: pointer; }
-.ranking__rotulo { margin: 0; font-size: 14px; color: var(--tinta-suave); }
+.ranking__rotulo { margin: -14px 0 0; font-size: 14px; color: var(--tinta-suave); }
 
 /* Cuerpo: tabla + lateral */
-.ranking__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 22px; align-items: start; }
+.ranking__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
 .ranking__principal { display: grid; gap: 18px; min-width: 0; }
-.ranking__lateral { display: grid; gap: 18px; }
+.ranking__lateral { display: grid; gap: 16px; position: sticky; top: 24px; }
 .ranking__mensaje, .ranking__vacio { padding: 36px 20px; border-radius: 24px; background: var(--violeta-claro); text-align: center; font-weight: 600; }
 .ranking__mensaje p, .ranking__vacio p { margin: 0 0 10px; }
 .ranking__espera { font-weight: 500; color: var(--tinta-suave); }
 
 /* Tabla */
-.ranking__tabla { width: 100%; border-collapse: separate; border-spacing: 0 6px; padding: 8px 14px 14px; border-radius: 24px; background: #fff; box-shadow: 0 8px 24px rgba(60, 40, 20, 0.07); }
-.ranking__tabla th { padding: 10px 8px; text-align: left; font-size: 13px; font-weight: 600; color: var(--tinta-suave); }
+.ranking__tabla { width: 100%; border-collapse: separate; border-spacing: 0; padding: 10px 12px 16px; border-radius: 26px; background: #fff; box-shadow: 0 8px 28px rgba(60, 40, 20, 0.07); }
+.ranking__tabla th { padding: 14px 12px 12px; text-align: left; font-size: 13px; font-weight: 600; color: var(--tinta-suave); }
 .ranking__tabla th:nth-child(n + 3), .ranking__tabla td:nth-child(n + 3) { text-align: center; }
-.ranking__tabla td { padding: 10px 8px; font-size: 15px; font-variant-numeric: tabular-nums; border-bottom: 1px solid #f0ede7; }
-.ranking__fila--top1 td, .ranking__fila--top2 td, .ranking__fila--top3 td { border-bottom: 0; }
+.ranking__tabla td { padding: 12px; font-size: 15px; font-variant-numeric: tabular-nums; border-bottom: 1px solid #efece6; }
+.ranking__tabla tbody tr:last-child td { border-bottom: 0; }
+.ranking__fila--top1 td, .ranking__fila--top2 td, .ranking__fila--top3 td { border-bottom: 0; padding-top: 14px; padding-bottom: 14px; }
+.ranking__tabla tbody tr.ranking__fila--top1 + tr td, .ranking__tabla tbody tr.ranking__fila--top2 + tr td, .ranking__tabla tbody tr.ranking__fila--top3 + tr td { border-top: 0; }
 .ranking__fila--top1 td { background: #fdf0b4; }
-.ranking__fila--top2 td { background: #e8e4fb; }
-.ranking__fila--top3 td { background: #ffd9e4; }
-.ranking__fila--top1 td:first-child, .ranking__fila--top2 td:first-child, .ranking__fila--top3 td:first-child { border-radius: 14px 0 0 14px; }
-.ranking__fila--top1 td:last-child, .ranking__fila--top2 td:last-child, .ranking__fila--top3 td:last-child { border-radius: 0 14px 14px 0; }
+.ranking__fila--top2 td, .ranking__fila--top3 td { background: #ece9fc; }
+.ranking__fila--top2 td, .ranking__fila--top3 td, .ranking__fila--top1 td { box-shadow: 0 6px 0 #fff; }
+.ranking__fila--top1 td:first-child, .ranking__fila--top2 td:first-child, .ranking__fila--top3 td:first-child { border-radius: 16px 0 0 16px; }
+.ranking__fila--top1 td:last-child, .ranking__fila--top2 td:last-child, .ranking__fila--top3 td:last-child { border-radius: 0 16px 16px 0; }
 .ranking__fila--mia td { background: var(--violeta-claro); }
-.ranking__puesto { width: 54px; font-weight: 700; color: var(--tinta-suave); }
+.ranking__puesto { width: 64px; font-weight: 700; color: var(--tinta-suave); }
 .ranking__corona { display: block; }
-.ranking__corona--1 { color: #f2b705; }
-.ranking__corona--2 { color: #a9a4c7; }
-.ranking__corona--3 { color: #e7885f; }
+.ranking__corona { color: #f2b705; }
 .ranking__jugador { display: flex; align-items: center; gap: 12px; }
 .ranking__nombre { font-weight: 700; overflow-wrap: anywhere; }
 .ranking__vos { padding: 2px 9px; border-radius: 999px; background: var(--violeta); color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; }
@@ -66,8 +73,11 @@
 .avatar--tono-4 { background: #ffc6bf; }
 
 /* Tu posición */
-.posicion { display: grid; gap: 14px; padding: 20px 22px; border-radius: 24px; background: #c9f4de; }
-.posicion p { margin: 0; font-weight: 600; }
+.posicion { position: relative; display: grid; gap: 14px; padding: 24px 26px; border-radius: 26px; background: #ece9fc; }
+.posicion h2 { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; }
+.posicion p { margin: 0; font-weight: 500; line-height: 1.45; }
+.posicion .boton { width: 100%; justify-content: center; }
+.posicion__flecha { position: absolute; top: 14px; right: 18px; width: 40px; height: 40px; transform: rotate(60deg) scaleX(-1); }
 .posicion__puesto { display: flex; align-items: center; gap: 14px; }
 .posicion__puesto .avatar { width: 56px; height: 56px; font-size: 24px; }
 .posicion__puesto strong { display: block; font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
@@ -77,23 +87,33 @@
 .posicion__numeros dt { font-size: 11px; color: var(--tinta-suave); order: 2; }
 .posicion__numeros div { display: flex; flex-direction: column; }
 
-/* Mejores rachas y más canciones */
-.destacada { display: grid; gap: 12px; padding: 20px 22px; border-radius: 24px; }
-.destacada--racha { background: #ebe8fb; }
-.destacada--canciones { background: #fdeeb0; }
-.destacada ol { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.destacada li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+/* ¿Cómo se calcula el puntaje? */
+.como-puntaje { padding: 18px 22px; border: 1px solid #e8e4ee; border-radius: 22px; background: #fff; }
+.como-puntaje summary { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; list-style: none; }
+.como-puntaje summary::-webkit-details-marker { display: none; }
+.como-puntaje summary::after { content: ""; width: 9px; height: 9px; margin: -4px 4px 0 auto; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 0.15s; }
+.como-puntaje[open] summary::after { margin-top: 4px; transform: rotate(225deg); }
+.como-puntaje p { margin: 12px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--tinta-suave); }
+
+/* Otros récords */
+.records { display: grid; gap: 18px; margin-top: 18px; }
+.ranking .records__titulo { margin: 0; font-size: 34px; font-weight: 900; letter-spacing: -0.03em; }
+.records__lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.destacada { display: grid; align-content: start; gap: 14px; padding: 22px 26px; border-radius: 24px; }
+.destacada--racha, .destacada--canciones { background: #ece9fc; }
+.destacada--precision { background: #fdf0b4; }
+.destacada h3 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 800; }
+.destacada ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.destacada li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; }
+.destacada li strong { font-weight: 800; }
 .destacada .avatar { width: 30px; height: 30px; font-size: 13px; }
-.destacada__puesto { width: 14px; font-weight: 700; }
+.destacada__puesto { width: 14px; font-weight: 600; }
 .destacada__nombre { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .destacada__vacia { margin: 0; font-size: 14px; color: var(--tinta-suave); }
 
-/* Estadísticas globales */
-.globales { display: grid; gap: 14px; }
-.globales ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
-.globales li { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 20px; background: #fff; box-shadow: 0 6px 20px rgba(60, 40, 20, 0.07); }
-.globales strong { display: block; font-size: 30px; font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; }
-.globales span { font-size: 14px; color: var(--tinta-suave); }
+/* El final de la lista, que trae la página siguiente */
+.ranking__final { display: grid; justify-items: center; gap: 10px; min-height: 24px; text-align: center; }
+.ranking__final p { margin: 0; font-size: 14px; color: var(--tinta-suave); }
 
 /* Llamado a crear una cuenta */
 .llamado { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 190px; padding: 26px 30px; border-radius: 28px; background: var(--violeta-claro); overflow: hidden; }
@@ -105,22 +125,36 @@
 
 @media (max-width: 1000px) {
   .ranking-hero { grid-template-columns: 1fr; }
+  .ranking-podio { justify-content: center; }
+  .ranking-podio img { max-width: 400px; }
   .ranking__cuerpo { grid-template-columns: 1fr; }
+  .ranking__lateral { position: static; }
+  .records__lista { grid-template-columns: 1fr; }
+  .globales li { padding: 0 16px; }
   .llamado { flex-direction: column; align-items: flex-start; }
   .llamado__flan { display: none; }
   .llamado__nota { margin: 0; transform: rotate(-3deg); }
 }
 @media (max-width: 640px) {
+  .ranking__tabla { padding: 6px 4px 10px; border-radius: 22px; }
+  .ranking__tabla th { padding: 12px 6px 10px; }
+  .ranking__tabla td { padding: 10px 6px; font-size: 14px; }
+  .ranking__puesto { width: 34px; }
+  .ranking__jugador { gap: 8px; }
+  .ranking__tabla .avatar { width: 32px; height: 32px; font-size: 14px; }
+  .ranking__nombre { overflow-wrap: break-word; word-break: normal; }
+  .globales ul { display: grid; grid-template-columns: repeat(3, minmax(0, auto)); justify-content: start; gap: 18px; }
+  .globales li, .globales li:first-child { flex-direction: column; align-items: flex-start; gap: 6px; padding: 0; border-left: 0; }
   .ranking__tabla th:nth-child(4), .ranking__tabla td:nth-child(4), .ranking__tabla th:nth-child(6), .ranking__tabla td:nth-child(6) { display: none; }
-  .ranking-colage { min-height: 240px; }
+  .ranking__periodo { margin-left: 0; }
 }
 
 /* Solo para lectores de pantalla (esta hoja puede cargarse sin la de /jugar, donde está definida la clase general). */
 .ranking .solo-lectores { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 /* El selector Diario | Mis batallas (solo con el modo batalla encendido) y la lista de Mis batallas. */
-.ranking__vistas { display: flex; gap: 8px; justify-content: center; margin: 0 0 8px; }
-.ranking__vista { padding: 8px 18px; border: 0; border-radius: 999px; background: var(--violeta-claro); font: inherit; font-weight: 700; color: var(--tinta); cursor: pointer; }
+.ranking__vistas { display: flex; gap: 8px; }
+.ranking__vista { padding: 12px 26px; border: 0; border-radius: 999px; background: var(--violeta-claro); font: inherit; font-weight: 700; color: var(--tinta); cursor: pointer; }
 .ranking__vista[aria-pressed="true"] { background: var(--violeta); color: #fff; }
 .mis-batallas { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .mis-batallas__item { padding: 4px; border-radius: 16px; background: #fff; box-shadow: 0 2px 10px rgba(60, 40, 120, 0.08); }

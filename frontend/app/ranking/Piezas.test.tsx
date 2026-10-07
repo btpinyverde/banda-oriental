@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { Destacados, FilaRanking, RankingServidor } from "../lib/juego/tipos";
-import { AvatarDeJugador, EstadisticasGlobalesDelJuego, HeroDelRanking, LlamadoACuenta, ListaDestacada, TablaDelRanking, TuPosicion } from "./Piezas";
+import { AvatarDeJugador, ComoSeCalculaElPuntaje, EstadisticasGlobalesDelJuego, HeroDelRanking, LlamadoACuenta, ListaDestacada, OtrosRecords, TablaDelRanking, TuPosicion } from "./Piezas";
 
 afterEach(cleanup);
 
@@ -35,11 +35,12 @@ describe("TablaDelRanking", () => {
     expect(primera).toHaveTextContent("20");
   });
 
-  it("los tres primeros llevan corona y su propio color; los demás, su número", () => {
+  it("el primero lleva corona; los tres primeros, su propio color; del segundo en adelante, su número", () => {
     const { container } = render(<TablaDelRanking filas={filas} me={null} />);
 
     expect(screen.getByRole("cell", { name: "Puesto 1" })).toBeInTheDocument();
-    expect(container.querySelectorAll("svg.ranking__corona")).toHaveLength(3);
+    expect(container.querySelectorAll("svg.ranking__corona")).toHaveLength(1);
+    expect(screen.getByRole("cell", { name: "Puesto 2" })).toHaveTextContent("2");
     expect(container.querySelector("tr.ranking__fila--top1")).not.toBeNull();
     expect(container.querySelector("tr.ranking__fila--top3")).not.toBeNull();
     expect(screen.getByRole("cell", { name: "Puesto 4" })).toHaveTextContent("4");
@@ -98,20 +99,32 @@ describe("TuPosicion", () => {
     expect(within(tarjeta).getByRole("link", { name: /Jugar el diario/ })).toHaveAttribute("href", "/jugar");
     expect(tarjeta.textContent).not.toMatch(/#|undefined/);
   });
+
+  it("sin puesto no deja un hueco: dice cómo aparecer", () => {
+    render(<TuPosicion ranking={ranking(null)} />);
+
+    expect(screen.getByText(/Jugá y guardá tu puntaje para aparecer/)).toBeInTheDocument();
+  });
 });
 
 describe("ListaDestacada", () => {
   const lista: Destacados["streaks"] = [{ display_name: "CampeónDelPrado", value: 21 }, { display_name: "TitoStereo", value: 18 }];
 
   it("es un título y una lista numerada con jugador y valor", () => {
-    render(<ListaDestacada titulo="Mejores rachas" filas={lista} />);
+    render(<ListaDestacada titulo="Mayor racha" filas={lista} />);
 
-    const region = screen.getByRole("region", { name: "Mejores rachas" });
+    const region = screen.getByRole("region", { name: "Mayor racha" });
     const items = within(region).getAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent("1");
     expect(items[0]).toHaveTextContent("CampeónDelPrado");
     expect(items[0]).toHaveTextContent("21");
+  });
+
+  it("el valor lleva el sufijo que se le pide (el porcentaje de la precisión)", () => {
+    render(<ListaDestacada titulo="Mejor precisión" filas={[{ display_name: "Ana", value: 90 }]} sufijo="%" />);
+
+    expect(screen.getByRole("region", { name: "Mejor precisión" })).toHaveTextContent("90%");
   });
 
   it("sin datos lo dice en vez de dejar un hueco", () => {
@@ -132,6 +145,13 @@ describe("EstadisticasGlobalesDelJuego", () => {
     expect(region).toHaveTextContent("partidas");
     expect(region).toHaveTextContent("124");
     expect(region).toHaveTextContent("canciones del diario");
+  });
+
+  it("es una fila de cifras con ícono, sin título propio (el encabezado ya explica de qué es)", () => {
+    render(<EstadisticasGlobalesDelJuego datos={{ players: 7, games: 8, days: 2 }} />);
+
+    expect(within(screen.getByRole("region", { name: "Estadísticas globales" })).queryByRole("heading")).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 
   it("singular cuando es uno", () => {
@@ -158,12 +178,66 @@ describe("LlamadoACuenta", () => {
 });
 
 describe("HeroDelRanking", () => {
-  it("tiene el título grande y la bajada, y el collage es decorativo", () => {
-    const { container } = render(<HeroDelRanking />);
+  it("tiene el título grande y la bajada, y el podio es decorativo", () => {
+    const { container } = render(<HeroDelRanking globales={null} />);
 
     expect(screen.getByRole("heading", { level: 1, name: /Quién sabe más de música uruguaya/ })).toBeInTheDocument();
     expect(screen.getByText(/Compará tu puntaje, racha y precisión/)).toBeInTheDocument();
     expect(screen.getByText("Ranking global")).toBeInTheDocument();
-    expect(container.querySelector(".ranking-colage")).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector(".ranking-podio")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("lleva las cifras del juego debajo de la bajada, dentro del encabezado", () => {
+    const { container } = render(<HeroDelRanking globales={{ players: 7, games: 8, days: 2 }} />);
+
+    expect(container.querySelector(".ranking-hero")).toContainElement(screen.getByRole("region", { name: "Estadísticas globales" }));
+  });
+
+  it("sin cifras no deja un hueco ni ceros inventados", () => {
+    render(<HeroDelRanking globales={null} />);
+
+    expect(screen.queryByRole("region", { name: "Estadísticas globales" })).toBeNull();
+  });
+});
+
+describe("ComoSeCalculaElPuntaje", () => {
+  it("es un desplegable que explica el puntaje con lo que de verdad cuenta: los intentos y la rapidez", () => {
+    render(<ComoSeCalculaElPuntaje />);
+
+    const detalle = screen.getByText("¿Cómo se calcula el puntaje?").closest("details") as HTMLDetailsElement;
+    expect(detalle).not.toBeNull();
+    expect(detalle.textContent).toMatch(/intentos/);
+    expect(detalle.textContent).toMatch(/rápido/);
+  });
+});
+
+describe("OtrosRecords", () => {
+  const datos: Destacados = {
+    streaks: [{ display_name: "Ana", value: 5 }],
+    songs: [{ display_name: "Beto", value: 12 }],
+    accuracy: [{ display_name: "Cata", value: 100 }],
+  };
+
+  it("son tres tarjetas, cada una con su lista: mayor racha, mejor precisión (en porcentaje) y más canciones descubiertas", () => {
+    render(<OtrosRecords datos={datos} />);
+
+    const conjunto = screen.getByRole("region", { name: "Otros récords" });
+    expect(within(conjunto).getByRole("heading", { level: 2, name: "Otros récords" })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Mayor racha" })).getByText("Ana")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Mejor precisión" })).toHaveTextContent("100%");
+    expect(screen.getByRole("region", { name: "Más canciones descubiertas" })).toHaveTextContent("Beto");
+  });
+
+  it("con un servidor que todavía no manda la precisión, quedan las otras dos tarjetas", () => {
+    render(<OtrosRecords datos={{ streaks: datos.streaks, songs: datos.songs }} />);
+
+    expect(screen.queryByRole("region", { name: "Mejor precisión" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Mayor racha" })).toBeInTheDocument();
+  });
+
+  it("sin datos no aparece", () => {
+    const { container } = render(<OtrosRecords datos={null} />);
+
+    expect(container).toBeEmptyDOMElement();
   });
 });

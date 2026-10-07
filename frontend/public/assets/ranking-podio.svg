@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 380" fill="none">
+  <title>podio con una copa</title>
+  <!-- mancha lila detrás -->
+  <path d="M190 120c40-40 150-62 215-10 40 32 66 80 55 140-4 22-14 38-14 38H180c-20-40-48-110-10-168Z" fill="#c9b8ff"/>
+  <!-- rayas negras de arriba -->
+  <g stroke="#14110f" stroke-width="8" stroke-linecap="round">
+    <path d="M36 62c26 12 46 24 66 44"/>
+    <path d="M62 112c22 2 34 6 52 12"/>
+    <path d="M118 8c6 18 8 28 8 46"/>
+    <path d="M338 12c14 14 20 24 26 34"/>
+  </g>
+  <g stroke="#14110f" stroke-width="5" stroke-linecap="round">
+    <path d="M440 78c10 4 16 8 22 14"/>
+    <path d="M446 62c12 2 18 4 28 10"/>
+  </g>
+  <!-- corona rosa de contorno -->
+  <path d="M30 218 52 176l24 24 18-44 22 50 16 24-70 6Z" stroke="#ff7fbf" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+  <!-- estrella violeta -->
+  <polygon fill="#6c4ff0" points="498,228 486,238 490,254 474,252 468,268 454,258 440,266 436,250 420,246 430,232 424,218 440,218 446,204 460,214 474,206 478,222"/>
+  <!-- copa -->
+  <g stroke="#14110f" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M250 62h110v52c0 34-24 58-55 58s-55-24-55-58Z" fill="#f6c524"/>
+    <path d="M250 80c-34-6-48 6-44 26 4 22 24 34 48 38" fill="none"/>
+    <path d="M360 80c34-6 48 6 44 26-4 22-24 34-48 38" fill="none"/>
+    <path d="M305 172v26" fill="none"/>
+    <path d="M270 200h70v14h-70Z" fill="#f6c524"/>
+  </g>
+  <path d="M286 92c10-14 28-14 38 0-6 10-12 14-19 22-8-6-15-10-19-22Z" stroke="#14110f" stroke-width="3.5" stroke-linejoin="round"/>
+  <!-- podio -->
+  <g stroke="#14110f" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" fill="#fff">
+    <path d="M232 216h146v150H232Z"/>
+    <path d="M70 262h154v104H70Z"/>
+    <path d="M386 282h132v84H386Z"/>
+  </g>
+  <!-- sombreado a rayitas, solo en el borde izquierdo de cada bloque -->
+  <defs>
+    <clipPath id="b1"><path d="M232 216h146v150H232Z"/></clipPath>
+    <clipPath id="b2"><path d="M70 262h154v104H70Z"/></clipPath>
+    <clipPath id="b3"><path d="M386 282h132v84H386Z"/></clipPath>
+  </defs>
+  <g stroke="#14110f" stroke-width="3" stroke-linecap="round" opacity=".8">
+    <g clip-path="url(#b1)"><path d="M238 232l30 140M238 262l24 110M238 292l18 80M238 322l12 50M238 352l6 20"/></g>
+    <g clip-path="url(#b2)"><path d="M76 276l28 100M76 304l20 72M76 332l12 44"/></g>
+    <g clip-path="url(#b3)"><path d="M392 296l26 80M392 324l16 52M392 352l8 24"/></g>
+  </g>
+  <!-- números -->
+  <g fill="#14110f" font-family="Inter, Arial, sans-serif" font-weight="900" text-anchor="middle">
+    <text x="305" y="330" font-size="112">1</text>
+    <text x="150" y="340" font-size="92">2</text>
+    <text x="452" y="344" font-size="76">3</text>
+  </g>
+</svg>

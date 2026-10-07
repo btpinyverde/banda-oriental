@@ -8,7 +8,7 @@ import { idDeDispositivo } from "../lib/juego/dispositivo";
 import { pedirDestacados, pedirGlobales, pedirRanking } from "../lib/juego/estadisticas-servidor";
 import type { Destacados, EstadisticasGlobales, FilaRanking, PeriodoRanking, RankingServidor } from "../lib/juego/tipos";
 import { FinDeLaLista } from "./FinDeLaLista";
-import { EstadisticasGlobalesDelJuego, HeroDelRanking, ListaDestacada, LlamadoACuenta, TablaDelRanking, TuPosicion } from "./Piezas";
+import { ComoSeCalculaElPuntaje, HeroDelRanking, LlamadoACuenta, OtrosRecords, TablaDelRanking, TuPosicion } from "./Piezas";
 
 const PERIODOS: { periodo: PeriodoRanking; etiqueta: string; nombre: string }[] = [
   { periodo: "all", etiqueta: "Todo el tiempo", nombre: "de todos los tiempos" },
@@ -125,10 +125,13 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
 
   return (
     <main className="ranking">
-      <HeroDelRanking />
-      {selector}
+      <HeroDelRanking globales={globales} />
 
       <div className="ranking__controles">
+        <h2 className="ranking__titulo">
+          <span className="resaltado-titulo">Ranking</span>
+        </h2>
+        {selector}
         <label className="ranking__periodo">
           <span className="solo-lectores">Período</span>
           <select value={periodo} onChange={(evento) => setPeriodo(evento.target.value as PeriodoRanking)}>
@@ -139,8 +142,8 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
             ))}
           </select>
         </label>
-        {ranking && <p className="ranking__rotulo">{rotulo(ranking)}</p>}
       </div>
+      {ranking && <p className="ranking__rotulo">{rotulo(ranking)}</p>}
 
       <div className="ranking__cuerpo">
         <div className="ranking__principal" aria-live="polite">
@@ -188,12 +191,11 @@ export function Ranking({ selector }: { selector?: ReactNode } = {}) {
 
         <aside className="ranking__lateral">
           {ranking && <TuPosicion ranking={ranking} />}
-          {destacados && <ListaDestacada titulo="Mejores rachas" filas={destacados.streaks} clase="destacada--racha" />}
-          {destacados && <ListaDestacada titulo="Más canciones" filas={destacados.songs} clase="destacada--canciones" />}
+          <ComoSeCalculaElPuntaje />
         </aside>
       </div>
 
-      <EstadisticasGlobalesDelJuego datos={globales} />
+      <OtrosRecords datos={destacados} />
       {cuentasActivas() && lista && !sesion && <LlamadoACuenta />}
     </main>
   );

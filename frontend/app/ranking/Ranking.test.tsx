@@ -16,7 +16,7 @@ const respuesta = (periodo: PeriodoRanking, entries: FilaRanking[], me: FilaRank
   players,
 });
 
-const DESTACADOS = { streaks: [{ display_name: "CampeónDelPrado", value: 21 }], songs: [{ display_name: "TitoStereo", value: 342 }] };
+const DESTACADOS = { streaks: [{ display_name: "CampeónDelPrado", value: 21 }], songs: [{ display_name: "TitoStereo", value: 342 }], accuracy: [{ display_name: "Afinada", value: 95 }] };
 const GLOBALES = { players: 5432, games: 12000, days: 124 };
 
 let pedir: MockInstance<typeof servidor.pedirRanking>;
@@ -42,6 +42,16 @@ describe("Ranking: la página", () => {
     expect(await screen.findByRole("table", { name: "Ranking" })).toHaveTextContent("Ana");
     expect(pedir).toHaveBeenCalledWith("all", expect.any(String), 1);
     expect(screen.getByRole("combobox", { name: "Período" })).toHaveValue("all");
+  });
+
+  it("pone el título Ranking, las pestañas (si las hay) y el período en una misma fila de controles", async () => {
+    const { container } = render(<Ranking selector={<div role="group" aria-label="Qué ranking ver" />} />);
+    await screen.findByText("Ana");
+
+    const fila = container.querySelector(".ranking__controles") as HTMLElement;
+    expect(within(fila).getByRole("heading", { level: 2, name: "Ranking" })).toBeInTheDocument();
+    expect(within(fila).getByRole("group", { name: "Qué ranking ver" })).toBeInTheDocument();
+    expect(within(fila).getByRole("combobox", { name: "Período" })).toBeInTheDocument();
   });
 
   it("deja elegir el período, y al elegir otro pide ese ranking y lo muestra", async () => {
@@ -83,11 +93,12 @@ describe("Ranking: la página", () => {
     expect(tarjeta).toHaveTextContent("de 5.432 jugadores");
   });
 
-  it("muestra las listas de mejores rachas y de más canciones, y las estadísticas globales", async () => {
+  it("muestra los otros récords (racha, precisión y canciones) y las estadísticas globales", async () => {
     render(<Ranking />);
 
-    expect(await screen.findByRole("region", { name: "Mejores rachas" })).toHaveTextContent("CampeónDelPrado");
-    expect(screen.getByRole("region", { name: "Más canciones" })).toHaveTextContent("TitoStereo");
+    expect(await screen.findByRole("region", { name: "Mayor racha" })).toHaveTextContent("CampeónDelPrado");
+    expect(screen.getByRole("region", { name: "Mejor precisión" })).toHaveTextContent("Afinada");
+    expect(screen.getByRole("region", { name: "Más canciones descubiertas" })).toHaveTextContent("TitoStereo");
     expect(screen.getByRole("region", { name: "Estadísticas globales" })).toHaveTextContent("5.432");
   });
 
@@ -98,7 +109,7 @@ describe("Ranking: la página", () => {
 
     expect(await screen.findByRole("table", { name: "Ranking" })).toBeInTheDocument();
     await waitFor(() => expect(servidor.pedirGlobales).toHaveBeenCalled());
-    expect(screen.queryByRole("region", { name: "Mejores rachas" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Otros récords" })).toBeNull();
     expect(screen.queryByRole("region", { name: "Estadísticas globales" })).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
   });

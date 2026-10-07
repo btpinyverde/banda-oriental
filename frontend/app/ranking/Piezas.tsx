@@ -18,9 +18,9 @@ export function AvatarDeJugador({ nombre }: { nombre: string }) {
   );
 }
 
-function Corona({ puesto }: { puesto: 1 | 2 | 3 }) {
+function Corona() {
   return (
-    <svg className={`ranking__corona ranking__corona--${puesto}`} width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="ranking__corona" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 8l4.2 3.4L12 4l4.8 7.4L21 8l-1.8 11H4.8Z" fill="currentColor" />
     </svg>
   );
@@ -37,7 +37,7 @@ const racha = (fila: FilaRanking) =>
 const precision = (fila: FilaRanking) => (fila.win_percentage === undefined || fila.win_percentage === null ? SIN_DATO : `${fila.win_percentage}%`);
 const canciones = (fila: FilaRanking) => numero.format(fila.played ?? fila.games);
 
-/** La tabla de posiciones: puesto (con corona los tres primeros), jugador, puntaje, racha, precisión y canciones. */
+/** La tabla de posiciones: puesto (con corona el primero), jugador, puntaje, racha, precisión y canciones. */
 export function TablaDelRanking({ filas, me }: { filas: FilaRanking[]; me: FilaRanking | null }) {
   const esMia = (fila: FilaRanking) => !!me && me.rank === fila.rank && me.display_name === fila.display_name;
   return (
@@ -56,7 +56,7 @@ export function TablaDelRanking({ filas, me }: { filas: FilaRanking[]; me: FilaR
         {filas.map((fila, indice) => (
           <tr key={`${indice}-${fila.rank}-${fila.display_name}`} className={`ranking__fila${fila.rank <= 3 ? ` ranking__fila--top${fila.rank}` : ""}${esMia(fila) ? " ranking__fila--mia" : ""}`}>
             <td className="ranking__puesto" aria-label={`Puesto ${fila.rank}`}>
-              {fila.rank <= 3 ? <Corona puesto={fila.rank as 1 | 2 | 3} /> : fila.rank}
+              {fila.rank === 1 ? <Corona /> : fila.rank}
             </td>
             <td className="ranking__jugador">
               <AvatarDeJugador nombre={fila.display_name} />
@@ -79,6 +79,7 @@ export function TuPosicion({ ranking }: { ranking: RankingServidor }) {
   const { me, players } = ranking;
   return (
     <section className="posicion" aria-label="Tu posición">
+      <img className="posicion__flecha" src="/assets/doodle-arrow-curve.svg" alt="" width={44} height={44} aria-hidden="true" />
       <h2>Tu posición</h2>
       {me ? (
         <>
@@ -109,11 +110,14 @@ export function TuPosicion({ ranking }: { ranking: RankingServidor }) {
   );
 }
 
-/** Una lista corta (mejores rachas, más canciones): los cinco primeros con su valor. */
-export function ListaDestacada({ titulo, filas, clase = "" }: { titulo: string; filas: Destacados["streaks"]; clase?: string }) {
+/** Una lista corta (mayor racha, mejor precisión, más canciones): los primeros con su valor. */
+export function ListaDestacada({ titulo, filas, clase = "", icono, sufijo = "" }: { titulo: string; filas: Destacados["streaks"]; clase?: string; icono?: string; sufijo?: string }) {
   return (
     <section className={`destacada ${clase}`.trim()} aria-label={titulo}>
-      <h2>{titulo}</h2>
+      <h3>
+        {icono && <img src={icono} alt="" width={30} height={30} aria-hidden="true" />}
+        {titulo}
+      </h3>
       {filas.length === 0 ? (
         <p className="destacada__vacia">Todavía no hay datos.</p>
       ) : (
@@ -123,7 +127,7 @@ export function ListaDestacada({ titulo, filas, clase = "" }: { titulo: string; 
               <span className="destacada__puesto">{indice + 1}</span>
               <AvatarDeJugador nombre={fila.display_name} />
               <span className="destacada__nombre">{fila.display_name}</span>
-              <strong>{numero.format(fila.value)}</strong>
+              <strong>{`${numero.format(fila.value)}${sufijo}`}</strong>
             </li>
           ))}
         </ol>
@@ -132,21 +136,77 @@ export function ListaDestacada({ titulo, filas, clase = "" }: { titulo: string; 
   );
 }
 
-/** Tres cifras de todo el juego; sin datos no se muestra nada (nunca ceros inventados). */
+/** Las tres listas de récords, en fila bajo la tabla. Sin datos no aparece; un servidor anterior sin precisión deja dos. */
+export function OtrosRecords({ datos }: { datos: Destacados | null }) {
+  if (!datos) return null;
+  return (
+    <section className="records" aria-label="Otros récords">
+      <h2 className="records__titulo">
+        <span className="resaltado-titulo">Otros récords</span>
+      </h2>
+      <div className="records__lista">
+        <ListaDestacada titulo="Mayor racha" filas={datos.streaks} clase="destacada--racha" icono="/assets/streak-fire.svg" />
+        {datos.accuracy && <ListaDestacada titulo="Mejor precisión" filas={datos.accuracy} clase="destacada--precision" icono="/assets/icon-diana.svg" sufijo="%" />}
+        <ListaDestacada titulo="Más canciones descubiertas" filas={datos.songs} clase="destacada--canciones" icono="/assets/music-note.svg" />
+      </div>
+    </section>
+  );
+}
+
+/** Cómo se arma el puntaje, en un desplegable. Lo que dice es lo que calcula el servidor: puntos por intento y bonus por rapidez. */
+export function ComoSeCalculaElPuntaje() {
+  return (
+    <details className="como-puntaje">
+      <summary>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.5" />
+          <path d="M12 11v6M12 7.5v.01" />
+        </svg>
+        ¿Cómo se calcula el puntaje?
+      </summary>
+      <p>Sumás más puntos cuanto menos intentos necesitás y cuanto más rápido descubrís la canción. La racha y la precisión se muestran aparte.</p>
+    </details>
+  );
+}
+
+const ICONO = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
+const ICONOS_GLOBALES = {
+  jugadores: (
+    <svg width="34" height="34" viewBox="0 0 32 32" {...ICONO}>
+      <circle cx="12" cy="11" r="4.5" />
+      <path d="M3.5 26c.8-5 4-8 8.5-8s7.7 3 8.5 8" />
+      <path d="M21 6.8a4.5 4.5 0 0 1 0 8.4M24 19c2.4 1 4 3.4 4.5 7" />
+    </svg>
+  ),
+  partidas: (
+    <svg width="34" height="34" viewBox="0 0 32 32" {...ICONO}>
+      <path d="M12 23V8l14-3v15" />
+      <circle cx="8.5" cy="23" r="3.5" />
+      <circle cx="22.5" cy="20" r="3.5" />
+    </svg>
+  ),
+  dias: (
+    <svg width="34" height="34" viewBox="0 0 32 32" {...ICONO}>
+      <rect x="4" y="7" width="24" height="21" rx="3" />
+      <path d="M4 14h24M10 3.5V9M22 3.5V9" />
+    </svg>
+  ),
+};
+
+/** Tres cifras de todo el juego, en fila; sin datos no se muestra nada (nunca ceros inventados). */
 export function EstadisticasGlobalesDelJuego({ datos }: { datos: EstadisticasGlobales | null }) {
   if (!datos) return null;
   const tarjetas = [
-    { valor: datos.players, etiqueta: plural(datos.players, "jugador", "jugadores"), icono: "/assets/icon-trophy.svg" },
-    { valor: datos.games, etiqueta: plural(datos.games, "partida", "partidas"), icono: "/assets/music-note.svg" },
-    { valor: datos.days, etiqueta: `${plural(datos.days, "canción", "canciones")} del diario`, icono: "/assets/calendar-today.svg" },
+    { valor: datos.players, etiqueta: plural(datos.players, "jugador", "jugadores"), icono: ICONOS_GLOBALES.jugadores },
+    { valor: datos.games, etiqueta: plural(datos.games, "partida", "partidas"), icono: ICONOS_GLOBALES.partidas },
+    { valor: datos.days, etiqueta: `${plural(datos.days, "canción", "canciones")} del diario`, icono: ICONOS_GLOBALES.dias },
   ];
   return (
     <section className="globales" aria-label="Estadísticas globales">
-      <h2>Estadísticas globales</h2>
       <ul>
         {tarjetas.map(({ valor, etiqueta, icono }) => (
-          <li key={icono}>
-            <img src={icono} alt="" width={44} height={44} />
+          <li key={etiqueta}>
+            {icono}
             <div>
               <strong>{numero.format(valor)}</strong>
               <span>{etiqueta}</span>
@@ -180,35 +240,20 @@ export function LlamadoACuenta() {
   );
 }
 
-/** El encabezado: título grande, bajada y el collage con el trofeo (decorativo). */
-export function HeroDelRanking() {
+/** El encabezado: título grande, bajada, las cifras del juego y el podio dibujado (decorativo). */
+export function HeroDelRanking({ globales = null }: { globales?: EstadisticasGlobales | null }) {
   return (
     <section className="ranking-hero">
       <div>
         <p className="ranking-hero__etiqueta">Ranking global</p>
         <h1>
-          ¿Quién sabe más de música <span className="ranking-hero__resaltado">uruguaya?</span>
+          ¿Quién sabe más <span className="ranking-hero__sin-corte">de música</span> <span className="ranking-hero__resaltado">uruguaya?</span>
         </h1>
         <p className="ranking-hero__bajada">Compará tu puntaje, racha y precisión con jugadores de todo el mundo.</p>
+        <EstadisticasGlobalesDelJuego datos={globales} />
       </div>
-      <div className="ranking-colage" aria-hidden="true">
-        <img className="ranking-colage__mancha" src="/assets/hero-blob-yellow.svg" alt="" />
-        <figure className="ranking-colage__foto">
-          <img src="/assets/hero-foto-salvo.webp" alt="" width={560} height={560} />
-        </figure>
-        <div className="ranking-colage__copa">
-          <img src="/assets/trophy.svg" alt="" width={200} height={200} />
-          <span>#1</span>
-        </div>
-        <div className="ranking-colage__nota">
-          <span>Del rock</span>
-          <span>al candombe,</span>
-          <span>acá también</span>
-          <span>se compite.</span>
-        </div>
-        <svg className="ranking-colage__estrella" viewBox="0 0 120 120" fill="none">
-          <polygon fill="currentColor" points="117,60 101.5,71.1 109.4,88.5 90.4,90.4 88.5,109.4 71.1,101.5 60,117 48.9,101.5 31.5,109.4 29.6,90.4 10.6,88.5 18.5,71.1 3,60 18.5,48.9 10.6,31.5 29.6,29.6 31.5,10.6 48.9,18.5 60,3 71.1,18.5 88.5,10.6 90.4,29.6 109.4,31.5 101.5,48.9" />
-        </svg>
+      <div className="ranking-podio" aria-hidden="true">
+        <img src="/assets/ranking-podio.svg" alt="" width={520} height={380} />
       </div>
     </section>
   );
